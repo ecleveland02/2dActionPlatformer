@@ -66,6 +66,14 @@ namespace Margin.EditorTools
             EditorUtility.SetDirty(bodyData);
             inkMaterial = LoadOrCreateInkMaterial();
             Object controls = AssetDatabase.LoadMainAssetAtPath(ControlsPath);
+            if (controls == null)
+            {
+                EditorUtility.DisplayDialog("Build Movement Gym",
+                    $"Could not load {ControlsPath}. Select it in the Project window and check the Inspector " +
+                    "and Console for an import error.", "OK");
+                return;
+            }
+            Debug.Log($"Gym builder: using controls asset '{controls.name}' ({controls.GetType().Name}).");
             AssetDatabase.SaveAssets();
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);

@@ -47,8 +47,13 @@ namespace Margin.Core
             }
             instance = this;
 
+            // The whole game counts time in 60 Hz ticks, so enforce it here even if Project Settings disagree.
             if (Mathf.Abs(Time.fixedDeltaTime - GameTime.TickDelta) > 0.0001f)
-                Debug.LogWarning($"Fixed Timestep is {Time.fixedDeltaTime}, expected 1/60. Set it in Project Settings > Time.");
+            {
+                Debug.LogWarning($"Fixed Timestep was {Time.fixedDeltaTime}; forcing 1/60 for this session. " +
+                                 "Set Project Settings > Time > Fixed Timestep to 0.0166667 to remove this warning.");
+                Time.fixedDeltaTime = GameTime.TickDelta;
+            }
         }
 
         private void OnDestroy()

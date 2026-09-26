@@ -54,6 +54,15 @@ namespace Margin.Input
 
         private void Awake()
         {
+            if (actions == null)
+            {
+                // Disabling in Awake means OnEnable/OnDisable never run, so this is the only error shown.
+                Debug.LogError("InputReader has no Actions asset. Select the Player and drag " +
+                               "Assets/_Project/Scripts/Input/MarginControls into the Input Reader's Actions slot.", this);
+                enabled = false;
+                return;
+            }
+
             // GameLoop runs its Awake first (DefaultExecutionOrder), so the clock exists here.
             if (Buffer == null && GameLoop.Clock != null) Initialize(GameLoop.Clock);
             if (Buffer == null) Debug.LogError("InputReader needs a GameLoop in the scene.", this);
