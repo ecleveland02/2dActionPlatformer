@@ -27,6 +27,7 @@ namespace Margin.Player
         [SerializeField] private Transform visualRoot;
 
         private PlayerStateMachine machine;
+        private bool reportedMissingInput;
         private bool coyoteAvailable;
         private bool hasPendingDy;
         private float pendingDy;
@@ -119,7 +120,7 @@ namespace Margin.Player
 
         public void Tick()
         {
-            if (data == null || Controls == null || Controls.Buffer == null) return;
+            if (!EnsureReady()) return;
 
             if (DashCooldown > 0) DashCooldown--;
             hasPendingDy = false;
@@ -134,6 +135,32 @@ namespace Margin.Player
             ResolveCollisions();
 
             if (visualRoot != null) visualRoot.localScale = new Vector3(Facing, 1f, 1f);
+        }
+
+        /// <summary>
+        /// Checks references before ticking. A missing MovementData is reported once and replaced with
+        /// default values so the player still moves; missing input is reported once and the tick is skipped.
+        /// </summary>
+        private bool EnsureReady()
+        {
+            if (data == null)
+            {
+                Debug.LogError("PlayerController: 'Data' is empty, so default movement values are being used. " +
+                               "Drag Assets/_Project/Data/MovementData into it, or run Margin > Wire Player References.", this);
+                data = ScriptableObject.CreateInstance<MovementData>();
+            }
+
+            if (Controls == null || Controls.Buffer == null)
+            {
+                if (!reportedMissingInput)
+                {
+                    Debug.LogError("PlayerController: no working input. Assign the Input Reader field and make sure the " +
+                                   "InputReader has its Actions asset (Margin > Wire Player References does both).", this);
+                    reportedMissingInput = true;
+                }
+                return false;
+            }
+            return true;
         }
 
         private void ResolveCollisions()

@@ -57,26 +57,14 @@ namespace Margin.EditorTools
 
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-            // ---- Data assets (created only if missing, so tuning is never overwritten) ----
-            var movement = LoadOrCreate<MovementData>($"{DataFolder}/MovementData.asset");
-            var bufferSettings = LoadOrCreate<InputBufferSettings>($"{DataFolder}/InputBufferSettings.asset");
-            var bodyData = LoadOrCreate<KinematicBodyData>($"{DataFolder}/KinematicBodyData.asset");
-            bodyData.solidMask = 1 << groundLayer;
-            bodyData.oneWayMask = 1 << oneWayLayer;
-            EditorUtility.SetDirty(bodyData);
-            inkMaterial = LoadOrCreateInkMaterial();
-            Object controls = AssetDatabase.LoadMainAssetAtPath(ControlsPath);
-            if (controls == null)
-            {
-                EditorUtility.DisplayDialog("Build Movement Gym",
-                    $"Could not load {ControlsPath}. Select it in the Project window and check the Inspector " +
-                    "and Console for an import error.", "OK");
-                return;
-            }
-            Debug.Log($"Gym builder: using controls asset '{controls.name}' ({controls.GetType().Name}).");
-            AssetDatabase.SaveAssets();
-
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+
+            // Load assets AFTER creating the scene. Opening a scene in Single mode unloads assets that
+            // nothing references yet, which would leave these variables pointing at unloaded objects
+            // (that bug left every Player reference empty in the first version of this builder).
+            GymAssets assets = LoadAssets();
+            if (assets == null) return;
+            inkMaterial = assets.Ink;
 
             new GameObject("GameLoop").AddComponent<GameLoop>();
 
@@ -128,7 +116,7 @@ namespace Margin.EditorTools
             Label(labels, "WALL JUMP", 62.5f, 13);
 
             // ---- Player ----
-            GameObject player = BuildPlayer(playerLayer, movement, bufferSettings, bodyData, controls);
+            GameObject player = BuildPlayer(playerLayer, assets);
 
             // ---- Camera ----
             var camObject = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -141,13 +129,104 @@ namespace Margin.EditorTools
             camObject.AddComponent<CameraFollow>().Target = player.transform;
             camObject.AddComponent<AudioListener>();
 
+            EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings(ScenePath);
             Debug.Log("Movement gym built at " + ScenePath + ". Press Play.");
         }
 
-        private static GameObject BuildPlayer(int layer, MovementData movement, InputBufferSettings bufferSettings,
-                                              KinematicBodyData bodyData, Object controls)
+        /// <summary>
+        /// Menu: Margin > Wire Player References. Fills in every data/asset slot on the player(s) in the open
+        /// scene from Assets/_Project/Data, without rebuilding the scene. Existing references are replaced.
+        /// </summary>
+        [MenuItem("Margin/Wire Player References")]
+        public static void WirePlayerReferences()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            var controllers = new List<PlayerController>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                controllers.AddRange(root.GetComponentsInChildren<PlayerController>(true));
+
+            if (controllers.Count == 0)
+            {
+                EditorUtility.DisplayDialog("Wire Player References", "No PlayerController found in the open scene.", "OK");
+                return;
+            }
+
+            GymAssets assets = LoadAssets();
+            if (assets == null) return;
+
+            foreach (PlayerController controller in controllers)
+            {
+                WirePlayer(controller, controller.GetComponent<InputReader>(),
+                           controller.GetComponent<KinematicBody2D>(), null, assets);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
+            Debug.Log($"Wired references on {controllers.Count} player(s) and saved {scene.name}. Press Play.");
+        }
+
+        /// <summary>The assets a gym player needs, loaded (or created) from the project.</summary>
+        private sealed class GymAssets
+        {
+            public MovementData Movement;
+            public InputBufferSettings BufferSettings;
+            public KinematicBodyData BodyData;
+            public Object Controls;
+            public Material Ink;
+        }
+
+        /// <summary>Loads the data assets, creating any that are missing (existing tuning is never overwritten).</summary>
+        private static GymAssets LoadAssets()
+        {
+            var assets = new GymAssets
+            {
+                Movement = LoadOrCreate<MovementData>($"{DataFolder}/MovementData.asset"),
+                BufferSettings = LoadOrCreate<InputBufferSettings>($"{DataFolder}/InputBufferSettings.asset"),
+                BodyData = LoadOrCreate<KinematicBodyData>($"{DataFolder}/KinematicBodyData.asset"),
+                Controls = AssetDatabase.LoadMainAssetAtPath(ControlsPath),
+                Ink = LoadOrCreateInkMaterial(),
+            };
+
+            if (assets.Controls == null)
+            {
+                EditorUtility.DisplayDialog("Margin",
+                    $"Could not load {ControlsPath}. Select it in the Project window and check the Inspector " +
+                    "and Console for an import error.", "OK");
+                return null;
+            }
+
+            // Masks come from layer names so they stay right even if layer numbers change.
+            assets.BodyData.solidMask = LayerMask.GetMask("Ground");
+            assets.BodyData.oneWayMask = LayerMask.GetMask("OneWayPlatform");
+            EditorUtility.SetDirty(assets.BodyData);
+            AssetDatabase.SaveAssets();
+            return assets;
+        }
+
+        /// <summary>Assigns every asset slot on a player's components and logs one summary line.</summary>
+        private static void WirePlayer(PlayerController controller, InputReader reader, KinematicBody2D body,
+                                       Transform visual, GymAssets assets)
+        {
+            bool ok = true;
+            if (body != null) ok &= SetReference(body, "data", assets.BodyData);
+            if (reader != null)
+            {
+                ok &= SetReference(reader, "actions", assets.Controls);
+                ok &= SetReference(reader, "bufferSettings", assets.BufferSettings);
+                ok &= SetReference(controller, "inputReader", reader);
+            }
+            ok &= SetReference(controller, "data", assets.Movement);
+            if (visual != null) ok &= SetReference(controller, "visualRoot", visual);
+
+            string summary = $"{controller.name}: MovementData={assets.Movement.name}, KinematicBodyData={assets.BodyData.name}, " +
+                             $"Controls={assets.Controls.name}, BufferSettings={assets.BufferSettings.name}";
+            if (ok) Debug.Log("References wired. " + summary, controller);
+            else Debug.LogError("Some references did not stick (see errors above). " + summary, controller);
+        }
+
+        private static GameObject BuildPlayer(int layer, GymAssets assets)
         {
             var player = new GameObject("Player") { layer = layer };
             player.transform.position = new Vector3(0, 1.5f, 0);
@@ -158,11 +237,8 @@ namespace Margin.EditorTools
             var rb = player.GetComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-            SetReference(body, "data", bodyData);
 
             var reader = player.AddComponent<InputReader>();
-            SetReference(reader, "actions", controls);
-            SetReference(reader, "bufferSettings", bufferSettings);
 
             // Placeholder visual: an ink capsule plus a short "eye" line that shows facing.
             var visual = new GameObject("Visual").transform;
@@ -174,9 +250,7 @@ namespace Margin.EditorTools
             AddLine(eye, new[] { new Vector3(0.08f, 0.6f), new Vector3(0.22f, 0.6f) }, false, Ink).useWorldSpace = false;
 
             var controller = player.AddComponent<PlayerController>();
-            SetReference(controller, "data", movement);
-            SetReference(controller, "inputReader", reader);
-            SetReference(controller, "visualRoot", visual);
+            WirePlayer(controller, reader, body, visual, assets);
             var so = new SerializedObject(controller);
             so.FindProperty("abilities.wallCling").boolValue = true;   // gym has walls unlocked for tuning
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -306,11 +380,24 @@ namespace Margin.EditorTools
             return material;
         }
 
-        private static void SetReference(Object target, string property, Object value)
+        /// <summary>Sets a serialized reference field and checks that it actually took. Returns false if not.</summary>
+        private static bool SetReference(Object target, string property, Object value)
         {
             var so = new SerializedObject(target);
-            so.FindProperty(property).objectReferenceValue = value;
+            SerializedProperty field = so.FindProperty(property);
+            if (field == null)
+            {
+                Debug.LogError($"{target.GetType().Name} has no serialized field '{property}'.", target);
+                return false;
+            }
+
+            field.objectReferenceValue = value;
             so.ApplyModifiedPropertiesWithoutUndo();
+
+            so.Update();
+            bool ok = value != null && so.FindProperty(property).objectReferenceValue == value;
+            if (!ok) Debug.LogError($"Could not set {target.GetType().Name}.{property} to '{(value != null ? value.name : "null")}'.", target);
+            return ok;
         }
 
         private static void AddToBuildSettings(string path)

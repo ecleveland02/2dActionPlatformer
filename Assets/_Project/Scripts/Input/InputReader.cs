@@ -63,6 +63,9 @@ namespace Margin.Input
                 return;
             }
 
+            if (bufferSettings == null)
+                Debug.LogWarning("InputReader: 'Buffer Settings' is empty, so every action uses the default 6 frame window.", this);
+
             // GameLoop runs its Awake first (DefaultExecutionOrder), so the clock exists here.
             if (Buffer == null && GameLoop.Clock != null) Initialize(GameLoop.Clock);
             if (Buffer == null) Debug.LogError("InputReader needs a GameLoop in the scene.", this);

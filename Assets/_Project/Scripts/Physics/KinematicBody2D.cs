@@ -94,6 +94,7 @@ namespace Margin.Physics
         public bool IsTouchingWall(int dir)
         {
             if (dir == 0) return false;
+            EnsureData();
             Vector2 direction = new Vector2(dir, 0f);
             return Cast(Position, direction, Skin, data.solidMask, false, out RaycastHit2D hit)
                    && !IsWalkable(hit.normal);
@@ -106,6 +107,7 @@ namespace Margin.Physics
         /// </summary>
         public Vector2 Move(Vector2 delta, float cornerCorrection = 0f)
         {
+            EnsureData();
             bool wasGrounded = state.Grounded;
             Vector2 groundNormal = state.GroundNormal;
             state = default;
@@ -249,6 +251,15 @@ namespace Margin.Physics
             p.y -= Mathf.Max(0f, hit.distance - Skin);
             SetGround(hit);
             return p;
+        }
+
+        // A missing data asset is reported once and replaced with defaults instead of throwing every tick.
+        private void EnsureData()
+        {
+            if (data != null) return;
+            Debug.LogError("KinematicBody2D: 'Data' is empty, so default collision values are being used. " +
+                           "Drag Assets/_Project/Data/KinematicBodyData into it, or run Margin > Wire Player References.", this);
+            data = ScriptableObject.CreateInstance<KinematicBodyData>();
         }
 
         private void UpdateDropThrough(Vector2 p)
