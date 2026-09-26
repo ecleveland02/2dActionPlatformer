@@ -16,6 +16,16 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Coyote time uses the same rule (first airborne tick is frame 1; frame 6 succeeds, frame 7 fails).
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
+- **Tick order:** `GameLoop` (one per scene) advances the `FrameCounter` then ticks every `ITickable` by `TickOrder`:
+  `InputReader` (-100), then `PlayerController` (0). Pausing/frame-stepping only needs to control `GameLoop`.
+- **Layers:** 6 `Ground` (solid), 7 `OneWayPlatform`, 8 `Player`. `KinematicBodyData` holds the masks.
+- **Physics:** `KinematicBody2D` tracks its own `Position` and casts from it (Physics2D autoSyncTransforms is off).
+  The Rigidbody2D is Kinematic + Interpolate, moved with `MovePosition`, only for smooth rendering.
+- **Player states:** only change `PlayerController.Velocity`; the controller moves the body after the state ticks.
+  Shared rules (jump, coyote, dash, walls) live in `PlayerController.Check*` helpers.
+- **Input in tests:** `PlayerController` reads `IPlayerInput`; PlayMode tests inject a scripted fake and call `Tick()`.
+- **Editor code:** `Assets/_Project/Scripts/Editor/` (own `Margin.Editor` assembly, namespace `Margin.EditorTools`).
+  Menu **Margin > Build Movement Gym** regenerates `Scenes/Gym.unity`.
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress.
 
 ## 0. How to Use This Document (Instructions for Claude Code)
