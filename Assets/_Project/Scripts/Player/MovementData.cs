@@ -13,6 +13,8 @@ namespace Margin.Player
     {
         [Header("Run")]
         [Min(0f)] public float runSpeed = 9f;
+        [Tooltip("Stick tilt (0 to 1) needed to count as pressing left/right. Running is digital: full speed or none.")]
+        [Range(0.05f, 1f)] public float runInputThreshold = 0.25f;
         [Tooltip("Frames to go from standing to full run speed on the ground.")]
         [Min(1)] public int groundAccelerationFrames = 4;
         [Tooltip("Frames to go from full run speed to stopped on the ground. Also used when turning around.")]
@@ -60,6 +62,14 @@ namespace Margin.Player
         [Min(0)] public int airDashes = 1;
         [Tooltip("Frames after a ground dash before another dash is allowed.")]
         [Min(0)] public int dashCooldownFrames = 20;
+
+        [Header("Walls (requires Wall Cling ability)")]
+        [Tooltip("Max fall speed while sliding down a wall.")]
+        [Min(0f)] public float wallSlideSpeed = 4f;
+        [Tooltip("Horizontal speed pushed away from the wall on a wall jump.")]
+        [Min(0f)] public float wallJumpHorizontalSpeed = 9f;
+        [Tooltip("Frames after a wall jump during which left/right input is ignored, so you can't instantly drift back.")]
+        [Min(0)] public int wallJumpControlLockFrames = 8;
 
         // Derived values. Computed from the fields above so designers only tune the intuitive numbers.
         public float RiseGravity => MovementMath.RiseGravity(jumpHeight, framesToApex);
