@@ -10,14 +10,12 @@ namespace Margin.Input
     /// Why the "pending" queue: Input System callbacks run during Update (once per rendered frame),
     /// but gameplay runs in FixedUpdate at 60 Hz. If gameplay polled "was pressed this frame"
     /// from FixedUpdate, quick taps could be missed or seen twice. Instead we remember every press
-    /// here and hand them to the InputBuffer at the start of the next tick via BeginTick().
+    /// here and hand them to the InputBuffer at the start of the next tick via Tick().
     ///
-    /// Usage (from whatever owns the tick, e.g. PlayerController.FixedUpdate):
-    ///     frameCounter.Advance();
-    ///     inputReader.BeginTick();
-    ///     ... states read inputReader.Move / JumpHeld and call inputReader.Buffer.Consume(...)
+    /// The GameLoop ticks this before the player (TickOrder -100), so every tick goes:
+    ///     frame counter advances -> InputReader.Tick() flushes presses -> player reads input.
     /// </summary>
-    public sealed class InputReader : MonoBehaviour
+    public sealed class InputReader : MonoBehaviour, IPlayerInput, ITickable
     {
         [Tooltip("The MarginControls input actions asset.")]
         [SerializeField] private InputActionAsset actions;
@@ -39,7 +37,9 @@ namespace Margin.Input
 
         public InputBuffer Buffer { get; private set; }
 
-        // Snapshots taken in BeginTick so every state sees the same values for the whole tick.
+        public int TickOrder => -100;
+
+        // Snapshots taken in Tick() so every state sees the same values for the whole tick.
         public Vector2 Move { get; private set; }
         public bool JumpHeld { get; private set; }
         public bool DownHeld => Move.y <= -directionThreshold;
@@ -54,6 +54,10 @@ namespace Margin.Input
 
         private void Awake()
         {
+            // GameLoop runs its Awake first (DefaultExecutionOrder), so the clock exists here.
+            if (Buffer == null && GameLoop.Clock != null) Initialize(GameLoop.Clock);
+            if (Buffer == null) Debug.LogError("InputReader needs a GameLoop in the scene.", this);
+
             InputActionMap map = actions.FindActionMap(GameplayMap, throwIfNotFound: true);
             moveAction = map.FindAction("Move", throwIfNotFound: true);
             jumpAction = map.FindAction("Jump", throwIfNotFound: true);
@@ -74,12 +78,14 @@ namespace Margin.Input
         {
             foreach (InputAction action in bufferedActions) action.performed += OnButtonPerformed;
             actions.FindActionMap(GameplayMap).Enable();
+            GameLoop.Register(this);
         }
 
         private void OnDisable()
         {
             foreach (InputAction action in bufferedActions) action.performed -= OnButtonPerformed;
             actions.FindActionMap(GameplayMap).Disable();
+            GameLoop.Unregister(this);
         }
 
         private void OnButtonPerformed(InputAction.CallbackContext context)
@@ -89,10 +95,10 @@ namespace Margin.Input
         }
 
         /// <summary>
-        /// Call once at the start of every fixed tick, after the frame counter advances.
+        /// Called by the GameLoop once at the start of every fixed tick, after the frame counter advances.
         /// Moves queued presses into the buffer and snapshots held/axis state.
         /// </summary>
-        public void BeginTick()
+        public void Tick()
         {
             for (int i = 0; i < pendingPresses.Length; i++)
             {
