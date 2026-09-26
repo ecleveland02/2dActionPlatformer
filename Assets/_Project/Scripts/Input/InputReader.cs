@@ -1,0 +1,108 @@
+using Margin.Core;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace Margin.Input
+{
+    /// <summary>
+    /// Bridges the Unity Input System to the fixed-tick gameplay code.
+    ///
+    /// Why the "pending" queue: Input System callbacks run during Update (once per rendered frame),
+    /// but gameplay runs in FixedUpdate at 60 Hz. If gameplay polled "was pressed this frame"
+    /// from FixedUpdate, quick taps could be missed or seen twice. Instead we remember every press
+    /// here and hand them to the InputBuffer at the start of the next tick via BeginTick().
+    ///
+    /// Usage (from whatever owns the tick, e.g. PlayerController.FixedUpdate):
+    ///     frameCounter.Advance();
+    ///     inputReader.BeginTick();
+    ///     ... states read inputReader.Move / JumpHeld and call inputReader.Buffer.Consume(...)
+    /// </summary>
+    public sealed class InputReader : MonoBehaviour
+    {
+        [Tooltip("The MarginControls input actions asset.")]
+        [SerializeField] private InputActionAsset actions;
+
+        [Tooltip("Per-action buffer windows in frames.")]
+        [SerializeField] private InputBufferSettings bufferSettings;
+
+        [Tooltip("Stick values below this on an axis are treated as zero for Up/Down checks.")]
+        [SerializeField, Range(0f, 1f)] private float directionThreshold = 0.5f;
+
+        private const string GameplayMap = "Gameplay";
+
+        private InputAction moveAction;
+        private InputAction jumpAction;
+
+        // Maps each Input System action to the BufferedAction it feeds. Order matches BufferedAction.
+        private InputAction[] bufferedActions;
+        private bool[] pendingPresses;
+
+        public InputBuffer Buffer { get; private set; }
+
+        // Snapshots taken in BeginTick so every state sees the same values for the whole tick.
+        public Vector2 Move { get; private set; }
+        public bool JumpHeld { get; private set; }
+        public bool DownHeld => Move.y <= -directionThreshold;
+        public bool UpHeld => Move.y >= directionThreshold;
+
+        /// <summary>Creates the buffer. Call once before the first tick, passing the game's frame counter.</summary>
+        public void Initialize(IFrameSource clock)
+        {
+            Buffer = new InputBuffer(clock);
+            if (bufferSettings != null) bufferSettings.ApplyTo(Buffer);
+        }
+
+        private void Awake()
+        {
+            InputActionMap map = actions.FindActionMap(GameplayMap, throwIfNotFound: true);
+            moveAction = map.FindAction("Move", throwIfNotFound: true);
+            jumpAction = map.FindAction("Jump", throwIfNotFound: true);
+
+            bufferedActions = new[]
+            {
+                map.FindAction("Jump", throwIfNotFound: true),
+                map.FindAction("LightAttack", throwIfNotFound: true),
+                map.FindAction("HeavyAttack", throwIfNotFound: true),
+                map.FindAction("Special", throwIfNotFound: true),
+                map.FindAction("Dash", throwIfNotFound: true),
+                map.FindAction("Parry", throwIfNotFound: true),
+            };
+            pendingPresses = new bool[bufferedActions.Length];
+        }
+
+        private void OnEnable()
+        {
+            foreach (InputAction action in bufferedActions) action.performed += OnButtonPerformed;
+            actions.FindActionMap(GameplayMap).Enable();
+        }
+
+        private void OnDisable()
+        {
+            foreach (InputAction action in bufferedActions) action.performed -= OnButtonPerformed;
+            actions.FindActionMap(GameplayMap).Disable();
+        }
+
+        private void OnButtonPerformed(InputAction.CallbackContext context)
+        {
+            int index = System.Array.IndexOf(bufferedActions, context.action);
+            if (index >= 0) pendingPresses[index] = true;
+        }
+
+        /// <summary>
+        /// Call once at the start of every fixed tick, after the frame counter advances.
+        /// Moves queued presses into the buffer and snapshots held/axis state.
+        /// </summary>
+        public void BeginTick()
+        {
+            for (int i = 0; i < pendingPresses.Length; i++)
+            {
+                if (!pendingPresses[i]) continue;
+                Buffer.Record((BufferedAction)i);
+                pendingPresses[i] = false;
+            }
+
+            Move = moveAction.ReadValue<Vector2>();
+            JumpHeld = jumpAction.IsPressed();
+        }
+    }
+}
