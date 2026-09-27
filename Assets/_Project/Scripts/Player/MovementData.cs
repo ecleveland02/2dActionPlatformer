@@ -31,8 +31,11 @@ namespace Margin.Player
         [Min(1)] public int framesToStartSprint = 40;
         [Tooltip("Frames to ramp from run speed up to sprint speed.")]
         [Min(1)] public int sprintAccelerationFrames = 15;
-        [Tooltip("Frames to skid from full sprint speed to a stop when turning around. Jump and dash cancel the skid.")]
+        [Tooltip("Frames to skid from full sprint speed to a stop when turning around. Jump and dash cancel the skid. " +
+                 "Letting go at sprint speed also coasts down to run speed at this rate.")]
         [Min(1)] public int skidFrames = 20;
+        [Tooltip("Placeholder visual only: how far the capsule leans back while skidding, in degrees.")]
+        [Range(0f, 45f)] public float skidLeanDegrees = 15f;
 
         [Header("Jump")]
         [Tooltip("Apex height when jump is held, in units.")]

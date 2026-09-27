@@ -140,7 +140,7 @@ namespace Margin.Player
 
             ResolveCollisions();
 
-            if (visualRoot != null) visualRoot.localScale = new Vector3(Facing, 1f, 1f);
+            UpdatePlaceholderVisual();
         }
 
         /// <summary>
@@ -169,6 +169,16 @@ namespace Margin.Player
             return true;
         }
 
+        /// <summary>Flips the placeholder to show facing, and leans it back while skidding. Replaced by the rig in Milestone 2.</summary>
+        private void UpdatePlaceholderVisual()
+        {
+            if (visualRoot == null) return;
+            visualRoot.localScale = new Vector3(Facing, 1f, 1f);
+            // Positive Z rotation tips the top to the left, so lean against the direction of the slide.
+            float lean = CurrentState == Skid ? Mathf.Sign(Velocity.x) * data.skidLeanDegrees : 0f;
+            visualRoot.localRotation = Quaternion.Euler(0f, 0f, lean);
+        }
+
         private void ResolveCollisions()
         {
             CollisionState c = Body.Collisions;
@@ -193,13 +203,22 @@ namespace Margin.Player
 
         /// <summary>
         /// Sprint builds up while running at full speed on the ground and is kept through jumps as long as
-        /// you keep holding the direction you are moving. Letting go, turning, or stopping (e.g. a wall) resets it.
+        /// you keep holding the direction you are moving. A brief release while still above run speed keeps it
+        /// (keyboard direction changes often pass through neutral); turning, stopping, or a wall resets it.
         /// </summary>
         private void UpdateSprintCharge(bool grounded)
         {
-            bool holdingForward = InputX != 0 && (int)Mathf.Sign(Velocity.x) == InputX && Velocity.x != 0f;
-            if (!holdingForward) SprintCharge = 0;
-            else if (grounded && Mathf.Abs(Velocity.x) >= data.runSpeed - 0.001f) SprintCharge++;
+            bool holdingForward = InputX != 0 && Velocity.x != 0f && (int)Mathf.Sign(Velocity.x) == InputX;
+            bool coasting = InputX == 0 && Mathf.Abs(Velocity.x) > data.runSpeed;
+
+            if (holdingForward)
+            {
+                if (grounded && Mathf.Abs(Velocity.x) >= data.runSpeed - 0.001f) SprintCharge++;
+            }
+            else if (!coasting)
+            {
+                SprintCharge = 0;
+            }
         }
 
         // ---------------- Helpers used by states ----------------
@@ -209,7 +228,8 @@ namespace Margin.Player
         {
             if (onGround)
                 Velocity.x = MovementMath.GroundStep(Velocity.x, InputX, data.runSpeed, data.sprintSpeed, IsSprinting,
-                                                     data.GroundAccelStep, data.GroundDecelStep, data.SprintAccelStep);
+                                                     data.GroundAccelStep, data.GroundDecelStep, data.SprintAccelStep,
+                                                     data.SkidStep);
             else
                 Velocity.x = MovementMath.AirStep(Velocity.x, InputX, data.runSpeed, data.AirAccelStep, data.AirDecelStep);
 

@@ -181,40 +181,42 @@ namespace Margin.Tests
         private static readonly float RunAccel = MovementMath.SpeedStepPerTick(RunSpeed, 4);
         private static readonly float RunDecel = MovementMath.SpeedStepPerTick(RunSpeed, 3);
         private static readonly float SprintAccel = MovementMath.SpeedStepPerTick(SprintSpeed - RunSpeed, 15);
+        private static readonly float Coast = MovementMath.SpeedStepPerTick(SprintSpeed, 20);   // skid rate
 
         [Test]
         public void Sprint_RampsFromRunToSprintSpeed_InFifteenTicks()
         {
             float vx = RunSpeed;
             for (int i = 0; i < 14; i++)
-                vx = MovementMath.GroundStep(vx, 1, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel);
+                vx = MovementMath.GroundStep(vx, 1, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel, Coast);
             Assert.Less(vx, SprintSpeed);
-            vx = MovementMath.GroundStep(vx, 1, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel);
+            vx = MovementMath.GroundStep(vx, 1, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel, Coast);
             Assert.AreEqual(SprintSpeed, vx, 0.0001f);
         }
 
         [Test]
         public void NotSprinting_NeverExceedsRunSpeed_AndEasesDownFromSprint()
         {
-            float vx = MovementMath.GroundStep(RunSpeed, 1, RunSpeed, SprintSpeed, false, RunAccel, RunDecel, SprintAccel);
+            float vx = MovementMath.GroundStep(RunSpeed, 1, RunSpeed, SprintSpeed, false, RunAccel, RunDecel, SprintAccel, Coast);
             Assert.AreEqual(RunSpeed, vx, 0.0001f);
 
-            vx = MovementMath.GroundStep(SprintSpeed, 1, RunSpeed, SprintSpeed, false, RunAccel, RunDecel, SprintAccel);
+            vx = MovementMath.GroundStep(SprintSpeed, 1, RunSpeed, SprintSpeed, false, RunAccel, RunDecel, SprintAccel, Coast);
             Assert.Less(vx, SprintSpeed);
             Assert.GreaterOrEqual(vx, RunSpeed);
         }
 
         [Test]
-        public void Sprint_LetGo_StopsAtNormalStopRate()
+        public void Sprint_LetGo_CoastsToRunSpeed_ThenStopsQuickly()
         {
             float vx = SprintSpeed;
             int ticks = 0;
             while (vx > 0f && ticks < 50)
             {
-                vx = MovementMath.GroundStep(vx, 0, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel);
+                vx = MovementMath.GroundStep(vx, 0, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel, Coast);
                 ticks++;
             }
-            Assert.AreEqual(5, ticks, "13 u/s at the 3 u/s-per-tick stop rate takes 5 ticks.");
+            // 13 -> 9 at 0.65/tick takes 7 ticks (coast), then 9 -> 0 at 3/tick takes 3 ticks (normal stop).
+            Assert.AreEqual(10, ticks);
         }
 
         [Test]

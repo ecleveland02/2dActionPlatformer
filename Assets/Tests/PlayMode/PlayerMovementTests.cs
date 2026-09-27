@@ -265,6 +265,21 @@ namespace Margin.Tests
         }
 
         [Test]
+        public void TurningAtSprint_ThroughBriefNeutral_StillSkids()
+        {
+            // Keyboard turns usually pass through a few frames of neutral (both or neither key held).
+            StandOnFloor();
+            SprintRight();
+
+            input.Move = Vector2.zero;
+            for (int i = 0; i < 3; i++) Step();
+
+            input.Move = Vector2.left;
+            Step();
+            Assert.IsInstanceOf<SkidState>(player.CurrentState);
+        }
+
+        [Test]
         public void TurningAtRunSpeed_DoesNotSkid()
         {
             StandOnFloor();

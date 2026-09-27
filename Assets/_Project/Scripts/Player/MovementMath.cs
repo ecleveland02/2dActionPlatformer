@@ -75,15 +75,20 @@ namespace Margin.Player
         /// <summary>
         /// One tick of horizontal speed on the ground, including sprint.
         /// While sprinting and still holding the direction of travel, speed ramps from run speed up to
-        /// sprint speed by <paramref name="sprintAccelStep"/> per tick. Otherwise it is a normal run step
-        /// (which also eases back down to run speed when sprint ends).
+        /// sprint speed by <paramref name="sprintAccelStep"/> per tick.
+        /// Letting go above run speed coasts back down to run speed at <paramref name="coastStep"/> per tick
+        /// (momentum), and only then uses the normal quick stop. That coast also gives keyboard players time
+        /// to press the other direction and trigger a skid.
+        /// Otherwise it is a normal run step (which also eases back down to run speed when sprint ends).
         /// </summary>
         public static float GroundStep(float velocityX, int inputX, float runSpeed, float sprintSpeed, bool sprinting,
-                                       float accelStep, float decelStep, float sprintAccelStep)
+                                       float accelStep, float decelStep, float sprintAccelStep, float coastStep)
         {
             bool holdingForward = inputX != 0 && Math.Sign(velocityX) == inputX;
             if (sprinting && holdingForward && Math.Abs(velocityX) >= runSpeed)
                 return Approach(velocityX, inputX * sprintSpeed, sprintAccelStep);
+            if (inputX == 0 && Math.Abs(velocityX) > runSpeed)
+                return Approach(velocityX, Math.Sign(velocityX) * runSpeed, coastStep);
             return HorizontalStep(velocityX, inputX, runSpeed, accelStep, decelStep);
         }
 
