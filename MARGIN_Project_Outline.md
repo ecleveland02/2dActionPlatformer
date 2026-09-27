@@ -144,6 +144,9 @@ Because the developer cannot draw sprite sheets, characters are built from code.
 | Ground acceleration | reach max in 4 frames | Snappy start |
 | Ground deceleration | stop in 3 frames | No sliding |
 | Air acceleration | reach max in 8 frames | Some air control, not full |
+| Sprint speed | 13 units/s | Automatic: after 40 frames of continuous running at full speed; ramps up over 15 frames. No sprint button, no walk |
+| Sprint skid | 20 frames from full sprint to stop | Turning around above run speed skids, then runs the other way. Jump and dash cancel it |
+| Sprint in the air | momentum kept while holding forward | Air control cannot accelerate past run speed. Sprint jump ~8.5 units vs run jump ~6 |
 | Jump height (full) | 3.2 units | |
 | Jump height (min, early release) | 1.2 units | Variable jump |
 | Rise gravity | derived from jump height and 22 frames to apex | |
@@ -163,7 +166,7 @@ Because the developer cannot draw sprite sheets, characters are built from code.
 
 ### 5.4 Player States
 
-Idle, Run, Jump, Fall, Land (2 frames), FastFall, Dash, WallSlide, WallJump, Attack, AirAttack, Parry, Hitstun, Knockdown, Dead
+Idle, Run (includes sprint), Skid, Jump, Fall, Land (2 frames), FastFall, Dash, WallSlide, WallJump, Attack, AirAttack, Parry, Hitstun, Knockdown, Dead
 
 Rule: any state can be interrupted by Hitstun. Attack states expose cancel windows (Section 6.3).
 

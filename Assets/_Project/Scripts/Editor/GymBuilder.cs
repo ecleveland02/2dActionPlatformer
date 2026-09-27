@@ -17,8 +17,10 @@ namespace Margin.EditorTools
     /// Menu: Margin > Build Movement Gym. Generates Assets/_Project/Scenes/Gym.unity from code, so the
     /// test level can be rebuilt any time the layout changes. Also creates any missing data assets.
     ///
-    /// Layout (x positions in units, floor top at y = 0; walk right from the spawn):
-    ///   -12..20  flat floor, corner-correction ceiling block (x 6-9), coyote ledge (x 12-16, 2 high)
+    /// Layout (x positions in units, floor top at y = 0; spawn at x = 0):
+    ///   -45..-16 sprint gap to the LEFT of spawn: 8 units wide, too far for a run jump (~6), fine for a
+    ///            sprint jump (~8.5). Run left from the spawn to build up sprint first.
+    ///   -16..20  flat floor, corner-correction ceiling block (x 6-9), coyote ledge (x 12-16, 2 high)
     ///    20..23  3-unit gap with a shallow pit
     ///    23..40  30° up / 45° down hill, then a 60° slope (too steep, acts as a wall)
     ///    40..45  5-unit gap with a shallow pit
@@ -72,8 +74,10 @@ namespace Margin.EditorTools
             var level = new GameObject("Level").transform;
 
             // Floors and boundary walls
-            Box(level, "Floor A", -12, -1, 20, 0, groundLayer);
-            Box(level, "Wall Left", -13, -1, -12, 14, groundLayer);
+            Box(level, "Wall Left", -46, -1, -45, 14, groundLayer);
+            Box(level, "Floor A0", -45, -1, -24, 0, groundLayer);
+            Box(level, "Pit 0", -24, -3, -16, -2, groundLayer);    // 8-unit sprint gap
+            Box(level, "Floor A", -16, -1, 20, 0, groundLayer);
             Box(level, "Pit 1", 20, -3, 23, -2, groundLayer);
             Box(level, "Floor B", 23, -1, 40, 0, groundLayer);
             Box(level, "Pit 2", 40, -3, 45, -2, groundLayer);
@@ -106,6 +110,7 @@ namespace Margin.EditorTools
 
             // ---- Labels ----
             var labels = new GameObject("Labels").transform;
+            Label(labels, "<- SPRINT GAP 8", -20, 1.5f);
             Label(labels, "CORNER CORRECTION", 7.5f, 5.2f);
             Label(labels, "COYOTE", 16, 3);
             Label(labels, "GAP 3", 21.5f, 1.5f);

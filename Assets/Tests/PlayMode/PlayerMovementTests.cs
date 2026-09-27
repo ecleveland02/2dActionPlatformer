@@ -213,6 +213,112 @@ namespace Margin.Tests
             Assert.IsFalse(player.IsInvulnerable);
         }
 
+        /// <summary>Runs right from standing until sprint has fully ramped up.</summary>
+        private void SprintRight()
+        {
+            input.Move = Vector2.right;
+            int guard = 0;
+            while (player.Velocity.x < data.sprintSpeed && ++guard < 200) Step();
+            Assert.IsTrue(player.IsSprinting, "Setup: should be sprinting.");
+        }
+
+        [Test]
+        public void Sprint_StartsAfterRunningLongEnough_ThenRampsToSprintSpeed()
+        {
+            StandOnFloor();
+            input.Move = Vector2.right;
+
+            // Full run speed is reached on tick 4; that tick counts as the first frame of sprint charge.
+            int ticksUntilSprint = 3 + data.framesToStartSprint;
+            for (int i = 0; i < ticksUntilSprint - 1; i++) Step();
+            Assert.IsFalse(player.IsSprinting);
+            Assert.AreEqual(data.runSpeed, player.Velocity.x, 0.001f);
+
+            Step();
+            Assert.IsTrue(player.IsSprinting);
+
+            for (int i = 0; i < data.sprintAccelerationFrames; i++) Step();
+            Assert.AreEqual(data.sprintSpeed, player.Velocity.x, 0.001f);
+        }
+
+        [Test]
+        public void TurningAtSprint_SkidsForSkidFrames_ThenRunsTheOtherWay()
+        {
+            StandOnFloor();
+            SprintRight();
+
+            input.Move = Vector2.left;
+            for (int i = 0; i < data.skidFrames - 1; i++)
+            {
+                Step();
+                Assert.IsInstanceOf<SkidState>(player.CurrentState, $"skid tick {i + 1}");
+                Assert.Greater(player.Velocity.x, 0f, "Still sliding forward during the skid.");
+            }
+            Assert.AreEqual(-1, player.Facing, "Should face the new direction while skidding.");
+
+            Step();
+            Assert.AreEqual(0f, player.Velocity.x, 0.001f, "Skid should end exactly after skidFrames.");
+
+            Step();
+            Assert.IsInstanceOf<RunState>(player.CurrentState);
+            Assert.Less(player.Velocity.x, 0f);
+        }
+
+        [Test]
+        public void TurningAtRunSpeed_DoesNotSkid()
+        {
+            StandOnFloor();
+            input.Move = Vector2.right;
+            for (int i = 0; i < 10; i++) Step();
+
+            input.Move = Vector2.left;
+            Step();
+            Assert.IsNotInstanceOf<SkidState>(player.CurrentState);
+        }
+
+        [Test]
+        public void Skid_IsCancelledByJump()
+        {
+            StandOnFloor();
+            SprintRight();
+            input.Move = Vector2.left;
+            for (int i = 0; i < 3; i++) Step();
+            Assert.IsInstanceOf<SkidState>(player.CurrentState);
+
+            input.JumpHeld = true;
+            Step(pressJump: true);
+            Assert.IsInstanceOf<JumpState>(player.CurrentState);
+        }
+
+        /// <summary>Runs right for <paramref name="runTicks"/>, does a full jump, returns horizontal distance until landing.</summary>
+        private float JumpDistance(int runTicks)
+        {
+            player.ResetTo(new Vector2(-40f, 0.05f + TestWorld.HalfHeight));
+            input.Move = Vector2.zero;
+            input.JumpHeld = false;
+            Settle();
+
+            input.Move = Vector2.right;
+            for (int i = 0; i < runTicks; i++) Step();
+            float startX = player.Body.Position.x;
+
+            input.JumpHeld = true;
+            Step(pressJump: true);
+            int guard = 0;
+            do { Step(); } while (!player.Grounded && ++guard < 200);
+            return player.Body.Position.x - startX;
+        }
+
+        [Test]
+        public void SprintJump_TravelsFartherThanRunJump()
+        {
+            StandOnFloor();
+            float runJump = JumpDistance(runTicks: 20);
+            float sprintJump = JumpDistance(runTicks: 80);
+
+            Assert.Greater(sprintJump, runJump * 1.3f, $"run jump {runJump:F2}, sprint jump {sprintJump:F2}");
+        }
+
         [Test]
         public void DownPlusJump_OnOneWay_DropsThrough()
         {

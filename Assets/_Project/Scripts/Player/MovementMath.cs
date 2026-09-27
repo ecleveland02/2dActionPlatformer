@@ -10,6 +10,8 @@ namespace Margin.Player
     /// </summary>
     public static class MovementMath
     {
+        private const float SnapEpsilon = 0.0001f;
+
         /// <summary>
         /// Gravity that makes a jump of <paramref name="height"/> peak exactly <paramref name="framesToApex"/>
         /// ticks after takeoff. From h = g·t²/2 with t = frames / 60.
@@ -48,6 +50,9 @@ namespace Margin.Player
         /// <summary>Moves <paramref name="current"/> toward <paramref name="target"/> by at most <paramref name="maxDelta"/>, never overshooting.</summary>
         public static float Approach(float current, float target, float maxDelta)
         {
+            // Snap when the remaining gap is within float rounding of one step, so e.g. 20 steps of
+            // 13/20 land exactly on 0 instead of leaving 0.000001 and costing an extra frame.
+            if (Math.Abs(target - current) <= maxDelta + SnapEpsilon) return target;
             if (current < target) return Math.Min(current + maxDelta, target);
             if (current > target) return Math.Max(current - maxDelta, target);
             return target;
@@ -65,6 +70,33 @@ namespace Margin.Player
             bool turning = velocityX != 0f && Math.Sign(velocityX) != Math.Sign(inputX);
             float step = stopping || turning ? decelStep : accelStep;
             return Approach(velocityX, target, step);
+        }
+
+        /// <summary>
+        /// One tick of horizontal speed on the ground, including sprint.
+        /// While sprinting and still holding the direction of travel, speed ramps from run speed up to
+        /// sprint speed by <paramref name="sprintAccelStep"/> per tick. Otherwise it is a normal run step
+        /// (which also eases back down to run speed when sprint ends).
+        /// </summary>
+        public static float GroundStep(float velocityX, int inputX, float runSpeed, float sprintSpeed, bool sprinting,
+                                       float accelStep, float decelStep, float sprintAccelStep)
+        {
+            bool holdingForward = inputX != 0 && Math.Sign(velocityX) == inputX;
+            if (sprinting && holdingForward && Math.Abs(velocityX) >= runSpeed)
+                return Approach(velocityX, inputX * sprintSpeed, sprintAccelStep);
+            return HorizontalStep(velocityX, inputX, runSpeed, accelStep, decelStep);
+        }
+
+        /// <summary>
+        /// One tick of horizontal speed in the air. Holding the direction you are already moving keeps any
+        /// speed above run speed (a sprint jump keeps its momentum), but air control can never accelerate
+        /// you past run speed. Letting go or pushing the other way slows you down as normal.
+        /// </summary>
+        public static float AirStep(float velocityX, int inputX, float runSpeed, float accelStep, float decelStep)
+        {
+            bool holdingForward = inputX != 0 && Math.Sign(velocityX) == inputX;
+            if (holdingForward && Math.Abs(velocityX) > runSpeed) return velocityX;
+            return HorizontalStep(velocityX, inputX, runSpeed, accelStep, decelStep);
         }
 
         /// <summary>

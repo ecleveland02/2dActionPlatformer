@@ -40,7 +40,9 @@ namespace Margin.Player
         public override void Exit()
         {
             Player.IsInvulnerable = false;
-            Player.Velocity.x = UnityEngine.Mathf.Clamp(Player.Velocity.x, -Data.runSpeed, Data.runSpeed);
+            // Leave the dash at run speed, or at sprint speed if you were (and still are) sprinting.
+            float exitSpeed = Player.IsSprinting ? Data.sprintSpeed : Data.runSpeed;
+            Player.Velocity.x = UnityEngine.Mathf.Clamp(Player.Velocity.x, -exitSpeed, exitSpeed);
             if (startedGrounded) Player.DashCooldown = Data.dashCooldownFrames;
         }
     }

@@ -35,6 +35,7 @@ namespace Margin.Player
         // ---- State instances (created once, reused) ----
         public IdleState Idle { get; private set; }
         public RunState Run { get; private set; }
+        public SkidState Skid { get; private set; }
         public JumpState Jump { get; private set; }
         public FallState Fall { get; private set; }
         public LandState Land { get; private set; }
@@ -56,6 +57,9 @@ namespace Margin.Player
         public int AirDashesLeft { get; set; }
         /// <summary>Ticks since last grounded. 0 while on the ground, 1 on the first tick starting airborne.</summary>
         public int FramesSinceGrounded { get; private set; }
+        /// <summary>Consecutive grounded ticks spent running at full speed or faster. Sprint starts at MovementData.framesToStartSprint.</summary>
+        public int SprintCharge { get; private set; }
+        public bool IsSprinting => SprintCharge >= data.framesToStartSprint;
 
         public MovementData Data => data;
         public IPlayerInput Controls { get; private set; }
@@ -84,6 +88,7 @@ namespace Margin.Player
 
             Idle = new IdleState(this);
             Run = new RunState(this);
+            Skid = new SkidState(this);
             Jump = new JumpState(this);
             Fall = new FallState(this);
             Land = new LandState(this);
@@ -113,6 +118,7 @@ namespace Margin.Player
             Body.Teleport(position);
             Velocity = Vector2.zero;
             FramesSinceGrounded = 0;
+            SprintCharge = 0;
             coyoteAvailable = false;
             Controls?.Buffer?.ClearAll();
             machine.ForceState(Fall);
@@ -170,6 +176,8 @@ namespace Margin.Player
             if (c.HitCeiling && Velocity.y > 0f) Velocity.y = 0f;
             if ((c.HitWallLeft && Velocity.x < 0f) || (c.HitWallRight && Velocity.x > 0f)) Velocity.x = 0f;
 
+            UpdateSprintCharge(c.Grounded);
+
             if (c.Grounded)
             {
                 if (Velocity.y < 0f) Velocity.y = 0f;
@@ -183,15 +191,37 @@ namespace Margin.Player
             }
         }
 
+        /// <summary>
+        /// Sprint builds up while running at full speed on the ground and is kept through jumps as long as
+        /// you keep holding the direction you are moving. Letting go, turning, or stopping (e.g. a wall) resets it.
+        /// </summary>
+        private void UpdateSprintCharge(bool grounded)
+        {
+            bool holdingForward = InputX != 0 && (int)Mathf.Sign(Velocity.x) == InputX && Velocity.x != 0f;
+            if (!holdingForward) SprintCharge = 0;
+            else if (grounded && Mathf.Abs(Velocity.x) >= data.runSpeed - 0.001f) SprintCharge++;
+        }
+
         // ---------------- Helpers used by states ----------------
 
         /// <summary>Accelerate/decelerate toward the input direction and update facing.</summary>
         public void ApplyHorizontal(bool onGround)
         {
-            float accel = onGround ? data.GroundAccelStep : data.AirAccelStep;
-            float decel = onGround ? data.GroundDecelStep : data.AirDecelStep;
-            Velocity.x = MovementMath.HorizontalStep(Velocity.x, InputX, data.runSpeed, accel, decel);
+            if (onGround)
+                Velocity.x = MovementMath.GroundStep(Velocity.x, InputX, data.runSpeed, data.sprintSpeed, IsSprinting,
+                                                     data.GroundAccelStep, data.GroundDecelStep, data.SprintAccelStep);
+            else
+                Velocity.x = MovementMath.AirStep(Velocity.x, InputX, data.runSpeed, data.AirAccelStep, data.AirDecelStep);
+
             if (InputX != 0) Facing = InputX;
+        }
+
+        /// <summary>Pushing against the direction of travel while faster than run speed (i.e. sprinting) starts a skid.</summary>
+        public PlayerState CheckSkid()
+        {
+            if (InputX == 0 || Velocity.x == 0f) return null;
+            bool reversing = (int)Mathf.Sign(Velocity.x) != InputX;
+            return reversing && Mathf.Abs(Velocity.x) > data.runSpeed + 0.01f ? Skid : null;
         }
 
         /// <summary>Apply one tick of gravity (with fall multiplier and apex hang) capped at maxFallSpeed.</summary>

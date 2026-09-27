@@ -24,6 +24,16 @@ namespace Margin.Player
         [Tooltip("Frames to stop in the air with no input. Not in the spec; defaults to match air acceleration.")]
         [Min(1)] public int airDecelerationFrames = 8;
 
+        [Header("Sprint")]
+        [Tooltip("Top speed after running long enough. Sprint happens automatically; there is no sprint button.")]
+        [Min(0f)] public float sprintSpeed = 13f;
+        [Tooltip("Frames of continuous running at full run speed before sprint starts.")]
+        [Min(1)] public int framesToStartSprint = 40;
+        [Tooltip("Frames to ramp from run speed up to sprint speed.")]
+        [Min(1)] public int sprintAccelerationFrames = 15;
+        [Tooltip("Frames to skid from full sprint speed to a stop when turning around. Jump and dash cancel the skid.")]
+        [Min(1)] public int skidFrames = 20;
+
         [Header("Jump")]
         [Tooltip("Apex height when jump is held, in units.")]
         [Min(0.1f)] public float jumpHeight = 3.2f;
@@ -79,6 +89,8 @@ namespace Margin.Player
         public float GroundDecelStep => MovementMath.SpeedStepPerTick(runSpeed, groundDecelerationFrames);
         public float AirAccelStep => MovementMath.SpeedStepPerTick(runSpeed, airAccelerationFrames);
         public float AirDecelStep => MovementMath.SpeedStepPerTick(runSpeed, airDecelerationFrames);
+        public float SprintAccelStep => MovementMath.SpeedStepPerTick(sprintSpeed - runSpeed, sprintAccelerationFrames);
+        public float SkidStep => MovementMath.SpeedStepPerTick(sprintSpeed, skidFrames);
 
         public float JumpCutVelocity(float heightRisen)
         {
@@ -96,6 +108,7 @@ namespace Margin.Player
         private void OnValidate()
         {
             if (minJumpHeight > jumpHeight) minJumpHeight = jumpHeight;
+            if (sprintSpeed < runSpeed) sprintSpeed = runSpeed;
             if (fastFallSpeed < maxFallSpeed) fastFallSpeed = maxFallSpeed;
             if (dashInvulnerableFrames > dashFrames) dashInvulnerableFrames = dashFrames;
         }

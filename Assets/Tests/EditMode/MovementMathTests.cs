@@ -177,6 +177,85 @@ namespace Margin.Tests
             Assert.AreEqual(7, ticks, "3 ticks braking at the stop rate + 4 ticks accelerating.");
         }
 
+        private const float SprintSpeed = 13f;
+        private static readonly float RunAccel = MovementMath.SpeedStepPerTick(RunSpeed, 4);
+        private static readonly float RunDecel = MovementMath.SpeedStepPerTick(RunSpeed, 3);
+        private static readonly float SprintAccel = MovementMath.SpeedStepPerTick(SprintSpeed - RunSpeed, 15);
+
+        [Test]
+        public void Sprint_RampsFromRunToSprintSpeed_InFifteenTicks()
+        {
+            float vx = RunSpeed;
+            for (int i = 0; i < 14; i++)
+                vx = MovementMath.GroundStep(vx, 1, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel);
+            Assert.Less(vx, SprintSpeed);
+            vx = MovementMath.GroundStep(vx, 1, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel);
+            Assert.AreEqual(SprintSpeed, vx, 0.0001f);
+        }
+
+        [Test]
+        public void NotSprinting_NeverExceedsRunSpeed_AndEasesDownFromSprint()
+        {
+            float vx = MovementMath.GroundStep(RunSpeed, 1, RunSpeed, SprintSpeed, false, RunAccel, RunDecel, SprintAccel);
+            Assert.AreEqual(RunSpeed, vx, 0.0001f);
+
+            vx = MovementMath.GroundStep(SprintSpeed, 1, RunSpeed, SprintSpeed, false, RunAccel, RunDecel, SprintAccel);
+            Assert.Less(vx, SprintSpeed);
+            Assert.GreaterOrEqual(vx, RunSpeed);
+        }
+
+        [Test]
+        public void Sprint_LetGo_StopsAtNormalStopRate()
+        {
+            float vx = SprintSpeed;
+            int ticks = 0;
+            while (vx > 0f && ticks < 50)
+            {
+                vx = MovementMath.GroundStep(vx, 0, RunSpeed, SprintSpeed, true, RunAccel, RunDecel, SprintAccel);
+                ticks++;
+            }
+            Assert.AreEqual(5, ticks, "13 u/s at the 3 u/s-per-tick stop rate takes 5 ticks.");
+        }
+
+        [Test]
+        public void Air_HoldingForward_KeepsSprintMomentum()
+        {
+            float airAccel = MovementMath.SpeedStepPerTick(RunSpeed, 8);
+            Assert.AreEqual(SprintSpeed, MovementMath.AirStep(SprintSpeed, 1, RunSpeed, airAccel, airAccel));
+            Assert.AreEqual(-SprintSpeed, MovementMath.AirStep(-SprintSpeed, -1, RunSpeed, airAccel, airAccel));
+        }
+
+        [Test]
+        public void Air_CannotAccelerateBeyondRunSpeed()
+        {
+            float airAccel = MovementMath.SpeedStepPerTick(RunSpeed, 8);
+            float vx = 0f;
+            for (int i = 0; i < 30; i++) vx = MovementMath.AirStep(vx, 1, RunSpeed, airAccel, airAccel);
+            Assert.AreEqual(RunSpeed, vx, 0.0001f);
+        }
+
+        [Test]
+        public void Air_ReleasingOrReversing_SlowsSprintJump()
+        {
+            float airAccel = MovementMath.SpeedStepPerTick(RunSpeed, 8);
+            Assert.Less(MovementMath.AirStep(SprintSpeed, 0, RunSpeed, airAccel, airAccel), SprintSpeed);
+            Assert.Less(MovementMath.AirStep(SprintSpeed, -1, RunSpeed, airAccel, airAccel), SprintSpeed);
+        }
+
+        [Test]
+        public void Skid_FromSprintSpeed_TakesTwentyTicks()
+        {
+            float step = MovementMath.SpeedStepPerTick(SprintSpeed, 20);
+            float vx = SprintSpeed;
+            int ticks = 0;
+            while (vx > 0f && ticks < 100)
+            {
+                vx = MovementMath.Approach(vx, 0f, step);
+                ticks++;
+            }
+            Assert.AreEqual(20, ticks);
+        }
+
         [Test]
         public void Approach_NeverOvershoots()
         {
