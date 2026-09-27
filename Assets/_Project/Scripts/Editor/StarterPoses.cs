@@ -68,14 +68,15 @@ namespace Margin.EditorTools
 
             Dictionary<string, ClipSpec> specs = ClipTable();
             foreach (string name in new[] { "Run", "Sprint" }) WriteClip(name, specs[name]);
-            foreach ((string clip, int frames) in EnemyWalks)
+            foreach ((string clip, string prefix, int frames) in EnemyWalks)
                 if (AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{clip}.asset") != null)
-                    WriteCycleClip(clip, "Walk", frames);
+                    WriteCycleClip(clip, prefix, frames);
+            MeasureStrides();
             AssetDatabase.SaveAssets();
             Debug.Log("Run, sprint and walk cycles upgraded to smooth 8-key cycles.");
         }
 
-        private static void WritePose(string name, FigurePose pose)
+        internal static void WritePose(string name, FigurePose pose)
         {
             string path = PathFor(name);
             var asset = AssetDatabase.LoadAssetAtPath<PoseData>(path);
@@ -93,7 +94,31 @@ namespace Margin.EditorTools
         }
 
         /// <summary>Enemy walk clips and their frames per key (grunt: 40-frame stride, lancer: 48).</summary>
-        internal static readonly (string clip, int framesPerKey)[] EnemyWalks = { ("GruntWalk", 5), ("LancerWalk", 6) };
+        internal static readonly (string clip, string poses, int framesPerKey)[] EnemyWalks =
+            { ("GruntWalk", "Walk", 5), ("LancerWalk", "WalkArmed", 6) };
+
+        /// <summary>
+        /// Sets each cycle clip's stride length (body travel per loop with planted feet not sliding), measured from
+        /// its poses with the default leg lengths. The animators use it to play cycles in step with speed.
+        /// </summary>
+        internal static void MeasureStrides()
+        {
+            var defaults = ScriptableObject.CreateInstance<StickFigureProportions>();
+            float thigh = defaults.thigh, shin = defaults.shin;
+            Object.DestroyImmediate(defaults);
+
+            var names = new List<string> { "Run", "Sprint" };
+            foreach (var (clip, _, _) in EnemyWalks) names.Add(clip);
+            foreach (string name in names)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{name}.asset");
+                if (clip == null) continue;
+                clip.InvalidateTimeline();
+                if (clip.Timeline == null) continue;
+                clip.strideLength = CycleSync.StrideLength(clip.Timeline, thigh, shin);
+                EditorUtility.SetDirty(clip);
+            }
+        }
 
         /// <summary>Creates or rewrites a looping 8-key cycle clip from poses named prefix1..prefix8.</summary>
         internal static PoseClip WriteCycleClip(string clipName, string posePrefix, int framesPerKey)
@@ -102,13 +127,14 @@ namespace Margin.EditorTools
             return AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{clipName}.asset");
         }
 
-        private static void WriteClip(string name, ClipSpec spec)
+        internal static void WriteClip(string name, ClipSpec spec)
         {
             string path = $"{ClipFolder}/{name}.asset";
             var clip = AssetDatabase.LoadAssetAtPath<PoseClip>(path);
             bool isNew = clip == null;
             if (isNew) clip = ScriptableObject.CreateInstance<PoseClip>();
             FillClip(clip, spec);
+            clip.InvalidateTimeline();
             if (isNew) AssetDatabase.CreateAsset(clip, path);
             else EditorUtility.SetDirty(clip);
         }
@@ -133,8 +159,11 @@ namespace Margin.EditorTools
         {
             CreatePoses(overwrite);
             Dictionary<string, PoseClip> clips = CreateClips(overwrite);
+            MeasureStrides();
             PlayerAnimationSet set = CreateSet(clips);
             AssetDatabase.SaveAssets();
+            // Overwriting restores the full multi-key set (it needs the combat poses, so only once they exist).
+            if (overwrite && AssetDatabase.LoadAssetAtPath<PoseData>(PathFor("Parry")) != null) StarterAnimations.Apply();
             return set;
         }
 
@@ -171,6 +200,12 @@ namespace Margin.EditorTools
         internal struct ClipSpec
         {
             public (string pose, int frames, PoseEasing easing)[] Entries;
+            public ClipSpec(bool loop, int fadeIn, params (string pose, int frames, PoseEasing easing)[] entries)
+            {
+                Entries = entries;
+                Loop = loop;
+                FadeIn = fadeIn;
+            }
             public bool Loop;
             public int FadeIn;
         }
@@ -274,8 +309,9 @@ namespace Margin.EditorTools
             {
                 ["Neutral"] = FigurePose.Neutral,
                 // Grounded poses are Planted(): the hips height is computed so the lowest foot touches the ground.
-                ["Idle"] = Planted(P(0, -0.01f, spine: 3, neck: -3, sf: 8, ef: 12, sb: -5, eb: 10, hf: 5, kf: -6, hb: -4, kb: -3)),
-                ["IdleBreath"] = Planted(P(0, -0.025f, spine: 5, neck: -4, sf: 11, ef: 14, sb: -2, eb: 12, hf: 5, kf: -8, hb: -4, kb: -5)),
+                // Low-ready: katana angled forward-down, tip clear of the floor. (StarterAnimations adds the rest.)
+                ["Idle"] = P(0f, -0.004f, spine: 3, neck: -3, sf: 18, ef: 45, sb: -5, eb: 15, hf: 8, kf: -10, hb: -8, kb: -6),
+                ["IdleBreath"] = P(0f, -0.02f, spine: 5, neck: -4, sf: 21, ef: 47, sb: -2, eb: 17, hf: 8, kf: -12, hb: -8, kb: -8),
                 ["Jump"] = P(0, 0f, spine: 6, neck: -4, sf: 150, ef: 15, sb: 120, eb: 20, hf: 55, kf: -75, hb: -10, kb: -25),
                 ["Fall"] = P(0, 0f, spine: 0, neck: 0, sf: 115, ef: 25, sb: 150, eb: 15, hf: 25, kf: -35, hb: -15, kb: -45),
                 // Crouch: the legs fold and planting drops the hips so the feet stay on the ground line.
@@ -304,17 +340,29 @@ namespace Margin.EditorTools
             public float LegSwing, KneeDrive, ContactBend, StanceBend, Tuck;
             public float ArmSwing, ArmLag, Elbow, ElbowSwing;
             public float Spine, Wobble, Neck, Flight;
+            /// <summary>Front (weapon) arm held steady instead of swinging: shoulder, elbow, small swing.
+            /// Keeps a sword or spear level instead of sweeping it through the floor.</summary>
+            public bool HoldsWeapon;
+            public float HeldShoulder, HeldElbow, HeldSwing;
         }
 
         private static readonly Gait[] Gaits =
         {
-            new Gait { Name = "Run", LegSwing = 38, KneeDrive = 22, ContactBend = 12, StanceBend = 28, Tuck = 80,
-                ArmSwing = 35, ArmLag = 0.06f, Elbow = 80, ElbowSwing = 20, Spine = 12, Wobble = 3, Neck = -8, Flight = 0.05f },
-            new Gait { Name = "Sprint", LegSwing = 52, KneeDrive = 35, ContactBend = 12, StanceBend = 32, Tuck = 105,
-                ArmSwing = 55, ArmLag = 0.05f, Elbow = 90, ElbowSwing = 15, Spine = 22, Wobble = 4, Neck = -15, Flight = 0.08f },
+            // Leg swings are sized so the stride fits the movement speed (feet lock at about 3 strides/s for run 9 u/s,
+            // 3.5 for sprint 13 u/s, 2 for a 2.2 u/s walk) instead of the legs spinning.
+            new Gait { Name = "Run", LegSwing = 52, KneeDrive = 22, ContactBend = 12, StanceBend = 28, Tuck = 80,
+                ArmSwing = 35, ArmLag = 0.06f, Elbow = 80, ElbowSwing = 20, Spine = 12, Wobble = 3, Neck = -8, Flight = 0.05f,
+                HoldsWeapon = true, HeldShoulder = 45, HeldElbow = 65, HeldSwing = 10 },
+            new Gait { Name = "Sprint", LegSwing = 64, KneeDrive = 45, ContactBend = 12, StanceBend = 32, Tuck = 105,
+                ArmSwing = 55, ArmLag = 0.05f, Elbow = 90, ElbowSwing = 15, Spine = 22, Wobble = 4, Neck = -15, Flight = 0.08f,
+                HoldsWeapon = true, HeldShoulder = 45, HeldElbow = 75, HeldSwing = 8 },
             // Enemies walk: always one foot down (no flight), small arm swing.
-            new Gait { Name = "Walk", LegSwing = 24, KneeDrive = 8, ContactBend = 4, StanceBend = 10, Tuck = 38,
+            new Gait { Name = "Walk", LegSwing = 39, KneeDrive = 8, ContactBend = 4, StanceBend = 10, Tuck = 38,
                 ArmSwing = 16, ArmLag = 0.08f, Elbow = 18, ElbowSwing = 12, Spine = 4, Wobble = 1.5f, Neck = -3, Flight = 0f },
+            // Walk with a spear held level (Pencil Lancer).
+            new Gait { Name = "WalkArmed", LegSwing = 39, KneeDrive = 8, ContactBend = 4, StanceBend = 10, Tuck = 38,
+                ArmSwing = 16, ArmLag = 0.08f, Elbow = 18, ElbowSwing = 12, Spine = 4, Wobble = 1.5f, Neck = -3, Flight = 0f,
+                HoldsWeapon = true, HeldShoulder = 50, HeldElbow = 40, HeldSwing = 6 },
         };
 
         /// <summary>
@@ -334,6 +382,11 @@ namespace Margin.EditorTools
                 (float hf, float kf) = Leg(g, phase);
                 (float hb, float kb) = Leg(g, phase + 0.5f);
                 (float sf, float ef) = Arm(g, phase);
+                if (g.HoldsWeapon)
+                {
+                    sf = g.HeldShoulder + g.HeldSwing * Mathf.Cos(2f * Mathf.PI * (phase - g.ArmLag));
+                    ef = g.HeldElbow;
+                }
                 (float sb, float eb) = Arm(g, phase + 0.5f);
                 float sway = Mathf.Cos(4f * Mathf.PI * (phase - 0.1f));
 
@@ -385,11 +438,11 @@ namespace Margin.EditorTools
         }
 
         internal static FigurePose P(float x, float y, float spine, float neck, float sf, float ef, float sb, float eb,
-                              float hf, float kf, float hb, float kb)
+                              float hf, float kf, float hb, float kb, float tilt = 0f)
         {
             return new FigurePose
             {
-                rootOffsetX = x, rootOffsetY = y,
+                rootOffsetX = x, rootOffsetY = y, rootRotation = tilt,
                 spine = spine, neck = neck,
                 shoulderFront = sf, elbowFront = ef, shoulderBack = sb, elbowBack = eb,
                 hipFront = hf, kneeFront = kf, hipBack = hb, kneeBack = kb,

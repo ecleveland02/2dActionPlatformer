@@ -127,7 +127,7 @@ namespace Margin.EditorTools
             }
 
             if (lancer.idle == null) lancer.idle = StarterCombat.HoldClip("LancerIdle", poses["LancerIdle"], 6, false);
-            if (lancer.walk == null) lancer.walk = WalkClip("LancerWalk", 6);
+            if (lancer.walk == null) lancer.walk = WalkClip("LancerWalk", 6, "WalkArmed");
             if (lancer.alert == null) lancer.alert = StarterCombat.HoldClip("LancerAlert", poses["LancerAlert"], 3, false);
             if (lancer.hurt == null) lancer.hurt = StarterCombat.HoldClip("GruntHurt", poses["DummyHit"], 0, false);
             if (lancer.defeated == null) lancer.defeated = StarterCombat.HoldClip("GruntDefeated", poses["Defeated"], 3, false);
@@ -163,10 +163,13 @@ namespace Margin.EditorTools
         }
 
         /// <summary>The smooth 8-key walk cycle (Walk1-8 poses) at <paramref name="framesPerKey"/> frames per key.</summary>
-        private static PoseClip WalkClip(string name, int framesPerKey)
+        private static PoseClip WalkClip(string name, int framesPerKey, string poses = "Walk")
         {
             var existing = AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{name}.asset");
-            return existing != null ? existing : StarterPoses.WriteCycleClip(name, "Walk", framesPerKey);
+            if (existing != null) return existing;
+            PoseClip clip = StarterPoses.WriteCycleClip(name, poses, framesPerKey);
+            StarterPoses.MeasureStrides();
+            return clip;
         }
     }
 }

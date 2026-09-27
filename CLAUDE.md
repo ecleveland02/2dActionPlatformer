@@ -47,7 +47,10 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   previous->current tick pose in LateUpdate (like Rigidbody2D interpolation; holds still when it didn't tick) and
   applies `SecondaryMotion` springs per `PoseMotionSettings` (head/back arm sprung; sword arm and legs never, so
   attacks and foot contact stay exact); `PlayerAnimator` leans into ground acceleration (run/idle only).
-  Cycles: 8 keys from `Gait` tables in StarterPoses (Run1-8, Sprint1-8, Walk1-8); **Margin > Upgrade Run Cycles**.
+  Cycles: 8 keys from `Gait` tables in StarterPoses (Run1-8, Sprint1-8, Walk1-8, WalkArmed1-8; weapon arm held
+  level via `HoldsWeapon`); **Margin > Upgrade Run Cycles**. Full player set (multi-key clips + transitions) lives in
+  `Editor/StarterAnimations.cs` (**Margin > Upgrade Animations**); its poses are generated from offline FK checks
+  (feet within ~1 cm of the floor, blade never under it), so edit values there rather than guessing.
   `FigurePose.rootRotation` tilts the whole body around the hips (lying down). Foot lock: `PoseClip.strideLength`
   + pure `CycleSync` set `PoseAnimator.PlaybackRate` from movement speed (player run/sprint, enemy walks).
   One-shot transition clips (turn, runStop, hardLand by `LastFallHeight`, parrySuccess, idleFidget) are visual only:

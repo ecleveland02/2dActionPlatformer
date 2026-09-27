@@ -44,6 +44,9 @@ namespace Margin.Rendering
 
         private void OnValidate() => timeline = null;
 
+        /// <summary>Rebuild the playback data next time it's used (call after editing entries from code).</summary>
+        public void InvalidateTimeline() => timeline = null;
+
         private PoseTimeline Build()
         {
             var poses = new List<FigurePose>();

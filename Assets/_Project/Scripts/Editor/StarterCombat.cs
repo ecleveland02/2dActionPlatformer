@@ -286,6 +286,10 @@ namespace Margin.EditorTools
 
             FillPlayerAnimationSet(poses, overwrite);
             AssetDatabase.SaveAssets();
+            // The multi-key player animations (hurt, Redraw, combo breaker, defeat and the rest) replace the
+            // single-pose placeholders above: once for new projects, and again after an overwrite.
+            if (overwrite) StarterAnimations.Apply();
+            else StarterAnimations.EnsureApplied();
 
             return new Result
             {
@@ -406,8 +410,8 @@ namespace Margin.EditorTools
                 ["LancerChargeWindup"] = Planted(-20, 10, -35, 105, -40, 95, 35, -60, -35, -30),
                 ["LancerChargeStrike"] = Planted(25, -12, 115, 0, 60, 15, 55, -25, -45, 0),
                 ["LancerChargeRecover"] = Planted(15, -5, 90, 10, 45, 40, 40, -30, -30, -5),
-                // Collapsed to the knees (used by the player and the grunt).
-                ["Defeated"] = Planted(35, 30, -10, 10, 10, 10, 70, -110, -10, -110),
+                // Kneeling, leaning on the planted sword (part of the player's defeat animation).
+                ["Defeated"] = StarterPoses.P(0f, -0.4f, spine: 25, neck: 25, sf: 70, ef: 10, sb: 20, eb: 30, hf: 75, kf: -120, hb: 0, kb: -90),
                 // Combo breaker: arms flung wide, body upright.
                 ["ComboBreaker"] = Planted(-5, 0, 110, 10, -110, 10, 20, -20, -20, -20),
                 ["DummySmashWindup"] = Planted(-20, 10, 185, 10, 175, 10, 25, -40, -15, -30),
