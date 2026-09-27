@@ -34,6 +34,10 @@ namespace Margin.EditorTools
             public CombatSettings Settings;
             public PoseData DummyIdle;
             public PoseData DummyHit;
+            /// <summary>Every starter attack by name (e.g. "GruntSwing").</summary>
+            public Dictionary<string, AttackData> Attacks;
+            /// <summary>Every starter combat pose by name (e.g. "GruntIdle").</summary>
+            public Dictionary<string, PoseData> Poses;
             /// <summary>The sparring dummy's attack pattern: jab, jab, unparryable smash. A jab that hits becomes jab > cross > kick.</summary>
             public List<AttackData> SparringAttacks;
         }
@@ -134,6 +138,17 @@ namespace Margin.EditorTools
                 BoxCenter = new Vector2(0.8f, 0.1f), BoxSize = new Vector2(1.2f, 1.2f), Shake = 0.15f, FadeIn = 0,
                 Unparryable = true },
 
+            // Doodle Grunt (spec 9: walks, 1 slow swing). The haymaker has a long 20-frame wind-up; on hit it chains
+            // into a two-handed shove that knocks the player away. Hitboxes sit slightly inside the arm's reach.
+            new Move { Name = "GruntSwing", Button = AttackButton.Heavy, Startup = 20, Active = 4, Recovery = 22,
+                Damage = 12, Hitstop = 7, Hitstun = 22, Ink = 0, Knockback = new Vector2(2f, 0f), CancelStart = 26, CancelEnd = 34,
+                BoxCenter = new Vector2(0.6f, 0.15f), BoxSize = new Vector2(0.8f, 0.7f), Shake = 0.1f, FadeIn = 2,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "GruntShove", Button = AttackButton.Heavy, Startup = 10, Active = 3, Recovery = 24,
+                Damage = 8, Hitstop = 8, Hitstun = 30, Ink = 0, Knockback = new Vector2(8f, 5f), CancelStart = 37, CancelEnd = 37,
+                BoxCenter = new Vector2(0.65f, 0.3f), BoxSize = new Vector2(0.7f, 0.7f), Shake = 0.15f, FadeIn = 1,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+
             // Special (spec 7): costs 50 ink, throws a crescent of ink. The blade itself has no hitbox.
             new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 16,
                 Damage = 20, Hitstop = 6, Hitstun = 30, Ink = 0, InkCost = 50, Knockback = new Vector2(7f, 2f),
@@ -157,6 +172,7 @@ namespace Margin.EditorTools
             // Sparring dummy string. Enemies always take the first entry.
             ["DummyJab"] = new[] { "DummyJab2" },
             ["DummyJab2"] = new[] { "DummyKick" },
+            ["GruntSwing"] = new[] { "GruntShove" },
         };
 
         [MenuItem("Margin/Create Starter Combat Data")]
@@ -252,6 +268,8 @@ namespace Margin.EditorTools
                 Settings = settings,
                 DummyIdle = AssetDatabase.LoadAssetAtPath<PoseData>(StarterPoses.PathFor("Idle")),
                 DummyHit = poses["DummyHit"],
+                Attacks = attacks,
+                Poses = poses,
                 SparringAttacks = new List<AttackData> { attacks["DummyJab"], attacks["DummyJab"], attacks["DummySmash"] },
             };
         }
@@ -341,6 +359,17 @@ namespace Margin.EditorTools
                 ["DummyKickWindup"] = Planted(-15, 5, 60, 40, -40, 50, 70, -110, -10, -15),
                 ["DummyKickStrike"] = Planted(-25, 10, 70, 30, -30, 40, 95, 0, -15, -5),
                 ["DummyKickRecover"] = Planted(-10, 5, 50, 40, -30, 40, 40, -40, -15, -10),
+                // Doodle Grunt: hunched brute. Haymaker from behind the head, then a two-handed shove.
+                ["GruntIdle"] = Planted(10, 5, 20, 40, -15, 40, 12, -18, -12, -10),
+                ["GruntAlert"] = Planted(-10, -10, 150, 40, 140, 40, 15, -20, -15, -15),
+                ["GruntSwingWindup"] = Planted(-15, 5, 200, 30, 30, 40, 20, -25, -20, -10),
+                ["GruntSwingStrike"] = Planted(30, -10, 90, 0, -20, 40, 45, -50, -30, -5),
+                ["GruntSwingRecover"] = Planted(20, -5, 50, 20, -10, 40, 35, -40, -25, -8),
+                ["GruntShoveWindup"] = Planted(-5, 0, 10, 110, 0, 110, 25, -30, -25, -10),
+                ["GruntShoveStrike"] = Planted(25, -5, 95, 0, 90, 5, 45, -20, -35, 0),
+                ["GruntShoveRecover"] = Planted(12, 0, 70, 30, 65, 35, 30, -25, -25, -5),
+                // Collapsed to the knees (used by the player and the grunt).
+                ["Defeated"] = Planted(35, 30, -10, 10, 10, 10, 70, -110, -10, -110),
                 // Combo breaker: arms flung wide, body upright.
                 ["ComboBreaker"] = Planted(-5, 0, 110, 10, -110, 10, 20, -20, -20, -20),
                 ["DummySmashWindup"] = Planted(-20, 10, 185, 10, 175, 10, 25, -40, -15, -30),
@@ -373,11 +402,12 @@ namespace Margin.EditorTools
             if (set.parry == null || overwrite) set.parry = HoldClip("Parry", poses["Parry"], 0, overwrite);
             if (set.redraw == null || overwrite) set.redraw = HoldClip("Redraw", poses["Redraw"], 6, overwrite);
             if (set.hitstun == null || overwrite) set.hitstun = HoldClip("Hurt", poses["Hurt"], 0, overwrite);
+            if (set.defeated == null || overwrite) set.defeated = HoldClip("Defeated", poses["Defeated"], 3, overwrite);
             if (set.comboBreaker == null || overwrite) set.comboBreaker = HoldClip("ComboBreaker", poses["ComboBreaker"], 0, overwrite);
             EditorUtility.SetDirty(set);
         }
 
-        private static PoseClip HoldClip(string name, PoseData pose, int fadeIn, bool overwrite)
+        internal static PoseClip HoldClip(string name, PoseData pose, int fadeIn, bool overwrite)
         {
             PoseClip clip = LoadOrCreate<PoseClip>($"{ClipFolder}/{name}.asset", out bool isNew);
             if (!isNew && !overwrite) return clip;
@@ -427,7 +457,7 @@ namespace Margin.EditorTools
             return clip;
         }
 
-        private static T LoadOrCreate<T>(string path, out bool created) where T : ScriptableObject
+        internal static T LoadOrCreate<T>(string path, out bool created) where T : ScriptableObject
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             created = asset == null;

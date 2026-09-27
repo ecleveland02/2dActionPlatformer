@@ -280,7 +280,9 @@ Standard enemies built on `EnemyBase` with a state machine: Idle, Patrol, Alert,
 Rules:
 
 - Every enemy attack has at least 12 frames of visible startup (telegraph). Unfair hits destroy game feel.
-- Max 2 enemies attacking the player at once (attack token system). Others circle and wait.
+- Attack token system. (Amended: the number of attackers scales with the enemies fighting you, uncapped by default so
+  every enemy that noticed you attacks. `CombatSettings.maxEnemyAttackers` caps it, e.g. 2, if groups feel unfair.
+  Enemies without a slot wait.)
 
 ## 10. Bosses
 

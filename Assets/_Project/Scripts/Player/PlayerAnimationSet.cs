@@ -28,5 +28,7 @@ namespace Margin.Player
         public PoseClip redraw;
         [Tooltip("Combo breaker burst. Falls back to the parry clip.")]
         public PoseClip comboBreaker;
+        [Tooltip("Defeated (health 0). Falls back to the hitstun clip.")]
+        public PoseClip defeated;
     }
 }

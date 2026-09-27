@@ -13,7 +13,8 @@ namespace Margin.Player
     ///     is still in hitstun continue the combo (enemies can combo the player), with damage scaled down per hit
     ///     (ComboScaling). When hitstun ends, the combo is over and 45 frames of flickering invulnerability start.
     ///     Dash i-frames and the combo breaker also prevent hits.
-    /// Reaching 0 health refills it for now; death and respawn arrive in Milestone 4.
+    /// Reaching 0 health: DefeatedState for CombatSettings.playerDeathFrames, then a respawn at SpawnPoint with
+    /// full health and empty ink, and PlayerEvents.Respawned (enemies reset). Checkpoints will move SpawnPoint.
     /// </summary>
     [RequireComponent(typeof(PlayerController))]
     public sealed class PlayerHealth : MonoBehaviour, IHitReceiver, ITickable
@@ -24,6 +25,9 @@ namespace Margin.Player
         private readonly ComboScaling comboTaken = new ComboScaling();
 
         public int TickOrder => 12;
+
+        /// <summary>Where the player respawns. The start position until checkpoints exist (Milestone 5).</summary>
+        public Vector2 SpawnPoint { get; set; }
 
         public Health Health
         {
@@ -40,11 +44,15 @@ namespace Margin.Player
         private CombatSettings Settings =>
             player != null && player.Combat != null ? player.Combat.Settings : CombatSettings.Defaults;
 
-        private void Awake() => player = GetComponent<PlayerController>();
+        private void Awake()
+        {
+            player = GetComponent<PlayerController>();
+            SpawnPoint = transform.position;
+        }
         private void OnEnable() => GameLoop.Register(this);
         private void OnDisable() => GameLoop.Unregister(this);
 
-        public bool CanBeHit => !player.IsInvulnerable && !Health.IsInvulnerable;
+        public bool CanBeHit => !player.IsInvulnerable && !Health.IsInvulnerable && !Health.IsDepleted;
 
         public bool ReceiveHit(in HitInfo hit)
         {
@@ -64,14 +72,34 @@ namespace Margin.Player
             // Target side of hitstop: the player freezes too (unless the whole game already froze).
             if (!hit.GlobalHitstop && player.Combat != null)
                 player.Combat.HitstopFrames = Mathf.Max(player.Combat.HitstopFrames, hit.HitstopFrames);
-            player.EnterHitstun(hit.Knockback, hit.HitstunFrames);
-
-            if (Health.IsDepleted)
-            {
-                Debug.Log("[Player] defeated. (Death and respawn arrive in Milestone 4; refilling health.)", this);
-                Health.Refill();
-            }
+            if (Health.IsDepleted) Die(hit);
+            else player.EnterHitstun(hit.Knockback, hit.HitstunFrames);
             return true;
+        }
+
+        private void Die(in HitInfo hit)
+        {
+            comboTaken.End();
+            player.EnterDefeated(hit.Knockback);
+            Debug.Log($"[Player] DEFEATED by {hit.Attack.name}", this);
+            PlayerEvents.RaiseDied(player);
+        }
+
+        /// <summary>Back to the spawn point with full health, empty ink and a moment of invulnerability.</summary>
+        public void Respawn()
+        {
+            CombatSettings s = Settings;
+            player.ResetTo(SpawnPoint);
+            Health.Refill();
+            Health.StartInvulnerability(s.respawnInvulnerableFrames);
+            comboTaken.End();
+            if (player.Combat != null)
+            {
+                player.Combat.Ink.Reset();
+                player.Combat.HitstopFrames = 0;
+            }
+            Debug.Log("[Player] respawned", this);
+            PlayerEvents.RaiseRespawned(player);
         }
 
         private void Parry(ParryState parry, in HitInfo hit)
@@ -92,6 +120,12 @@ namespace Margin.Player
 
         public void Tick()
         {
+            if (player.CurrentState is DefeatedState && player.FramesInState >= Settings.playerDeathFrames)
+            {
+                Respawn();
+                return;
+            }
+
             Health.Tick();
 
             // Runs after PlayerController, so the tick hitstun ends is frame 1 of the invulnerability.

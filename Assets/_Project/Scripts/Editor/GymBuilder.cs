@@ -30,7 +30,7 @@ namespace Margin.EditorTools
     ///    40..45  5-unit gap with a shallow pit
     ///    45..78  one-way platform stack (x 48-54), wall-jump chimney (x 61-64) up to a high ledge
     /// </summary>
-    public static class GymBuilder
+    public static partial class GymBuilder
     {
         private const string ScenePath = "Assets/_Project/Scenes/Gym.unity";
         private const string DataFolder = "Assets/_Project/Data";

@@ -1,0 +1,400 @@
+using System.Collections.Generic;
+using Margin.Combat;
+using Margin.Core;
+using Margin.FX;
+using Margin.Physics;
+using Margin.Player;
+using Margin.Rendering;
+using UnityEngine;
+
+namespace Margin.Enemies
+{
+    /// <summary>
+    /// A ground enemy (spec 9): a stick figure with health that patrols, notices the player, approaches,
+    /// attacks using AttackData (with combo strings), takes knockback, hitstun and juggles, and dies.
+    /// Behavior lives in EnemyData, so the Doodle Grunt and Pencil Lancer are this component with different data.
+    ///
+    /// States: Patrol > Alert > Approach > Attack, plus Hitstun (hits, launches and parry staggers) and Dead.
+    /// Each tick: the state machine sets Velocity, then gravity is applied and the body moves (like the player).
+    /// Attack slots: an enemy needs a slot from the shared AttackTokenPool to attack (CombatSettings.maxEnemyAttackers).
+    /// Everything resets when the player respawns.
+    /// </summary>
+    [RequireComponent(typeof(KinematicBody2D))]
+    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource
+    {
+        [SerializeField] private EnemyData data;
+        [Tooltip("Gravity and friction come from here (the player's MovementData is fine).")]
+        [SerializeField] private MovementData physics;
+        [SerializeField] private CombatSettings settings;
+        [SerializeField] private StickFigureRig rig;
+        [SerializeField] private PoseAnimator animator;
+
+        private static readonly List<EnemyBase> all = new List<EnemyBase>();
+        private static readonly Color FlashA = new Color(0.85f, 0.1f, 0.1f);
+        private static readonly Color FlashB = new Color(0.45f, 0.05f, 0.05f);
+
+        /// <summary>Shared attack slots for every enemy in the scene.</summary>
+        public static readonly AttackTokenPool Tokens = new AttackTokenPool();
+        public static IReadOnlyList<EnemyBase> All => all;
+
+        private EnemyStateMachine machine;
+        private EnemyAttackRunner runner;
+        private Hurtbox hurtbox;
+        private PlayerController target;
+        private Vector2 home;
+        private int hitstop, nextAttack;
+
+        // ---- States ----
+        public EnemyPatrolState Patrol { get; private set; }
+        public EnemyAlertState Alert { get; private set; }
+        public EnemyApproachState Approach { get; private set; }
+        public EnemyAttackState Attack { get; private set; }
+        public EnemyHitstunState Hitstun { get; private set; }
+        public EnemyDeadState Dead { get; private set; }
+
+        // ---- Runtime values ----
+        [System.NonSerialized] public Vector2 Velocity;
+        public int Facing { get; private set; } = -1;
+        public Health Health { get; private set; }
+        /// <summary>Frames until this enemy may start another attack.</summary>
+        public int Cooldown { get; set; }
+
+        public int TickOrder => 22;
+        public EnemyData Data => data;
+        public CombatSettings Settings => settings != null ? settings : CombatSettings.Defaults;
+        public KinematicBody2D Body { get; private set; }
+        public Vector2 Position => Body.Position;
+        public Vector2 Home => home;
+        public bool Grounded => Body.Collisions.Grounded;
+        public EnemyState CurrentState => machine?.Current;
+        public int FramesInState => machine.FramesInState;
+        public EnemyAttackRunner Runner => runner;
+        public StickFigureRig Rig => rig;
+        public PlayerController Target => target;
+        public bool IsDead => CurrentState == Dead;
+        /// <summary>Fighting the player: noticed them and not patrolling, stunned or dead. Counts toward attack slots.</summary>
+        public bool IsEngaged => CurrentState == Alert || CurrentState == Approach || CurrentState == Attack;
+        public int HitstopRemaining => hitstop;
+
+        // IHitboxSource
+        public Faction Faction => Faction.Enemy;
+        public IReadOnlyList<AabbBox> ActiveHitboxes => runner.ActiveHitboxes;
+
+        // IHitReceiver
+        public bool CanBeHit => machine != null && !IsDead;
+
+        protected virtual void Awake()
+        {
+            Body = GetComponent<KinematicBody2D>();
+            hurtbox = GetComponent<Hurtbox>();
+            home = transform.position;
+            if (rig != null) Facing = rig.transform.localScale.x < 0f ? -1 : 1;
+
+            runner = new EnemyAttackRunner(OnAttackStarted);
+            Patrol = new EnemyPatrolState(this);
+            Alert = new EnemyAlertState(this);
+            Approach = new EnemyApproachState(this);
+            Attack = new EnemyAttackState(this);
+            Hitstun = new EnemyHitstunState(this);
+            Dead = new EnemyDeadState(this);
+        }
+
+        protected virtual void OnEnable()
+        {
+            all.Add(this);
+            GameLoop.Register(this);
+            HitboxSources.Register(this);
+            PlayerEvents.Respawned += OnPlayerRespawned;
+        }
+
+        protected virtual void OnDisable()
+        {
+            all.Remove(this);
+            Tokens.Release(this);
+            GameLoop.Unregister(this);
+            HitboxSources.Unregister(this);
+            PlayerEvents.Respawned -= OnPlayerRespawned;
+        }
+
+        /// <summary>Sets dependencies from code (tests, the editor builder). Overrides the Inspector values.</summary>
+        public void Configure(EnemyData enemyData, MovementData physicsData, CombatSettings combatSettings,
+                              StickFigureRig figure = null, PoseAnimator poseAnimator = null)
+        {
+            data = enemyData;
+            physics = physicsData;
+            settings = combatSettings;
+            rig = figure;
+            animator = poseAnimator;
+            machine = null;   // restart with the new data on the next tick
+        }
+
+        /// <summary>For tests: fight a specific player instead of the first one in the scene.</summary>
+        public void SetTarget(PlayerController player) => target = player;
+
+        // ---------------- tick ----------------
+
+        public void Tick()
+        {
+            if (data == null || physics == null) return;
+            if (machine == null) Begin();
+
+            // Hitstop (spec 6.4): frozen after being hit (shaking) or after landing a hit.
+            if (hitstop > 0)
+            {
+                hitstop--;
+                ShakeVisual(hitstop > 0);
+                return;
+            }
+            ShakeVisual(false);
+            if (runner.Hitstop > 0)
+            {
+                runner.Hitstop--;
+                return;
+            }
+
+            if (Cooldown > 0 && CurrentState != Attack) Cooldown--;
+            FindTarget();
+            machine.Tick();
+            MoveBody();
+            UpdateVisual();
+        }
+
+        private void Begin()
+        {
+            Health = new Health(data.maxHealth);
+            machine = new EnemyStateMachine();
+            machine.ForceState(Patrol);
+        }
+
+        private void MoveBody()
+        {
+            bool grounded = Body.Collisions.Grounded;
+            float dy = Velocity.y * GameTime.TickDelta;
+            if (!grounded || Velocity.y > 0f)
+            {
+                // Juggle: airborne enemies in hitstun fall slower so air combos can keep them up.
+                bool juggled = CurrentState == Hitstun || CurrentState == Dead;
+                float gravity = physics.FallGravity * (juggled ? Settings.juggleGravityScale : 1f);
+                // A spiked enemy (slammed downward) may fall faster than the normal max fall speed.
+                float maxFall = Mathf.Max(physics.maxFallSpeed, -Velocity.y);
+                Velocity.y = MovementMath.VerticalStep(Velocity.y, gravity, maxFall, out dy);
+            }
+
+            float fallSpeed = -Velocity.y;
+            Body.Move(new Vector2(Velocity.x * GameTime.TickDelta, dy));
+            CollisionState c = Body.Collisions;
+            if (c.JustLanded && fallSpeed >= Settings.slamImpactSpeed) OnSlamImpact();
+            if (c.HitWallLeft || c.HitWallRight) Velocity.x = 0f;
+            if (c.HitCeiling && Velocity.y > 0f) Velocity.y = 0f;
+            if (c.Grounded && Velocity.y < 0f) Velocity.y = 0f;
+        }
+
+        // ---------------- helpers used by states ----------------
+
+        /// <summary>Accelerates toward a walking velocity (dir -1, 0 or +1), stopping at ledges and walls.</summary>
+        public void Walk(int dir)
+        {
+            if (dir != 0 && (!GroundAhead(dir) || Body.IsTouchingWall(dir))) dir = 0;
+            float step = data.walkSpeed / data.accelerationFrames;
+            Velocity.x = MovementMath.Approach(Velocity.x, dir * data.walkSpeed, step);
+        }
+
+        /// <summary>Slows to a stop on the ground (knockback slide).</summary>
+        public void Brake(float scale = 1f)
+        {
+            if (Grounded && Velocity.y <= 0f)
+                Velocity.x = MovementMath.Approach(Velocity.x, 0f, physics.GroundDecelStep * scale);
+        }
+
+        /// <summary>True if there is floor just past the front edge, so walking won't step off a ledge.</summary>
+        public bool GroundAhead(int dir)
+        {
+            if (!Grounded) return true;
+            Vector2 half = Body.Size * 0.5f;
+            var from = new Vector2(Position.x + dir * (half.x + 0.1f), Position.y - half.y + 0.05f);
+            int mask = Body.Data != null ? Body.Data.solidMask | Body.Data.oneWayMask : Physics2D.DefaultRaycastLayers;
+            return Physics2D.Raycast(from, Vector2.down, 0.6f, mask).collider != null;
+        }
+
+        public void SetFacing(int direction)
+        {
+            if (direction == 0) return;
+            Facing = direction < 0 ? -1 : 1;
+        }
+
+        public void FacePlayer()
+        {
+            if (target != null) SetFacing(target.Body.Position.x >= Position.x ? 1 : -1);
+        }
+
+        /// <summary>Horizontal and vertical distance to the player (x is signed: + = player to the right).</summary>
+        public Vector2 ToPlayer => target != null ? target.Body.Position - Position : new Vector2(float.MaxValue, 0f);
+
+        /// <summary>A living player within notice range.</summary>
+        public bool CanNoticePlayer()
+        {
+            if (!PlayerFightable()) return false;
+            Vector2 d = ToPlayer;
+            return Mathf.Abs(d.x) <= data.noticeRange && Mathf.Abs(d.y) <= data.noticeHeight;
+        }
+
+        public bool PlayerFightable() => target != null && !(target.CurrentState is DefeatedState);
+
+        /// <summary>Another living enemy close in front (toward dir), so this one waits behind it.</summary>
+        public bool BlockedByAlly(int dir)
+        {
+            foreach (EnemyBase other in all)
+            {
+                if (other == this || other.IsDead || other.machine == null) continue;
+                float dx = other.Position.x - Position.x;
+                if (Mathf.Sign(dx) == dir && Mathf.Abs(dx) < data.personalSpace && Mathf.Abs(other.Position.y - Position.y) < 1f)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>Tries to take an attack slot. The number of slots depends on how many enemies are fighting.</summary>
+        public bool TryTakeAttackSlot()
+        {
+            int engaged = 0;
+            foreach (EnemyBase e in all) if (e.IsEngaged) engaged++;
+            return Tokens.TryTake(this, AttackTokenPool.Capacity(engaged, Settings.maxEnemyAttackers));
+        }
+
+        public void ReleaseAttackSlot() => Tokens.Release(this);
+
+        /// <summary>The next opener in EnemyData.attacks (they're used in order).</summary>
+        public AttackData NextOpener()
+        {
+            if (data.attacks.Count == 0) return null;
+            AttackData a = data.attacks[nextAttack % data.attacks.Count];
+            nextAttack++;
+            return a;
+        }
+
+        public void StartAttack(AttackData attack)
+        {
+            FacePlayer();
+            runner.Start(attack);
+        }
+
+        /// <summary>Runs one attack tick; false when the attack (or string) is over.</summary>
+        public bool TickAttack() => runner.Tick(this, Position, Facing, target, Settings);
+
+        public void Play(PoseClip clip, bool restart = false)
+        {
+            if (animator == null || clip == null) return;
+            if (restart) animator.Restart(clip);
+            else animator.Play(clip);
+        }
+
+        private void OnAttackStarted(AttackData attack)
+        {
+            FacePlayer();
+            Play(attack.poseClip, restart: true);
+        }
+
+        // ---------------- taking hits ----------------
+
+        public bool ReceiveHit(in HitInfo hit)
+        {
+            Health.TakeDamage(hit.Damage, 0);   // no invulnerability: enemies can be comboed
+            runner.Cancel();
+            ReleaseAttackSlot();
+
+            Velocity = hit.Knockback * data.knockbackTaken;
+            // A heavy hit already froze the whole game, so no extra freeze here.
+            hitstop = hit.GlobalHitstop ? 0 : hit.HitstopFrames;
+            if (hit.Attacker != null) SetFacing(hit.Attacker.transform.position.x >= Position.x ? 1 : -1);
+
+            if (Health.IsDepleted)
+            {
+                machine.ForceState(Dead);
+            }
+            else
+            {
+                Hitstun.Frames = hit.HitstunFrames;
+                machine.ForceState(Hitstun);
+            }
+            return true;
+        }
+
+        /// <summary>Parried (spec 6.5): the attack is cancelled and the enemy staggers, open to a punish.</summary>
+        public void OnParried(in HitInfo hit, int staggerFrames)
+        {
+            runner.Cancel();
+            ReleaseAttackSlot();
+            Velocity = Vector2.zero;
+            Hitstun.Frames = staggerFrames;
+            machine.ForceState(Hitstun);
+        }
+
+        /// <summary>Called by EnemyDeadState when the defeat pose is over: vanish in a burst of ink.</summary>
+        public void Vanish()
+        {
+            if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(Position, Vector2.up, 25);
+            if (rig != null) rig.gameObject.SetActive(false);
+            if (hurtbox != null) hurtbox.enabled = false;
+        }
+
+        // ---------------- reset ----------------
+
+        private void OnPlayerRespawned(PlayerController player) => ResetEnemy();
+
+        /// <summary>Back home with full health, patrolling (on player respawn).</summary>
+        public void ResetEnemy()
+        {
+            if (machine == null) return;
+            runner.Cancel();
+            ReleaseAttackSlot();
+            Body.Teleport(home);
+            Velocity = Vector2.zero;
+            hitstop = 0;
+            Cooldown = 0;
+            nextAttack = 0;
+            Health.Refill();
+            if (rig != null)
+            {
+                rig.gameObject.SetActive(true);
+                rig.Tint = null;
+            }
+            if (hurtbox != null) hurtbox.enabled = true;
+            machine.ForceState(Patrol);
+        }
+
+        // ---------------- visuals ----------------
+
+        private void UpdateVisual()
+        {
+            if (rig == null) return;
+            rig.transform.localScale = new Vector3(Facing, 1f, 1f);
+
+            // Unparryable attacks flash red while winding up (spec 6.5).
+            AttackData a = runner.Current;
+            bool flash = a != null && !a.parryable && runner.Frame <= a.startupFrames;
+            rig.Tint = flash ? (runner.Frame / 3 % 2 == 0 ? FlashA : FlashB) : (Color?)null;
+
+            if (animator != null) animator.Tick();
+        }
+
+        private void ShakeVisual(bool shaking)
+        {
+            if (rig == null) return;
+            // Alternate left/right each tick during hitstop (spec 6.4: target shakes 0.05 units).
+            float x = shaking ? (hitstop % 2 == 0 ? 1f : -1f) * Settings.hitShakeDistance : 0f;
+            rig.transform.localPosition = new Vector3(x, 0f, 0f);
+        }
+
+        private void OnSlamImpact()
+        {
+            CameraShake.Shake(0.2f);
+            Vector2 feet = Position + new Vector2(0f, -Body.Size.y * 0.5f);
+            if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(feet, Vector2.up, 20);
+        }
+
+        private void FindTarget()
+        {
+            if (target == null) target = SceneQuery.FindFirst<PlayerController>();
+        }
+    }
+}

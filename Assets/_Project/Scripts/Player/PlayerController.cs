@@ -48,6 +48,7 @@ namespace Margin.Player
         public ParryState Parry { get; private set; }
         public RedrawState Redraw { get; private set; }
         public ComboBreakerState ComboBreaker { get; private set; }
+        public DefeatedState Defeated { get; private set; }
 
         // ---- Runtime values the states read and write ----
         /// <summary>Units per second. Public field so states can set .x / .y directly.</summary>
@@ -141,6 +142,7 @@ namespace Margin.Player
             Parry = new ParryState(this);
             Redraw = new RedrawState(this);
             ComboBreaker = new ComboBreakerState(this);
+            Defeated = new DefeatedState(this);
 
             machine = new PlayerStateMachine();
             machine.ForceState(Fall);
@@ -294,6 +296,13 @@ namespace Margin.Player
             Velocity = knockback;
             Hitstun.Frames = Mathf.Max(1, frames);
             machine.ForceState(Hitstun);
+        }
+
+        /// <summary>Health reached 0: collapse with the killing hit's knockback. PlayerHealth handles the respawn.</summary>
+        public void EnterDefeated(Vector2 knockback)
+        {
+            Velocity = knockback;
+            machine.ForceState(Defeated);
         }
 
         /// <summary>Parry button (spec 6.5). Needs PlayerCombat for its settings.</summary>

@@ -21,10 +21,19 @@ namespace Margin.Combat
                  "still land, so enemies can combo; this stops a fresh combo starting right away.")]
         [Min(0)] public int hurtInvulnerableFrames = 45;
 
+        [Tooltip("Frames of the defeat animation before respawning (spec 10: retry in under 3 seconds).")]
+        [Min(1)] public int playerDeathFrames = 90;
+        [Tooltip("Invulnerable frames after respawning, so nothing hits you on arrival.")]
+        [Min(0)] public int respawnInvulnerableFrames = 60;
         [Tooltip("Each later hit of a combo on the player does this much less damage (0.15 = 100%, 85%, 70%...).")]
         [Range(0f, 1f)] public float comboDamageStep = 0.15f;
         [Tooltip("Combo damage never scales below this fraction.")]
         [Range(0.1f, 1f)] public float comboDamageFloor = 0.5f;
+
+        [Header("Enemies (spec 9)")]
+        [Tooltip("Max enemies attacking the player at once (attack slots). 0 = no limit: every enemy that has " +
+                 "noticed the player may attack. Set 2 or 3 if groups turn into unavoidable lock-downs.")]
+        [Min(0)] public int maxEnemyAttackers = 0;
 
         [Header("Combo breaker")]
         [Tooltip("Parry pressed during hitstun with this much ink: break out of the combo.")]
