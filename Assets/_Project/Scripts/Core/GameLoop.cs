@@ -37,6 +37,21 @@ namespace Margin.Core
             }
         }
 
+        // Global hitstop (heavy hits): the whole game skips this many ticks.
+        private static int freezeTicks;
+
+        /// <summary>Remaining ticks of global hitstop.</summary>
+        public static int FreezeTicks => freezeTicks;
+
+        /// <summary>
+        /// Heavy-hit hitstop (spec 6.4): freezes every tickable for the given number of ticks. The frame counter
+        /// stops too, so buffered inputs don't age during the freeze. Overlapping freezes keep the longer one.
+        /// </summary>
+        public static void Freeze(int ticks)
+        {
+            if (ticks > freezeTicks) freezeTicks = ticks;
+        }
+
         /// <summary>Pauses (if needed) and runs exactly one gameplay tick on the next FixedUpdate.</summary>
         public static void Step()
         {
@@ -70,6 +85,7 @@ namespace Margin.Core
             instance = this;
             paused = false;       // statics survive between Play sessions when domain reload is off
             pendingSteps = 0;
+            freezeTicks = 0;
 
             // The whole game counts time in 60 Hz ticks, so enforce it here even if Project Settings disagree.
             if (Mathf.Abs(Time.fixedDeltaTime - GameTime.TickDelta) > 0.0001f)
@@ -91,6 +107,13 @@ namespace Margin.Core
             {
                 if (pendingSteps == 0) return;
                 pendingSteps--;
+            }
+
+            // A frozen tick still uses up a frame-step, so you can step through a heavy hit's freeze.
+            if (freezeTicks > 0)
+            {
+                freezeTicks--;
+                return;
             }
 
             counter.Advance();

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Margin.Combat;
 using Margin.Physics;
 using Margin.Player;
 using UnityEngine;
@@ -10,7 +11,7 @@ namespace Margin.DebugTools
     /// <summary>
     /// F1 view: draws every 2D collider's real shape over the game so you can compare it with the art.
     /// Colors: red = Ground, blue = OneWayPlatform, green = the player's collision box at its tick position,
-    /// yellow = anything else. Combat hitboxes/hurtboxes get added here in Milestone 3.
+    /// yellow = anything else, cyan = hurtboxes, orange = attack hitboxes that are out this tick.
     ///
     /// Drawn with GL lines after each camera renders. Works with the built-in renderer (Camera.onPostRender)
     /// and with URP (RenderPipelineManager.endCameraRendering).
@@ -21,6 +22,8 @@ namespace Margin.DebugTools
         private static readonly Color OneWayColor = new Color(0.25f, 0.5f, 1f);
         private static readonly Color PlayerColor = new Color(0.1f, 0.85f, 0.2f);
         private static readonly Color OtherColor = new Color(1f, 0.8f, 0.1f);
+        private static readonly Color HurtboxColor = new Color(0.1f, 0.85f, 0.95f);
+        private static readonly Color HitboxColor = new Color(1f, 0.45f, 0f);
 
         private readonly List<Collider2D> colliders = new List<Collider2D>();
         private Material lineMaterial;
@@ -73,6 +76,7 @@ namespace Margin.DebugTools
             }
 
             if (playerBody != null) DrawPlayer(playerBody);
+            DrawCombatBoxes();
 
             GL.End();
             GL.PopMatrix();
@@ -92,6 +96,23 @@ namespace Margin.DebugTools
                 Vector2 feet = new Vector2(center.x, center.y - half.y);
                 Line(feet, feet + body.Collisions.GroundNormal * 0.5f);
             }
+        }
+
+        private void DrawCombatBoxes()
+        {
+            GL.Color(HurtboxColor);
+            foreach (Hurtbox hurtbox in Hurtbox.Active) DrawBox(hurtbox.WorldBox, 0f);
+
+            if (Player == null || Player.Combat == null) return;
+            GL.Color(HitboxColor);
+            // Drawn three times, slightly inset, so active hitboxes stand out as thick outlines.
+            foreach (AabbBox box in Player.Combat.ActiveHitboxes)
+                for (int i = 0; i < 3; i++) DrawBox(box, i * 0.01f);
+        }
+
+        private static void DrawBox(AabbBox box, float inset)
+        {
+            Rect(new Vector2(box.MinX + inset, box.MinY + inset), new Vector2(box.MaxX - inset, box.MaxY - inset));
         }
 
         private static void DrawCollider(Collider2D col, Color color)

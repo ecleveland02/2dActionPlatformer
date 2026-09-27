@@ -17,6 +17,7 @@ namespace Margin.Player
 
         private PlayerController player;
         private bool reportedMissing;
+        private int lastAttackSerial = -1;
 
         public int TickOrder => 10;
         public PoseAnimator PoseAnimator => poseAnimator;
@@ -43,11 +44,24 @@ namespace Margin.Player
                 return;
             }
 
+            // Hitstop freezes the pose along with the player.
+            if (player.InHitstop) return;
+
             PoseClip current = poseAnimator.CurrentClip;
             PoseClip next = ChooseClip();
-            // Switching between run and sprint continues the stride instead of restarting it.
-            bool cycleSwap = IsCycle(current) && IsCycle(next);
-            poseAnimator.Play(next, keepPhase: cycleSwap);
+
+            if (player.CurrentState is AttackState && player.Combat.AttackSerial != lastAttackSerial)
+            {
+                // A new attack always starts its clip from frame 1, even if it's the same move again.
+                lastAttackSerial = player.Combat.AttackSerial;
+                poseAnimator.Restart(next != null ? next : current);
+            }
+            else
+            {
+                // Switching between run and sprint continues the stride instead of restarting it.
+                bool cycleSwap = IsCycle(current) && IsCycle(next);
+                poseAnimator.Play(next, keepPhase: cycleSwap);
+            }
             poseAnimator.SetAdditive(player.CurrentState is IdleState ? animations.idleBreathing : null);
             poseAnimator.Tick();
         }
@@ -58,6 +72,7 @@ namespace Margin.Player
             PlayerAnimationSet a = animations;
             switch (player.CurrentState)
             {
+                case AttackState attack: return attack.Attack.poseClip != null ? attack.Attack.poseClip : a.idle;
                 case WallJumpState _: return a.wallJump;
                 case JumpState _: return a.jump;
                 case FastFallState _: return a.fastFall;

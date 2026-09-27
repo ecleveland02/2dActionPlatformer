@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
+using Margin.Combat;
 using Margin.Core;
+using Margin.Enemies;
 using Margin.Input;
 using Margin.Level;
 using Margin.Physics;
@@ -121,8 +123,9 @@ namespace Margin.EditorTools
             Label(labels, "ONE-WAY  (DOWN+JUMP DROPS)", 51, 9);
             Label(labels, "WALL JUMP", 62.5f, 13);
 
-            // ---- Player ----
+            // ---- Player and training dummy ----
             GameObject player = BuildPlayer(playerLayer, assets);
+            BuildDummy(new Vector3(4f, 1.5f, 0f), assets);
 
             // ---- Camera ----
             var camObject = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -184,6 +187,7 @@ namespace Margin.EditorTools
             public Material Ink;
             public StickFigureProportions Proportions;
             public PlayerAnimationSet Animations;
+            public StarterCombat.Result Combat;
         }
 
         /// <summary>Loads the data assets, creating any that are missing (existing tuning is never overwritten).</summary>
@@ -198,6 +202,7 @@ namespace Margin.EditorTools
                 Ink = LoadOrCreateInkMaterial(),
                 Proportions = LoadOrCreate<StickFigureProportions>($"{DataFolder}/StickFigureProportions.asset"),
                 Animations = StarterPoses.EnsureCreated(),   // poses, clips and the set; only adds what's missing
+                Combat = StarterCombat.EnsureCreated(),      // attacks, Brush Katana, combat settings
             };
 
             if (assets.Controls == null)
@@ -279,7 +284,104 @@ namespace Margin.EditorTools
             ok &= SetReference(playerAnimator, "poseAnimator", poseAnimator);
 
             ok &= SetReference(controller, "visualRoot", visual);
+            ok &= WireCombat(controller, visual, rig, assets);
             return ok;
+        }
+
+        /// <summary>Adds PlayerCombat (Brush Katana), the blade line and the player's hurtbox.</summary>
+        private static bool WireCombat(PlayerController controller, Transform visual, StickFigureRig rig, GymAssets assets)
+        {
+            Transform bladeObject = visual.Find("Blade");
+            if (bladeObject == null)
+            {
+                bladeObject = new GameObject("Blade").transform;
+                bladeObject.SetParent(visual, false);
+            }
+            var blade = bladeObject.GetComponent<WeaponLine>();
+            if (blade == null) blade = bladeObject.gameObject.AddComponent<WeaponLine>();
+            bladeObject.GetComponent<LineRenderer>().sharedMaterial = assets.Ink;
+            bool ok = SetReference(blade, "rig", rig);
+
+            var combat = controller.GetComponent<PlayerCombat>();
+            if (combat == null) combat = controller.gameObject.AddComponent<PlayerCombat>();
+            ok &= SetReference(combat, "weapon", assets.Combat.Weapon);
+            ok &= SetReference(combat, "settings", assets.Combat.Settings);
+            ok &= SetReference(combat, "weaponLine", blade);
+
+            var hurtbox = controller.GetComponent<Hurtbox>();
+            if (hurtbox == null) hurtbox = controller.gameObject.AddComponent<Hurtbox>();
+            hurtbox.Configure(Faction.Player, Vector2.zero, new Vector2(0.6f, 1.8f));
+            EditorUtility.SetDirty(hurtbox);
+            return ok;
+        }
+
+        /// <summary>Menu: Margin > Add Training Dummy. Puts a dummy 4 units in front of the player in the open scene.</summary>
+        [MenuItem("Margin/Add Training Dummy")]
+        public static void AddTrainingDummy()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            PlayerController player = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+                if ((player = root.GetComponentInChildren<PlayerController>(true)) != null) break;
+
+            GymAssets assets = LoadAssets();
+            if (assets == null) return;
+
+            Vector3 at = player != null ? player.transform.position + new Vector3(4f, 0.5f, 0f) : new Vector3(4f, 1.5f, 0f);
+            GameObject dummy = BuildDummy(at, assets);
+            Selection.activeGameObject = dummy;
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
+        }
+
+        private static GameObject BuildDummy(Vector3 position, GymAssets assets)
+        {
+            var dummy = new GameObject("Training Dummy");
+            dummy.transform.position = position;
+            var body = dummy.AddComponent<KinematicBody2D>();   // also adds BoxCollider2D + Rigidbody2D
+            dummy.GetComponent<BoxCollider2D>().size = new Vector2(0.6f, 1.8f);
+            var rb = dummy.GetComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            SetReference(body, "data", assets.BodyData);
+
+            dummy.AddComponent<Hurtbox>().Configure(Faction.Enemy, Vector2.zero, new Vector2(0.6f, 1.8f));
+
+            // Visual faces left (toward a player standing to its left).
+            var visual = new GameObject("Visual").transform;
+            visual.SetParent(dummy.transform, false);
+            visual.localScale = new Vector3(-1f, 1f, 1f);
+            var rig = visual.gameObject.AddComponent<StickFigureRig>();
+            SetReference(rig, "proportions", assets.Proportions);
+            SetReference(rig, "lineMaterial", assets.Ink);
+            rig.Build();
+            if (assets.Combat.DummyIdle != null) rig.ApplyPose(assets.Combat.DummyIdle.pose);
+
+            var labelObject = new GameObject("Combo Label");
+            labelObject.transform.SetParent(dummy.transform, false);
+            labelObject.transform.localPosition = new Vector3(0f, 1.35f, 0f);
+            var label = labelObject.AddComponent<TextMesh>();
+            label.text = "hit me";
+            label.anchor = TextAnchor.LowerCenter;
+            label.alignment = TextAlignment.Center;
+            label.characterSize = 0.05f;
+            label.fontSize = 48;
+            label.color = new Color32(0x9A, 0x96, 0x8C, 0xFF);
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font != null)
+            {
+                label.font = font;
+                labelObject.GetComponent<MeshRenderer>().sharedMaterial = font.material;
+            }
+
+            var trainingDummy = dummy.AddComponent<TrainingDummy>();
+            SetReference(trainingDummy, "physics", assets.Movement);
+            SetReference(trainingDummy, "settings", assets.Combat.Settings);
+            SetReference(trainingDummy, "rig", rig);
+            SetReference(trainingDummy, "idlePose", assets.Combat.DummyIdle);
+            SetReference(trainingDummy, "hitPose", assets.Combat.DummyHit);
+            SetReference(trainingDummy, "label", label);
+            return dummy;
         }
 
         private static GameObject BuildPlayer(int layer, GymAssets assets)

@@ -38,6 +38,13 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Animation: `PoseClip` (entries: pose, frames, easing; loop; fadeInFrames) played by `PoseAnimator` on the rig.
   `PlayerAnimator` (TickOrder 10, after the player) maps states to clips via `PlayerAnimationSet`, so animation
   pauses/frame-steps with the game. **Margin > Wire Player References** upgrades a capsule player to the stick figure.
+- **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
+  cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
+  on hit, "Cancels into" + jump/dash inside the window; on whiff, only jump/dash from the window start.
+  `Hurtbox` is a registry box (no physics); `PlayerCombat` tests hitboxes after the player moves (`PlayerState.PostMove`).
+  Hitstop: below `CombatSettings.globalHitstopThreshold` (8) only attacker/target freeze; at/above it `GameLoop.Freeze`.
+  Weapons list only *starter* moves (Light1, Heavy, Up, Air...); follow-ups (Light2/3) come from cancel lists.
+  Menus: **Margin > Create Starter Combat Data**, **Margin > Add Training Dummy**.
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

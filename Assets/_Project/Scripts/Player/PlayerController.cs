@@ -43,6 +43,7 @@ namespace Margin.Player
         public DashState Dash { get; private set; }
         public WallSlideState WallSlide { get; private set; }
         public WallJumpState WallJump { get; private set; }
+        public AttackState Attack { get; private set; }
 
         // ---- Runtime values the states read and write ----
         /// <summary>Units per second. Public field so states can set .x / .y directly.</summary>
@@ -65,6 +66,20 @@ namespace Margin.Player
         public IPlayerInput Controls { get; private set; }
         public AbilityUnlocks Abilities => abilities;
         public KinematicBody2D Body { get; private set; }
+        private PlayerCombat combat;
+
+        /// <summary>Optional. Without it the player can move but not attack. Looked up on first use, so the
+        /// order components were added in doesn't matter.</summary>
+        public PlayerCombat Combat
+        {
+            get
+            {
+                if (combat == null) combat = GetComponent<PlayerCombat>();
+                return combat;
+            }
+        }
+        /// <summary>True while frozen by the player's own hitstop.</summary>
+        public bool InHitstop => Combat != null && Combat.HitstopFrames > 0;
         public PlayerState CurrentState => machine.Current;
         /// <summary>Raised on every state change with (previous, next). Used by the debug overlay.</summary>
         public event System.Action<PlayerState, PlayerState> StateChanged
@@ -104,6 +119,7 @@ namespace Margin.Player
             Dash = new DashState(this);
             WallSlide = new WallSlideState(this);
             WallJump = new WallJumpState(this);
+            Attack = new AttackState(this);
 
             machine = new PlayerStateMachine();
             machine.ForceState(Fall);
@@ -136,6 +152,13 @@ namespace Margin.Player
         {
             if (!EnsureReady()) return;
 
+            // Hitstop (spec 6.4): the player freezes completely for a few frames after landing a hit.
+            if (InHitstop)
+            {
+                Combat.HitstopFrames--;
+                return;
+            }
+
             if (DashCooldown > 0) DashCooldown--;
             hasPendingDy = false;
 
@@ -147,6 +170,7 @@ namespace Margin.Player
             Body.Move(new Vector2(Velocity.x * GameTime.TickDelta, dy), cornerCorrection);
 
             ResolveCollisions();
+            CurrentState.PostMove();
 
             UpdateFacingVisual();
         }
@@ -230,7 +254,7 @@ namespace Margin.Player
         // ---------------- Helpers used by states ----------------
 
         /// <summary>Accelerate/decelerate toward the input direction and update facing.</summary>
-        public void ApplyHorizontal(bool onGround)
+        public void ApplyHorizontal(bool onGround, bool updateFacing = true)
         {
             if (onGround)
                 Velocity.x = MovementMath.GroundStep(Velocity.x, InputX, data.runSpeed, data.sprintSpeed, IsSprinting,
@@ -239,8 +263,11 @@ namespace Margin.Player
             else
                 Velocity.x = MovementMath.AirStep(Velocity.x, InputX, data.runSpeed, data.AirAccelStep, data.AirDecelStep);
 
-            if (InputX != 0) Facing = InputX;
+            if (updateFacing && InputX != 0) Facing = InputX;
         }
+
+        /// <summary>Starts an attack if Light/Heavy/Special is buffered and the weapon has a matching move.</summary>
+        public PlayerState CheckAttack() => Combat != null && Combat.TryStartAttack() ? Attack : null;
 
         /// <summary>Pushing against the direction of travel while faster than run speed (i.e. sprinting) starts a skid.</summary>
         public PlayerState CheckSkid()

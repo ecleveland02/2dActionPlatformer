@@ -28,6 +28,9 @@ namespace Margin.Player
 
         public virtual void Exit() { }
 
+        /// <summary>Called after the body moved this tick (attacks check hitboxes here, at the new position).</summary>
+        public virtual void PostMove() { }
+
         /// <summary>Lets a state refuse to be left (e.g. a future attack during active frames).</summary>
         public virtual bool CanTransitionTo(PlayerState next) => true;
     }

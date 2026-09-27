@@ -43,6 +43,13 @@ namespace Margin.Rendering
         public void Play(PoseClip next, bool keepPhase = false)
         {
             if (next == null || next == clip) return;
+            Restart(next, keepPhase);
+        }
+
+        /// <summary>Starts a clip from the beginning even if it is already playing (e.g. the same attack twice in a row).</summary>
+        public void Restart(PoseClip next, bool keepPhase = false)
+        {
+            if (next == null) return;
             PoseTimeline nextTimeline = next.Timeline;
             if (nextTimeline == null) return;
 

@@ -76,7 +76,8 @@ namespace Margin.DebugTools
             text.Clear();
             int frame = GameLoop.Clock?.CurrentFrame ?? 0;
 
-            string mode = GameLoop.Paused ? "<color=#ff6060>PAUSED (F4 steps)</color>"
+            string mode = GameLoop.FreezeTicks > 0 ? $"<color=#ff9040>HITSTOP (global) {GameLoop.FreezeTicks}</color>"
+                        : GameLoop.Paused ? "<color=#ff6060>PAUSED (F4 steps)</color>"
                         : Controller != null && Controller.SlowMotion ? $"<color=#ffd060>SLOW x{Controller.SlowMotionScale:0.##}</color>"
                         : "running";
             text.AppendLine($"<b>Frame {frame}</b>   {mode}");
@@ -98,6 +99,8 @@ namespace Margin.DebugTools
                             $"wall L {YesNo(c.HitWallLeft)} R {YesNo(c.HitWallRight)}   ceiling {YesNo(c.HitCeiling)}");
             text.AppendLine($"Coyote   {CoyoteText(d)}");
             text.AppendLine($"Sprint   charge {player.SprintCharge}/{d.framesToStartSprint}   {(player.IsSprinting ? "<b>SPRINTING</b>" : "")}");
+            if (player.CurrentState is AttackState attack) AppendAttack(attack);
+            if (player.InHitstop) text.AppendLine($"<color=#ff9040>Hitstop  {player.Combat.HitstopFrames} frames left</color>");
             text.AppendLine($"Dash     cooldown {player.DashCooldown}   air dashes {player.AirDashesLeft}   " +
                             $"{(player.IsInvulnerable ? "<color=#60c0ff>INVULNERABLE</color>" : "")}");
 
@@ -111,6 +114,19 @@ namespace Margin.DebugTools
             text.AppendLine();
             text.AppendLine("<b>Recent states</b>");
             foreach (string line in history) text.AppendLine(line);
+        }
+
+        private void AppendAttack(AttackState attack)
+        {
+            Margin.Combat.AttackTiming t = attack.Attack.Timing;
+            int f = attack.Frame;
+            string phase = t.PhaseAt(f).ToString().ToUpperInvariant();
+            string color = phase == "ACTIVE" ? "#ff9040" : phase == "STARTUP" ? "#ffd060" : "#a0a0a0";
+            string cancel = t.AllowsAttackCancel(f, attack.HasHit) ? "<color=#80ff80>attacks+moves</color>"
+                          : t.AllowsMovementCancel(f, attack.HasHit) ? "<color=#80ff80>jump/dash only</color>"
+                          : "closed";
+            text.AppendLine($"<b>Attack</b>   {attack.Attack.name}  f{f}/{t.TotalFrames}  <color={color}>{phase}</color>" +
+                            $"   hit {YesNo(attack.HasHit)}   cancel {cancel}");
         }
 
         private string CoyoteText(MovementData d)

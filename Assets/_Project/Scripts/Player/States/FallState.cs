@@ -11,6 +11,7 @@ namespace Margin.Player
 
             return Player.CheckGroundJump()          // coyote time
                    ?? Player.CheckWallJump()
+                   ?? Player.CheckAttack()
                    ?? Player.CheckDash()
                    ?? Player.CheckWallSlide()
                    ?? (Player.Controls.DownHeld ? Player.FastFall : null);

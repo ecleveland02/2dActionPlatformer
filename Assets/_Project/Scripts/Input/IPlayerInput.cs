@@ -11,6 +11,7 @@ namespace Margin.Input
         Vector2 Move { get; }
         bool JumpHeld { get; }
         bool DownHeld { get; }
+        bool UpHeld { get; }
         InputBuffer Buffer { get; }
     }
 }

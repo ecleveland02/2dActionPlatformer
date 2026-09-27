@@ -1,0 +1,156 @@
+using Margin.Combat;
+using Margin.Core;
+using Margin.Physics;
+using Margin.Player;
+using Margin.Rendering;
+using UnityEngine;
+
+namespace Margin.Enemies
+{
+    /// <summary>
+    /// Practice target (Milestone 3): takes hits, knockback, hitstun and hitstop, logs every hit, and shows a
+    /// combo counter. A combo continues while each new hit lands before the previous hitstun runs out.
+    /// It never dies, and drifts back home after being left alone for a while.
+    /// </summary>
+    [RequireComponent(typeof(KinematicBody2D))]
+    public sealed class TrainingDummy : MonoBehaviour, IHitReceiver, ITickable
+    {
+        [Tooltip("Gravity and ground friction come from here (the player's MovementData is fine).")]
+        [SerializeField] private MovementData physics;
+        [SerializeField] private CombatSettings settings;
+        [SerializeField] private StickFigureRig rig;
+        [SerializeField] private PoseData idlePose;
+        [SerializeField] private PoseData hitPose;
+        [SerializeField] private TextMesh label;
+        [Tooltip("Ticks without being hit before the dummy returns to where it started.")]
+        [SerializeField, Min(1)] private int returnHomeAfterFrames = 180;
+
+        private KinematicBody2D body;
+        private Vector2 velocity;
+        private Vector2 home;
+        private int hitstop, hitstun, idleTicks;
+
+        public int TickOrder => 20;
+        public bool CanBeHit => true;
+        public int Combo { get; private set; }
+        public int ComboDamage { get; private set; }
+        public int BestCombo { get; private set; }
+        public int TotalDamage { get; private set; }
+        public int HitstunRemaining => hitstun;
+        public int HitstopRemaining => hitstop;
+        public Vector2 Velocity => velocity;
+
+        private CombatSettings Settings => settings != null ? settings : CombatSettings.Defaults;
+
+        private void Awake()
+        {
+            body = GetComponent<KinematicBody2D>();
+            home = transform.position;
+        }
+
+        private void OnEnable() => GameLoop.Register(this);
+        private void OnDisable() => GameLoop.Unregister(this);
+
+        public void Configure(MovementData physicsData, StickFigureRig figure, TextMesh text)
+        {
+            physics = physicsData;
+            rig = figure;
+            label = text;
+        }
+
+        public void ReceiveHit(in HitInfo hit)
+        {
+            bool comboContinues = hitstun > 0;
+            if (!comboContinues)
+            {
+                Combo = 0;
+                ComboDamage = 0;
+            }
+
+            Combo++;
+            ComboDamage += hit.Damage;
+            TotalDamage += hit.Damage;
+            BestCombo = Mathf.Max(BestCombo, Combo);
+
+            hitstun = hit.HitstunFrames;
+            velocity = hit.Knockback;
+            // A heavy hit already froze the whole game, so the dummy doesn't need its own freeze.
+            hitstop = hit.GlobalHitstop ? 0 : hit.HitstopFrames;
+            idleTicks = 0;
+
+            int frame = GameLoop.Clock?.CurrentFrame ?? 0;
+            Debug.Log($"[Dummy] f{frame}  {hit.Attack.name}  {hit.Damage} dmg  |  combo {Combo} ({ComboDamage} dmg)" +
+                      (comboContinues ? "" : "  (new combo)"), this);
+            UpdateLabel();
+        }
+
+        public void Tick()
+        {
+            if (physics == null) return;
+
+            if (hitstop > 0)
+            {
+                hitstop--;
+                ShakeVisual(hitstop > 0);
+                return;
+            }
+            ShakeVisual(false);
+
+            bool grounded = body.Collisions.Grounded;
+            if (grounded && velocity.y <= 0f)
+            {
+                velocity.y = 0f;
+                velocity.x = MovementMath.Approach(velocity.x, 0f, physics.GroundDecelStep);
+            }
+
+            float dy = velocity.y * GameTime.TickDelta;
+            if (!grounded || velocity.y > 0f)
+                velocity.y = MovementMath.VerticalStep(velocity.y, physics.FallGravity, physics.maxFallSpeed, out dy);
+
+            body.Move(new Vector2(velocity.x * GameTime.TickDelta, dy));
+            CollisionState c = body.Collisions;
+            if (c.HitWallLeft || c.HitWallRight) velocity.x = 0f;
+            if (c.HitCeiling && velocity.y > 0f) velocity.y = 0f;
+            if (c.Grounded && velocity.y < 0f) velocity.y = 0f;
+
+            if (hitstun > 0)
+            {
+                hitstun--;
+                if (hitstun == 0) UpdateLabel();
+            }
+
+            ReturnHomeWhenIdle();
+            if (rig != null)
+            {
+                PoseData pose = hitstun > 0 && hitPose != null ? hitPose : idlePose;
+                if (pose != null) rig.ApplyPose(pose.pose);
+            }
+        }
+
+        private void ReturnHomeWhenIdle()
+        {
+            if (hitstun > 0 || ++idleTicks < returnHomeAfterFrames) return;
+            if (Vector2.Distance(body.Position, home) > 0.5f)
+            {
+                body.Teleport(home);
+                velocity = Vector2.zero;
+            }
+            idleTicks = 0;
+        }
+
+        private void ShakeVisual(bool shaking)
+        {
+            if (rig == null) return;
+            // Alternate left/right each tick during hitstop (spec 6.4: target shakes 0.05 units).
+            float x = shaking ? (hitstop % 2 == 0 ? 1f : -1f) * Settings.hitShakeDistance : 0f;
+            rig.transform.localPosition = new Vector3(x, 0f, 0f);
+        }
+
+        private void UpdateLabel()
+        {
+            if (label == null) return;
+            string state = hitstun > 0 ? $"COMBO {Combo}" : $"combo {Combo} (dropped)";
+            label.text = $"{state}   {ComboDamage} dmg\nbest {BestCombo}   total {TotalDamage}";
+        }
+    }
+}

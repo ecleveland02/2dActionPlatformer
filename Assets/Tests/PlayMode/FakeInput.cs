@@ -12,6 +12,7 @@ namespace Margin.Tests
         public Vector2 Move { get; set; }
         public bool JumpHeld { get; set; }
         public bool DownHeld { get; set; }
+        public bool UpHeld { get; set; }
         public InputBuffer Buffer { get; }
     }
 }

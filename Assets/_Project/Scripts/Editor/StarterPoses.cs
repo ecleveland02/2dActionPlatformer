@@ -185,7 +185,7 @@ namespace Margin.EditorTools
             return set;
         }
 
-        private static string PathFor(string name) => $"{Folder}/{name}.asset";
+        internal static string PathFor(string name) => $"{Folder}/{name}.asset";
 
         internal static Dictionary<string, FigurePose> BuildTable()
         {
@@ -239,7 +239,7 @@ namespace Margin.EditorTools
         /// Sets the hips height so the lower foot rests exactly on the ground line (where it is in the neutral pose).
         /// Uses the default leg lengths. A foot's height below the hips is thigh*cos(hip) + shin*cos(hip + knee).
         /// </summary>
-        private static FigurePose Planted(FigurePose pose)
+        internal static FigurePose Planted(FigurePose pose)
         {
             var defaults = ScriptableObject.CreateInstance<StickFigureProportions>();
             float thigh = defaults.thigh, shin = defaults.shin;
@@ -253,7 +253,7 @@ namespace Margin.EditorTools
             return pose;
         }
 
-        private static FigurePose P(float x, float y, float spine, float neck, float sf, float ef, float sb, float eb,
+        internal static FigurePose P(float x, float y, float spine, float neck, float sf, float ef, float sb, float eb,
                               float hf, float kf, float hb, float kb)
         {
             return new FigurePose

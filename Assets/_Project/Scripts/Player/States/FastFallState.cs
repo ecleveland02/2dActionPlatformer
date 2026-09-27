@@ -16,6 +16,7 @@ namespace Margin.Player
 
             return Player.CheckGroundJump()
                    ?? Player.CheckWallJump()
+                   ?? Player.CheckAttack()
                    ?? Player.CheckDash();
         }
 

@@ -16,6 +16,7 @@ namespace Margin.Player
         public override PlayerState CheckTransitions()
         {
             return Player.CheckWallJump()
+                   ?? Player.CheckAttack()
                    ?? Player.CheckDash()
                    ?? (Player.Velocity.y <= 0f ? Player.Fall : null);
         }
