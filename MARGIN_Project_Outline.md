@@ -105,7 +105,7 @@ Because the developer cannot draw sprite sheets, characters are built from code.
 
 ### 4.1 Rig
 
-- A `StickFigureRig` component holds a hierarchy of joints: hips, spine, neck, head, and left/right shoulder, elbow, hand, hip, knee, foot.
+- A `StickFigureRig` component holds a hierarchy of joints: hips, spine, neck, head, and left/right shoulder, elbow, hand, hip, knee, foot. (Implemented as front/back, i.e. near/far limbs, since the view is side-on; back limbs draw lighter.)
 - Limbs are drawn with `LineRenderer` (or a single custom mesh for performance) using a round cap and slight width variation to look hand-inked.
 - Head is a circle drawn with a line loop or a simple sprite.
 - Line color: near-black ink (#1A1A1A). Slight wobble shader optional (Milestone 8).

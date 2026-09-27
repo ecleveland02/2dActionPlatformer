@@ -29,7 +29,12 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Debug tools:** `Scripts/Debug/DebugController` auto-spawns in the Editor/dev builds in any scene with a `GameLoop`.
   F1 collision boxes, F2 frame data overlay (on by default), F3 pause, F4 step one tick, F5 0.25x slow motion.
   Pause/step are `GameLoop.Paused` / `GameLoop.Step()`, so the frame counter and input buffer freeze with the game.
-- **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress.
+- **Stick figure (M2):** `Scripts/Rendering/`. `StickFigureRig` builds joints + LineRenderers and runs in edit mode.
+  Poses are `FigurePose` (pure C# struct; named to avoid clashing with `UnityEngine.Pose`) stored in `PoseData` assets.
+  10 joints: Spine, Neck, Shoulder/Elbow/Hip/Knee x Front/Back. "Front" = near limb (ink), "Back" = far limb (grey).
+  **Angle rule:** degrees relative to the parent bone, positive = swing toward facing; knees bend negative, elbows positive.
+  Menus: **Margin > Open Pose Studio** (posing scene), **Margin > Create Starter Poses** (writes `Data/Poses`).
+- **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)
 

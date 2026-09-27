@@ -355,7 +355,7 @@ namespace Margin.EditorTools
 
         // ---------------- asset helpers ----------------
 
-        private static T LoadOrCreate<T>(string path) where T : ScriptableObject
+        internal static T LoadOrCreate<T>(string path) where T : ScriptableObject
         {
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             if (asset != null) return asset;
@@ -364,7 +364,7 @@ namespace Margin.EditorTools
             return asset;
         }
 
-        private static Material LoadOrCreateInkMaterial()
+        internal static Material LoadOrCreateInkMaterial()
         {
             // URP's unlit sprite shader renders pink under the built-in renderer, so pick by active pipeline.
             bool urpActive = GraphicsSettings.currentRenderPipeline != null;
