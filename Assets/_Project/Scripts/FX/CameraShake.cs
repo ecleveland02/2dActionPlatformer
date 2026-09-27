@@ -53,7 +53,7 @@ namespace Margin.FX
 
         private void Add(float strength)
         {
-            strength *= Settings.screenShakeScale;
+            strength *= Settings.screenShakeScale * Margin.Save.OptionsStore.Current.screenShake;   // Options slider
             if (strength <= 0f) return;
             // Keep whichever shake is currently stronger, and restart the timer.
             float current = amplitude * FeelMath.ShakeFalloff(remaining, Settings.shakeFrames);

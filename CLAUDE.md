@@ -135,7 +135,11 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Resume, Restart = `PlayerHealth.Respawn`, Controls, Title Screen, Quit; Controls page shows `KeyHint` key/mouse
   pictures per binding, text for gamepad). `TitleScreen` (Scenes/Title.unity, **Margin > Build Title Screen**, first
   in Build Settings) is the same `MenuView` on a full `RuledPaper` page: Play (loads `UISettings.firstScene`),
-  Controls, Quit. Scene names live in UISettings (`titleScene`, `firstScene`); `MarginUI.LoadScene` checks Build Settings. Look: "clean flat + ink": menu cards/HUD bars hand-drawn, buttons flat rounded (UI Toolkit
+  Options, Controls, Quit. Scene names live in UISettings (`titleScene`, `firstScene`); `MarginUI.LoadScene` checks Build Settings.
+  **Options** (title + pause, `OptionsPanel` page of `MenuView`): master/music/effects volume, screen shake, window mode,
+  resolution, vsync. Pure `Save/OptionsData` (clamped, notch steps) persisted by `Save/OptionsStore` to
+  persistentDataPath/options.json (separate from save slots), loaded + display applied before the first scene;
+  AudioDirector gains and CameraShake multiply by it every frame. Look: "clean flat + ink": menu cards/HUD bars hand-drawn, buttons flat rounded (UI Toolkit
   borders, not sliced sprites). Art packs live in `Art/UI` (UIElements icons, InputIcons keys; white images tinted in
   code); `StarterUI` fills `UISettings` icon slots and `keyIcons` (only empty slots). Pure `KeyIcons` maps binding
   paths to icon names. SimplePixelUI/SimpleSpinner (Assets root) are unused. Pausing sets `GameLoop.Paused` and `Time.timeScale = 0` and restores

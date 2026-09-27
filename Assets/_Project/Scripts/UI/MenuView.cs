@@ -16,21 +16,25 @@ namespace Margin.UI
     /// </summary>
     public sealed class MenuView
     {
-        /// <summary>One button: label, icon and what it does. A null action opens the Controls page.</summary>
+        /// <summary>One button: label, icon and what it does (or which page it opens).</summary>
         public struct Entry
         {
             public string Label;
             public Texture2D Icon;
             public Action Action;
+            internal Page Opens;
         }
 
         public static Entry Item(string label, Texture2D icon, Action action) =>
-            new Entry { Label = label, Icon = icon, Action = action };
+            new Entry { Label = label, Icon = icon, Action = action, Opens = Page.Main };
 
         /// <summary>The button that opens the Controls page.</summary>
-        public static Entry Controls(UISettings s) => new Entry { Label = "Controls", Icon = s.iconControls, Action = null };
+        public static Entry Controls(UISettings s) => new Entry { Label = "Controls", Icon = s.iconControls, Opens = Page.Controls };
 
-        private enum Page { Main, Controls }
+        /// <summary>The button that opens the Options page (audio, screen shake, display).</summary>
+        public static Entry Options(UISettings s) => new Entry { Label = "Options", Icon = s.iconOptions, Opens = Page.Options };
+
+        internal enum Page { Main, Controls, Options }
 
         private readonly UISettings s;
         private readonly VisualElement layer;
@@ -40,6 +44,7 @@ namespace Margin.UI
         private readonly UIButton backButton;
         private readonly VisualElement bindingList;
         private readonly RuledPaper page;
+        private readonly OptionsPanel options;
         private MenuCursor cursor;
         private Page shown;
         private InputActionAsset shownBindings;
@@ -83,7 +88,15 @@ namespace Margin.UI
                 sub.style.marginBottom = 30f;
                 column.Add(sub);
             }
-            foreach (Entry e in entries) AddButton(column, e.Label, e.Icon, e.Action ?? (() => ShowPage(Page.Controls)));
+            foreach (Entry e in entries)
+            {
+                Page opens = e.Opens;
+                AddButton(column, e.Label, e.Icon, opens == Page.Main ? e.Action : () => ShowPage(opens));
+            }
+
+            // ---- Options page ----
+            options = new OptionsPanel(s, Card);
+            layer.Add(options.Card);
 
             // ---- Controls page: bindings table + Back ----
             float rowHeight = s.keyIconSize + 10f;
@@ -123,6 +136,7 @@ namespace Margin.UI
 
         public void Close()
         {
+            if (options != null && options.IsOpen) options.Close();
             IsOpen = false;
             HudView.SetVisible(layer, false);
         }
@@ -141,6 +155,13 @@ namespace Margin.UI
             {
                 pressedButton.SetPressed(false);
                 pressedButton = null;
+            }
+
+            if (shown == Page.Options)
+            {
+                options.Update(navigate, submit, cancel, realFrames);
+                if (page != null) page.Refresh();
+                return true;
             }
 
             if (shown == Page.Main)
@@ -175,6 +196,11 @@ namespace Margin.UI
         /// <summary>Pause pressed while open: back out of Controls first, otherwise close. Returns true if it closed.</summary>
         public bool Back()
         {
+            if (shown == Page.Options)
+            {
+                options.Close();   // saves and returns to the main page
+                return false;
+            }
             if (shown != Page.Controls) return true;
             ShowPage(Page.Main);
             return false;
@@ -184,10 +210,12 @@ namespace Margin.UI
 
         private void ShowPage(Page next)
         {
+            if (shown == Page.Options && next != Page.Options && options.IsOpen) options.Close();
             shown = next;
             HudView.SetVisible(mainCard, shown == Page.Main);
             HudView.SetVisible(controlsCard, shown == Page.Controls);
             backButton.SetSelected(shown == Page.Controls);   // the only button there
+            if (shown == Page.Options && !options.IsOpen) options.Open(() => ShowPage(Page.Main));
         }
 
         private void Select(int index)

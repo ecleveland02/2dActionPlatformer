@@ -63,6 +63,7 @@ namespace Margin.UI
             {
                 MenuView.Item("Resume", settings.iconResume, Resume),
                 MenuView.Item("Restart", settings.iconRestart, Restart),
+                MenuView.Options(settings),
                 MenuView.Controls(settings),
                 MenuView.Item("Title Screen", settings.iconHome, ToTitle),
                 MenuView.Item("Quit", settings.iconQuit, Quit),

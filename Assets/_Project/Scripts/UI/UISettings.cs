@@ -88,6 +88,7 @@ namespace Margin.UI
         public Texture2D iconQuit;
         public Texture2D iconBack;
         public Texture2D iconPlay;
+        public Texture2D iconOptions;
         [Tooltip("Pause menu: back to the title screen.")]
         public Texture2D iconHome;
         [Tooltip("Key and mouse pictures by name (\"f\", \"space\", \"mouse-left\", \"keyboard-wasd\"...). Filled from " +

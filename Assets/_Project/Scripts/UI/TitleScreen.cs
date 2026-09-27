@@ -35,6 +35,7 @@ namespace Margin.UI
             menu = new MenuView(document.rootVisualElement, settings, "MARGIN", new[]
             {
                 MenuView.Item("Play", settings.iconPlay, Play),
+                MenuView.Options(settings),
                 MenuView.Controls(settings),
                 MenuView.Item("Quit", settings.iconQuit, MarginUI.QuitGame),
             }, fullPage: true, titleSize: settings.menuTitleSize * 2);

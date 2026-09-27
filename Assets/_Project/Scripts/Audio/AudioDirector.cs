@@ -50,8 +50,10 @@ namespace Margin.Audio
         public int TickOrder => 40;
         public SoundBank Bank => bank;
 
-        private float SfxGain => bank != null ? bank.masterVolume * bank.sfxVolume : 0f;
-        private float MusicGain => bank != null ? bank.masterVolume * bank.musicVolume : 0f;
+        // The bank's mix times the player's Options volumes.
+        private static Margin.Save.OptionsData Options => Margin.Save.OptionsStore.Current;
+        private float SfxGain => bank != null ? bank.masterVolume * bank.sfxVolume * Options.masterVolume * Options.sfxVolume : 0f;
+        private float MusicGain => bank != null ? bank.masterVolume * bank.musicVolume * Options.masterVolume * Options.musicVolume : 0f;
 
         private void Awake()
         {

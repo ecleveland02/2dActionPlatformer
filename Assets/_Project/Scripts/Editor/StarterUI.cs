@@ -64,6 +64,7 @@ namespace Margin.EditorTools
             Fill(ref settings.iconQuit, "right exit");
             Fill(ref settings.iconBack, "left arrow");
             Fill(ref settings.iconPlay, "forward");
+            Fill(ref settings.iconOptions, "settings");
             Fill(ref settings.iconHome, "home");
 
             // Every key/mouse picture, named by file ("f", "space", "mouse-left"); KeyIcons maps bindings to names.
