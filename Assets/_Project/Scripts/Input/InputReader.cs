@@ -80,9 +80,9 @@ namespace Margin.Input
             InputActionMap map = actions.FindActionMap(GameplayMap, throwIfNotFound: true);
             moveAction = map.FindAction("Move", throwIfNotFound: true);
             jumpAction = map.FindAction("Jump", throwIfNotFound: true);
+            // Optional tap/hold button (tap = light, hold = heavy). Not bound by default: add an "Attack" action to
+            // MarginControls to enable it. Separate light/heavy buttons respond instantly, so they're the default.
             attackAction = map.FindAction("Attack", throwIfNotFound: false);
-            if (attackAction == null)
-                Debug.LogWarning("MarginControls has no 'Attack' action; the tap/hold attack button is disabled.", this);
 
             bufferedActions = new[]
             {
