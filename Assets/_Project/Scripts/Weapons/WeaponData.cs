@@ -6,7 +6,8 @@ namespace Margin.Weapons
 {
     /// <summary>
     /// A weapon's full move list (spec 7). Only moves listed as starters can begin from neutral;
-    /// follow-ups like Light2 are reached through an attack's "Cancels into" list, so combos come from data.
+    /// follow-ups (Light 2-4, and the heavy branches like L1 > Iaido) are reached through each attack's
+    /// "Cancels into" list, so combos come from data. Light2-4 fields are for reference and tools.
     /// </summary>
     [CreateAssetMenu(fileName = "Weapon", menuName = "Margin/Weapon Data")]
     public sealed class WeaponData : ScriptableObject
@@ -17,6 +18,7 @@ namespace Margin.Weapons
         public AttackData light1;
         public AttackData light2;
         public AttackData light3;
+        public AttackData light4;
         public AttackData heavy;
         public AttackData upAttack;
         public AttackData airLight;

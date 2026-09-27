@@ -146,14 +146,36 @@ namespace Margin.Tests
         }
 
         [Test]
-        public void OnWhiff_CannotCancelIntoAttack_ButCanDashFromWindowStart()
+        public void OnWhiff_ChainsIntoAttackOnlyAfterDelay_DashFromWindowStart()
         {
             Step(light: true);
             while (Attacking.Frame < 9) Step(heavyPress: Attacking.Frame == 8);
-            Assert.AreEqual(light1, Attacking.Attack, "A whiffed Light must not cancel into Heavy.");
+            Assert.AreEqual(light1, Attacking.Attack, "A missed Light can't chain at the normal window start.");
 
             Step(dash: true);
             Assert.IsInstanceOf<DashState>(player.CurrentState, "Dash is allowed on whiff from the window start.");
+        }
+
+        [Test]
+        public void OnWhiff_ChainsIntoFollowUp_FourFramesLate()
+        {
+            Step(light: true);
+            while (Attacking.Frame < 12) Step();
+            Step(heavyPress: true);          // frame 13 = window start 9 + whiff delay 4
+            Assert.AreEqual(heavy, Attacking.Attack, "A miss still chains, 4 frames later than a hit.");
+        }
+
+        [Test]
+        public void OnWhiff_ChainBeforeDelay_IsHeldUntilAllowed()
+        {
+            Step(light: true);
+            while (Attacking.Frame < 10) Step();
+            Step(heavyPress: true);          // frame 11: too early on a miss, but it stays buffered
+            Assert.AreEqual(light1, Attacking.Attack);
+            Step();
+            Assert.AreEqual(light1, Attacking.Attack);
+            Step();                          // frame 13: fires from the buffer
+            Assert.AreEqual(heavy, Attacking.Attack);
         }
 
         [Test]

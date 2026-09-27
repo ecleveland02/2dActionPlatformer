@@ -68,12 +68,22 @@ namespace Margin.Combat
         [Min(1)] public int cancelWindowEnd = 17;
         [Tooltip("Attacks this can cancel into on hit, during the window.")]
         public List<AttackData> cancelsInto = new List<AttackData>();
+        [Tooltip("A missed attack can still chain into its follow-ups, just later (see Whiff Chain Delay).")]
+        public bool chainsOnWhiff = true;
+        [Tooltip("Extra frames after the cancel window start before a MISSED attack can chain. 0 = same as on hit.")]
+        [Min(0)] public int whiffChainDelay = 4;
         public bool cancelsIntoJump = true;
         public bool cancelsIntoDash = true;
 
         [Header("Movement")]
-        [Tooltip("Forward speed (units/s) during startup and active frames. Ground attacks only. 0 = stand still.")]
+        [Tooltip("Forward speed (units/s) from Lunge First Frame through the last active frame. Ground attacks only. 0 = stand still.")]
         [Min(0f)] public float lungeSpeed;
+        [Tooltip("Attack frame the lunge starts on (1 = immediately). A late lunge makes a dashing thrust.")]
+        [Min(1)] public int lungeFirstFrame = 1;
+        [Tooltip("Upward speed (units/s) given on Hop Frame, for leaping attacks. 0 = no hop.")]
+        [Min(0f)] public float hopVelocity;
+        [Tooltip("Attack frame the hop happens on (1 = immediately).")]
+        [Min(1)] public int hopFrame = 1;
 
         [Header("Hitboxes")]
         public List<HitboxWindow> hitboxes = new List<HitboxWindow>();
@@ -88,7 +98,8 @@ namespace Margin.Combat
         public string hitSound = "hit_light";
 
         public AttackTiming Timing =>
-            new AttackTiming(startupFrames, activeFrames, recoveryFrames, cancelWindowStart, cancelWindowEnd);
+            new AttackTiming(startupFrames, activeFrames, recoveryFrames, cancelWindowStart, cancelWindowEnd,
+                             chainsOnWhiff ? whiffChainDelay : -1);
 
         public int TotalFrames => startupFrames + activeFrames + recoveryFrames;
 

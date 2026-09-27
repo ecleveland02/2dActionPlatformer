@@ -7,6 +7,8 @@ namespace Margin.Tests
     {
         // Spec 6.2 example: Brush Katana Light 1.
         private static readonly AttackTiming Light1 = new AttackTiming(startup: 4, active: 3, recovery: 10, cancelStart: 9, cancelEnd: 17);
+        // Same move, but a miss can still chain into a follow-up 4 frames after the window opens.
+        private static readonly AttackTiming Light1Chaining = new AttackTiming(4, 3, 10, 9, 17, whiffChainDelay: 4);
 
         [Test]
         public void Phases_FollowFrameData()
@@ -32,10 +34,26 @@ namespace Margin.Tests
 
         [TestCase(5)]
         [TestCase(9)]
-        [TestCase(12)]
-        public void AttackCancel_OnWhiff_NeverAllowed(int frame)
+        [TestCase(17)]
+        public void AttackCancel_OnWhiff_NeverAllowed_WhenChainingDisabled(int frame)
         {
             Assert.IsFalse(Light1.AllowsAttackCancel(frame, hasHit: false));
+        }
+
+        [TestCase(9, false)]
+        [TestCase(12, false)]
+        [TestCase(13, true)]
+        [TestCase(17, true)]
+        [TestCase(18, false)]
+        public void AttackCancel_OnWhiff_ChainsAfterDelay(int frame, bool expected)
+        {
+            Assert.AreEqual(expected, Light1Chaining.AllowsAttackCancel(frame, hasHit: false));
+        }
+
+        [Test]
+        public void AttackCancel_OnHit_UnaffectedByWhiffDelay()
+        {
+            Assert.IsTrue(Light1Chaining.AllowsAttackCancel(9, hasHit: true));
         }
 
         [TestCase(8, false)]

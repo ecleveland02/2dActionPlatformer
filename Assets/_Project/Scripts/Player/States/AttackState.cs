@@ -7,7 +7,8 @@ namespace Margin.Player
     /// Performing an attack (ground or air) from its AttackData (spec 6.2/6.3).
     /// Frame N of the attack is FramesInState = N. Hitboxes are checked after the player moves each active frame.
     /// Cancels: on hit, during the cancel window, into any move in "Cancels into", or jump/dash if allowed.
-    /// On whiff, only jump/dash, and only from the window start. Facing is locked for the whole attack.
+    /// On a miss, jump/dash from the window start, and follow-up attacks a few frames later (whiffChainDelay).
+    /// Facing is locked for the whole attack.
     /// </summary>
     public sealed class AttackState : PlayerState
     {
@@ -63,7 +64,10 @@ namespace Margin.Player
         {
             AttackTiming timing = Attack.Timing;
 
-            if (Airborne || !Player.Grounded)
+            // Leaping attacks (Rising Moon, Falling Blossom) jump on their hop frame.
+            if (Attack.hopVelocity > 0f && Frame == Attack.hopFrame) Player.Velocity.y = Attack.hopVelocity;
+
+            if (Airborne || !Player.Grounded || Player.Velocity.y > 0f)
             {
                 // Air attacks keep momentum and some air control, but never turn you around.
                 Player.ApplyHorizontal(onGround: false, updateFacing: false);
@@ -73,7 +77,7 @@ namespace Margin.Player
 
             // Ground attacks: optional forward lunge during startup/active, otherwise brake to a stop.
             Player.Velocity.y = 0f;
-            bool lunging = Attack.lungeSpeed > 0f && Frame <= timing.LastActiveFrame;
+            bool lunging = Attack.lungeSpeed > 0f && Frame >= Attack.lungeFirstFrame && Frame <= timing.LastActiveFrame;
             Player.Velocity.x = lunging
                 ? Player.Facing * Attack.lungeSpeed
                 : MovementMath.Approach(Player.Velocity.x, 0f, Data.GroundDecelStep);

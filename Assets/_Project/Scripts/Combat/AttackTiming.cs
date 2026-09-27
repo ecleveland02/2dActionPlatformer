@@ -15,14 +15,20 @@ namespace Margin.Combat
         public readonly int Recovery;
         public readonly int CancelStart;
         public readonly int CancelEnd;
+        /// <summary>
+        /// Extra frames a missed attack waits before it may chain into a follow-up attack. -1 = a miss can never
+        /// chain into an attack (only jump/dash, the original spec 6.3 rule).
+        /// </summary>
+        public readonly int WhiffChainDelay;
 
-        public AttackTiming(int startup, int active, int recovery, int cancelStart, int cancelEnd)
+        public AttackTiming(int startup, int active, int recovery, int cancelStart, int cancelEnd, int whiffChainDelay = -1)
         {
             Startup = startup;
             Active = active;
             Recovery = recovery;
             CancelStart = cancelStart;
             CancelEnd = cancelEnd;
+            WhiffChainDelay = whiffChainDelay;
         }
 
         public int TotalFrames => Startup + Active + Recovery;
@@ -40,10 +46,15 @@ namespace Margin.Combat
         public bool IsActive(int frame) => PhaseAt(frame) == AttackPhase.Active;
 
         /// <summary>
-        /// Spec 6.3: after landing a hit, the listed follow-up attacks may start on frames CancelStart..CancelEnd.
+        /// When a listed follow-up attack may start (spec 6.3, amended):
+        /// on hit, frames CancelStart..CancelEnd; on a miss, from CancelStart + WhiffChainDelay to the end of
+        /// the attack (so strings keep flowing, just a little slower), or never if WhiffChainDelay is -1.
         /// </summary>
-        public bool AllowsAttackCancel(int frame, bool hasHit) =>
-            hasHit && frame >= CancelStart && frame <= CancelEnd;
+        public bool AllowsAttackCancel(int frame, bool hasHit)
+        {
+            if (hasHit) return frame >= CancelStart && frame <= CancelEnd;
+            return WhiffChainDelay >= 0 && frame >= CancelStart + WhiffChainDelay && frame <= TotalFrames;
+        }
 
         /// <summary>
         /// Spec 6.3: jump and dash cancels. On hit, inside the cancel window. On whiff, only from the window

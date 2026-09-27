@@ -8,9 +8,16 @@ using UnityEngine;
 namespace Margin.EditorTools
 {
     /// <summary>
-    /// Creates the starter combat data (Milestone 3, chunk 1): attack poses and clips, the Brush Katana with
-    /// Light 1 and Heavy, and CombatSettings. Only missing assets are created, so your tuning is never overwritten.
-    /// Hitbox boxes were fitted to the blade in the Strike poses (blade length 0.9).
+    /// Creates the starter Brush Katana moveset (Milestone 3): a four-hit light string plus a heavy branch off
+    /// each of the first three lights, with poses, clips, hitboxes and CombatSettings.
+    ///
+    ///   L1 Descending cut > L2 Rising cut > L3 Stepping thrust > L4 Sweeping finisher
+    ///   Heavy from neutral: Overhead cleave
+    ///   L1 > Heavy: Iaido lunge    L2 > Heavy: Rising Moon (launcher)    L3 > Heavy: Falling Blossom (leaping cleave)
+    ///
+    /// Each strike pose was checked with the blade drawn and the hitbox fitted around it. Every move's recover
+    /// pose leads into the next move's wind-up so the string flows. Existing assets are kept unless you choose
+    /// Overwrite in the menu version.
     /// </summary>
     public static class StarterCombat
     {
@@ -27,58 +34,121 @@ namespace Margin.EditorTools
             public PoseData DummyHit;
         }
 
+        private sealed class Move
+        {
+            public string Name;
+            public AttackButton Button;
+            public int Startup, Active, Recovery;
+            public int Damage, Hitstop, Hitstun, Ink;
+            public Vector2 Knockback;
+            public bool Launches;
+            public int CancelStart, CancelEnd;
+            public float Lunge;
+            public int LungeFirst = 1;
+            public float Hop;
+            public int HopFrame = 1;
+            public Vector2 BoxCenter, BoxSize;
+            public float Shake;
+            public int FadeIn = 1;
+            public string Swing = "swing_light", Hit = "hit_light";
+        }
+
+        private static readonly Move[] Moves =
+        {
+            new Move { Name = "KatanaLight1", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 10,
+                Damage = 8, Hitstop = 4, Hitstun = 18, Ink = 5, Knockback = new Vector2(4f, 1f), CancelStart = 9, CancelEnd = 17,
+                Lunge = 1.5f, BoxCenter = new Vector2(1.05f, 0.15f), BoxSize = new Vector2(1.4f, 0.6f), Shake = 0.05f, FadeIn = 2 },
+            new Move { Name = "KatanaLight2", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 11,
+                Damage = 9, Hitstop = 4, Hitstun = 20, Ink = 5, Knockback = new Vector2(3f, 2f), CancelStart = 9, CancelEnd = 18,
+                Lunge = 1.5f, BoxCenter = new Vector2(0.85f, 0.5f), BoxSize = new Vector2(1.2f, 1.8f), Shake = 0.05f },
+            new Move { Name = "KatanaLight3", Button = AttackButton.Light, Startup = 6, Active = 3, Recovery = 12,
+                Damage = 11, Hitstop = 5, Hitstun = 22, Ink = 6, Knockback = new Vector2(5f, 1f), CancelStart = 11, CancelEnd = 21,
+                Lunge = 7f, LungeFirst = 3, BoxCenter = new Vector2(1.25f, 0.2f), BoxSize = new Vector2(1.6f, 0.4f), Shake = 0.07f },
+            new Move { Name = "KatanaLight4", Button = AttackButton.Light, Startup = 7, Active = 5, Recovery = 18,
+                Damage = 16, Hitstop = 7, Hitstun = 28, Ink = 8, Knockback = new Vector2(9f, 3f), CancelStart = 18, CancelEnd = 30,
+                Lunge = 3f, BoxCenter = new Vector2(0.9f, 0.3f), BoxSize = new Vector2(2.0f, 1.4f), Shake = 0.12f,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "KatanaHeavy", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 18,
+                Damage = 18, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(9f, 4f), CancelStart = 19, CancelEnd = 32,
+                Lunge = 4f, BoxCenter = new Vector2(1.05f, 0.15f), BoxSize = new Vector2(1.5f, 1.5f), Shake = 0.15f, FadeIn = 2,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "KatanaIaido", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 18,
+                Damage = 16, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(10f, 2f), CancelStart = 17, CancelEnd = 30,
+                Lunge = 12f, LungeFirst = 9, BoxCenter = new Vector2(1.35f, -0.05f), BoxSize = new Vector2(1.8f, 0.5f), Shake = 0.15f,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "KatanaRisingMoon", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 20,
+                Damage = 14, Hitstop = 8, Hitstun = 40, Ink = 10, Knockback = new Vector2(1.5f, 14f), Launches = true,
+                CancelStart = 17, CancelEnd = 32, Hop = 6f, HopFrame = 9,
+                BoxCenter = new Vector2(0.75f, 0.6f), BoxSize = new Vector2(1.3f, 2.0f), Shake = 0.15f,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "KatanaFallingBlossom", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 20,
+                Damage = 22, Hitstop = 10, Hitstun = 35, Ink = 12, Knockback = new Vector2(6f, 1f), CancelStart = 20, CancelEnd = 34,
+                Hop = 9f, HopFrame = 1, BoxCenter = new Vector2(1.0f, -0.1f), BoxSize = new Vector2(1.6f, 1.8f), Shake = 0.2f,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+        };
+
+        /// <summary>Which moves each move chains into (the combo tree). Heavies end the string.</summary>
+        private static readonly Dictionary<string, string[]> Chains = new Dictionary<string, string[]>
+        {
+            ["KatanaLight1"] = new[] { "KatanaLight2", "KatanaIaido" },
+            ["KatanaLight2"] = new[] { "KatanaLight3", "KatanaRisingMoon" },
+            ["KatanaLight3"] = new[] { "KatanaLight4", "KatanaFallingBlossom" },
+        };
+
         [MenuItem("Margin/Create Starter Combat Data")]
         public static void CreateFromMenu()
         {
-            Result result = EnsureCreated();
+            bool anyExists = AssetDatabase.LoadAssetAtPath<AttackData>($"{AttackFolder}/KatanaLight1.asset") != null;
+            bool overwrite = anyExists && EditorUtility.DisplayDialog("Create Starter Combat Data",
+                "Starter katana data already exists. Overwrite all starter attacks, clips and attack poses with the " +
+                "original versions? (Choose 'Keep' to only add what's missing and keep your tuning.)", "Overwrite", "Keep");
+
+            Result result = Create(overwrite);
             EditorGUIUtility.PingObject(result.Weapon);
             Debug.Log("Starter combat data ready: " + AssetDatabase.GetAssetPath(result.Weapon));
         }
 
-        internal static Result EnsureCreated()
+        /// <summary>Creates anything missing without asking (used by the gym builder and repair menu).</summary>
+        internal static Result EnsureCreated() => Create(overwrite: false);
+
+        private static Result Create(bool overwrite)
         {
             StarterPoses.EnsureCreated();   // the base poses (Idle etc.) must exist first
             foreach (string folder in new[] { AttackFolder, WeaponFolder, ClipFolder })
                 StickFigureRigEditor.EnsureFolder(folder);
 
-            Dictionary<string, PoseData> poses = CreatePoses();
+            Dictionary<string, PoseData> poses = CreatePoses(overwrite);
 
-            AttackData light1 = LoadOrCreate<AttackData>($"{AttackFolder}/KatanaLight1.asset", out bool newLight);
-            AttackData heavy = LoadOrCreate<AttackData>($"{AttackFolder}/KatanaHeavy.asset", out bool newHeavy);
-
-            if (newLight)
+            var attacks = new Dictionary<string, AttackData>();
+            var created = new HashSet<string>();
+            foreach (Move move in Moves)
             {
-                // Spec 6.2 example values.
-                light1.button = AttackButton.Light;
-                light1.startupFrames = 4; light1.activeFrames = 3; light1.recoveryFrames = 10;
-                light1.damage = 8; light1.hitstopFrames = 4; light1.hitstunFrames = 18;
-                light1.knockback = new Vector2(4f, 1f); light1.inkGain = 5;
-                light1.cancelWindowStart = 9; light1.cancelWindowEnd = 17;
-                light1.cancelsInto = new List<AttackData> { heavy };   // Light 2 arrives in chunk 2
-                light1.lungeSpeed = 1.5f; light1.screenShake = 0.05f;
-                light1.hitboxes = new List<HitboxWindow> { Window(new Vector2(1.05f, 0.15f), new Vector2(1.4f, 0.6f)) };
-                light1.poseClip = AttackClip("KatanaLight1", poses, light1, fadeIn: 2);
-                EditorUtility.SetDirty(light1);
+                AttackData attack = LoadOrCreate<AttackData>($"{AttackFolder}/{move.Name}.asset", out bool isNew);
+                attacks[move.Name] = attack;
+                if (isNew) created.Add(move.Name);
+                if (isNew || overwrite) Apply(move, attack, poses, overwrite);
             }
 
-            if (newHeavy)
+            // Combo tree. Written for new or overwritten attacks. Also upgrades a Light 1 from the first combat
+            // chunk (which cancelled into the neutral Heavy) the first time Light 2 appears.
+            foreach (KeyValuePair<string, string[]> chain in Chains)
             {
-                // Heavy: 10 startup frames (visible wind-up), hitstop 8 = whole-game freeze (spec 6.4).
-                heavy.button = AttackButton.Heavy;
-                heavy.startupFrames = 10; heavy.activeFrames = 4; heavy.recoveryFrames = 18;
-                heavy.damage = 18; heavy.hitstopFrames = 8; heavy.hitstunFrames = 30;
-                heavy.knockback = new Vector2(9f, 4f); heavy.inkGain = 10;
-                heavy.cancelWindowStart = 19; heavy.cancelWindowEnd = 32;
-                heavy.lungeSpeed = 4f; heavy.screenShake = 0.15f;
-                heavy.swingSound = "swing_heavy"; heavy.hitSound = "hit_heavy";
-                heavy.hitboxes = new List<HitboxWindow> { Window(new Vector2(1.05f, 0.15f), new Vector2(1.5f, 1.5f)) };
-                heavy.poseClip = AttackClip("KatanaHeavy", poses, heavy, fadeIn: 2);
-                EditorUtility.SetDirty(heavy);
+                bool write = created.Contains(chain.Key) || overwrite ||
+                             (chain.Key == "KatanaLight1" && created.Contains("KatanaLight2"));
+                if (!write) continue;
+
+                AttackData from = attacks[chain.Key];
+                from.cancelsInto = new List<AttackData>();
+                foreach (string to in chain.Value) from.cancelsInto.Add(attacks[to]);
+                EditorUtility.SetDirty(from);
             }
 
             WeaponData katana = LoadOrCreate<WeaponData>($"{WeaponFolder}/BrushKatana.asset", out _);
-            if (katana.light1 == null) katana.light1 = light1;
-            if (katana.heavy == null) katana.heavy = heavy;
+            if (katana.light1 == null || overwrite) katana.light1 = attacks["KatanaLight1"];
+            if (katana.light2 == null || overwrite) katana.light2 = attacks["KatanaLight2"];
+            if (katana.light3 == null || overwrite) katana.light3 = attacks["KatanaLight3"];
+            if (katana.light4 == null || overwrite) katana.light4 = attacks["KatanaLight4"];
+            if (katana.heavy == null || overwrite) katana.heavy = attacks["KatanaHeavy"];
             EditorUtility.SetDirty(katana);
 
             CombatSettings settings = LoadOrCreate<CombatSettings>(SettingsPath, out _);
@@ -93,17 +163,59 @@ namespace Margin.EditorTools
             };
         }
 
-        private static Dictionary<string, PoseData> CreatePoses()
+        private static void Apply(Move m, AttackData a, Dictionary<string, PoseData> poses, bool overwrite)
         {
-            // Right-facing, positive = forward. Checked visually with the blade and hitboxes drawn on top.
+            a.button = m.Button;
+            a.direction = AttackDirection.Neutral;
+            a.airborne = false;
+            a.startupFrames = m.Startup; a.activeFrames = m.Active; a.recoveryFrames = m.Recovery;
+            a.damage = m.Damage; a.hitstopFrames = m.Hitstop; a.hitstunFrames = m.Hitstun; a.inkGain = m.Ink;
+            a.knockback = m.Knockback; a.launches = m.Launches;
+            a.cancelWindowStart = m.CancelStart; a.cancelWindowEnd = m.CancelEnd;
+            a.chainsOnWhiff = true; a.whiffChainDelay = 4;
+            a.cancelsIntoJump = true; a.cancelsIntoDash = true;
+            a.cancelsInto = new List<AttackData>();
+            a.lungeSpeed = m.Lunge; a.lungeFirstFrame = m.LungeFirst;
+            a.hopVelocity = m.Hop; a.hopFrame = m.HopFrame;
+            a.hitboxes = new List<HitboxWindow>
+            {
+                new HitboxWindow { boxes = new List<HitboxShape> { new HitboxShape { offset = m.BoxCenter, size = m.BoxSize } } },
+            };
+            a.screenShake = m.Shake; a.swingSound = m.Swing; a.hitSound = m.Hit;
+            a.poseClip = AttackClip(m, poses, overwrite);
+            EditorUtility.SetDirty(a);
+        }
+
+        // Right-facing, positive = forward. An arm's world angle also includes the body lean,
+        // so thrusts add the spine angle to stay level.
+        private static Dictionary<string, PoseData> CreatePoses(bool overwrite)
+        {
             var table = new Dictionary<string, FigurePose>
             {
                 ["KatanaLight1Windup"] = Planted(-5, 0, 200, 30, -30, 40, 15, -20, -15, -10),
                 ["KatanaLight1Strike"] = Planted(15, -10, 95, 0, -40, 30, 40, -45, -25, -10),
                 ["KatanaLight1Recover"] = Planted(8, -5, 60, 25, -20, 30, 30, -35, -20, -10),
+                ["KatanaLight2Windup"] = Planted(10, -5, 45, 5, -30, 40, 35, -50, -30, -10),
+                ["KatanaLight2Strike"] = Planted(-5, 5, 125, 0, -60, 30, 25, -30, -20, -5),
+                ["KatanaLight2Recover"] = Planted(0, 0, 165, 10, -50, 30, 25, -35, -20, -10),
+                ["KatanaLight3Windup"] = Planted(5, 0, -40, 130, -10, 60, 10, -30, -20, -20),
+                ["KatanaLight3Strike"] = Planted(20, -10, 110, 0, -50, 20, 60, -40, -45, 0),
+                ["KatanaLight3Recover"] = Planted(12, -5, 90, 10, -40, 30, 45, -40, -35, -5),
+                ["KatanaLight4Windup"] = Planted(-10, 5, -100, 20, 40, 30, 40, -80, -30, -60),
+                ["KatanaLight4Strike"] = Planted(25, -10, 120, 0, -70, 20, 55, -35, -50, -5),
+                ["KatanaLight4Recover"] = Planted(20, -10, 150, 10, -80, 20, 50, -40, -45, -10),
                 ["KatanaHeavyWindup"] = Planted(-15, 5, 190, 20, 160, 20, 25, -50, -10, -40),
                 ["KatanaHeavyStrike"] = Planted(30, -20, 100, 0, 70, 20, 50, -60, -35, -5),
                 ["KatanaHeavyRecover"] = Planted(25, -15, 70, 15, 40, 30, 45, -60, -30, -10),
+                ["KatanaIaidoWindup"] = Planted(15, -5, 30, -150, -20, 60, 30, -70, -20, -50),
+                ["KatanaIaidoStrike"] = Planted(35, -15, 120, 0, -60, 20, 70, -30, -60, 0),
+                ["KatanaIaidoRecover"] = Planted(25, -10, 100, 10, -50, 30, 55, -45, -50, -5),
+                ["KatanaRisingMoonWindup"] = Planted(20, -10, -60, 30, -40, 40, 50, -100, -20, -80),
+                ["KatanaRisingMoonStrike"] = Air(-10, 5, 140, 0, 150, 10, 20, -10, -30, -20),
+                ["KatanaRisingMoonRecover"] = Air(0, 0, 175, 10, 140, 20, 20, -30, -20, -30),
+                ["KatanaFallingBlossomWindup"] = Air(-15, 5, 200, 40, 170, 30, 60, -90, 20, -70),
+                ["KatanaFallingBlossomStrike"] = Air(40, -15, 95, -5, 60, 20, 45, -60, -30, -20),
+                ["KatanaFallingBlossomRecover"] = Planted(30, -10, 110, 0, 40, 30, 50, -90, 35, -85),
                 ["DummyHit"] = Planted(-20, 15, 40, 30, 60, 30, -10, -20, 10, -10),
             };
 
@@ -111,7 +223,7 @@ namespace Margin.EditorTools
             foreach (KeyValuePair<string, FigurePose> entry in table)
             {
                 PoseData pose = LoadOrCreate<PoseData>(StarterPoses.PathFor(entry.Key), out bool isNew);
-                if (isNew)
+                if (isNew || overwrite)
                 {
                     pose.pose = entry.Value;
                     EditorUtility.SetDirty(pose);
@@ -124,35 +236,41 @@ namespace Margin.EditorTools
         private static FigurePose Planted(float spine, float neck, float sf, float ef, float sb, float eb,
                                           float hf, float kf, float hb, float kb)
         {
-            return StarterPoses.Planted(StarterPoses.P(0f, 0f, spine, neck, sf, ef, sb, eb, hf, kf, hb, kb));
+            return StarterPoses.Planted(Air(spine, neck, sf, ef, sb, eb, hf, kf, hb, kb));
+        }
+
+        /// <summary>Airborne pose: no foot planting.</summary>
+        private static FigurePose Air(float spine, float neck, float sf, float ef, float sb, float eb,
+                                      float hf, float kf, float hb, float kb)
+        {
+            return StarterPoses.P(0f, 0f, spine, neck, sf, ef, sb, eb, hf, kf, hb, kb);
         }
 
         /// <summary>
-        /// Clip timed to the frame data: hold the wind-up for the startup frames, snap to the strike for the
-        /// active frames (crisp), then ease into the recover pose over the recovery frames.
+        /// Clip timed to the frame data, built to flow:
+        ///   hold the wind-up (anticipation), swing into the strike over the last 2 startup frames (accelerating),
+        ///   hold the strike for the active frames (crisp, matches the hitbox), then ease into the recover pose.
+        /// The recover pose is chosen to lead into the next move's wind-up.
         /// </summary>
-        private static PoseClip AttackClip(string name, Dictionary<string, PoseData> poses, AttackData attack, int fadeIn)
+        private static PoseClip AttackClip(Move m, Dictionary<string, PoseData> poses, bool overwrite)
         {
-            PoseClip clip = LoadOrCreate<PoseClip>($"{ClipFolder}/{name}.asset", out bool isNew);
-            if (!isNew) return clip;
+            PoseClip clip = LoadOrCreate<PoseClip>($"{ClipFolder}/{m.Name}.asset", out bool isNew);
+            if (!isNew && !overwrite) return clip;
 
+            PoseData windup = poses[m.Name + "Windup"], strike = poses[m.Name + "Strike"], recover = poses[m.Name + "Recover"];
+            int swing = Mathf.Min(2, m.Startup);
             clip.loop = false;
-            clip.fadeInFrames = fadeIn;
-            clip.entries = new List<PoseClip.Entry>
-            {
-                new PoseClip.Entry { pose = poses[name + "Windup"], frames = attack.startupFrames, easing = PoseEasing.Snap },
-                new PoseClip.Entry { pose = poses[name + "Strike"], frames = attack.activeFrames, easing = PoseEasing.Snap },
-                new PoseClip.Entry { pose = poses[name + "Strike"], frames = Mathf.Max(1, attack.recoveryFrames), easing = PoseEasing.EaseOut },
-                new PoseClip.Entry { pose = poses[name + "Recover"], frames = 1, easing = PoseEasing.Linear },
-            };
+            clip.fadeInFrames = m.FadeIn;
+            clip.entries = new List<PoseClip.Entry>();
+            if (m.Startup > swing)
+                clip.entries.Add(new PoseClip.Entry { pose = windup, frames = m.Startup - swing, easing = PoseEasing.Snap });
+            clip.entries.Add(new PoseClip.Entry { pose = windup, frames = swing, easing = PoseEasing.EaseIn });
+            clip.entries.Add(new PoseClip.Entry { pose = strike, frames = m.Active, easing = PoseEasing.Snap });
+            clip.entries.Add(new PoseClip.Entry { pose = strike, frames = Mathf.Max(1, m.Recovery), easing = PoseEasing.EaseOut });
+            clip.entries.Add(new PoseClip.Entry { pose = recover, frames = 1, easing = PoseEasing.Linear });
             EditorUtility.SetDirty(clip);
             return clip;
         }
-
-        private static HitboxWindow Window(Vector2 offset, Vector2 size) => new HitboxWindow
-        {
-            boxes = new List<HitboxShape> { new HitboxShape { offset = offset, size = size } },
-        };
 
         private static T LoadOrCreate<T>(string path, out bool created) where T : ScriptableObject
         {

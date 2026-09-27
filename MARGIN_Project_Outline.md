@@ -201,7 +201,7 @@ Rule: any state can be interrupted by Hitstun. Attack states expose cancel windo
 ### 6.3 Cancels and Combos
 
 - On hit, during the cancel window, the player can cancel into any move listed in Cancels into.
-- On whiff, only Dash and Jump can cancel, and only after the window start.
+- On whiff, Dash and Jump can cancel from the window start. Follow-up attacks can also chain on whiff, but only 4 frames after the window start (per-attack `whiffChainDelay`), so strings flow while hits are still rewarded. (Changed from "only Dash and Jump on whiff" by the developer.)
 - No hardcoded combo strings. Combos emerge from cancel rules.
 
 ### 6.4 Hitstop and Feel
@@ -239,6 +239,8 @@ Each weapon is a `WeaponData` ScriptableObject with a full move list: Light1, Li
 | Compass Spear | Medium | Long, narrow | Thrusts, can plant and pole-vault | Multi-thrust flurry |
 | Paperclip Chain | Medium | Long, arcing | Whip, can grab ledges and pull enemies | Spin that pulls enemies in |
 | Scribble Gauntlets | Very fast | Short | Highest DPS, rapid jabs | Scribble barrage |
+
+Brush Katana moveset (implemented): a four-hit light string, Light 1 > 2 > 3 > 4 (descending cut, rising cut, stepping thrust, sweeping finisher), and a different heavy branching off each of the first three lights: Light 1 > Iaido lunge, Light 2 > Rising Moon (launcher), Light 3 > Falling Blossom (leaping cleave). Heavy from neutral is an overhead cleave.
 
 Vertical slice: Brush Katana only.
 

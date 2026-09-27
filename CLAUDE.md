@@ -40,7 +40,8 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   pauses/frame-steps with the game. **Margin > Wire Player References** upgrades a capsule player to the stick figure.
 - **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
   cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
-  on hit, "Cancels into" + jump/dash inside the window; on whiff, only jump/dash from the window start.
+  on hit, "Cancels into" + jump/dash inside the window; on whiff, jump/dash from the window start and follow-up
+  attacks from window start + `whiffChainDelay` (4). Katana combo tree lives in `Editor/StarterCombat.cs`.
   `Hurtbox` is a registry box (no physics); `PlayerCombat` tests hitboxes after the player moves (`PlayerState.PostMove`).
   Hitstop: below `CombatSettings.globalHitstopThreshold` (8) only attacker/target freeze; at/above it `GameLoop.Freeze`.
   Weapons list only *starter* moves (Light1, Heavy, Up, Air...); follow-ups (Light2/3) come from cancel lists.
