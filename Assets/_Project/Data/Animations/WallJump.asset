@@ -13,8 +13,15 @@ MonoBehaviour:
   m_Name: WallJump
   m_EditorClassIdentifier: 
   entries:
+  - pose: {fileID: 11400000, guid: 851e9e177e84eaa448d0b73f2a017803, type: 2}
+    frames: 3
+    easing: 3
+  - pose: {fileID: 11400000, guid: 02264507ea960d44aa6ffb06f619cf5d, type: 2}
+    frames: 8
+    easing: 4
   - pose: {fileID: 11400000, guid: 02264507ea960d44aa6ffb06f619cf5d, type: 2}
     frames: 1
     easing: 1
   loop: 0
-  fadeInFrames: 2
+  fadeInFrames: 1
+  strideLength: 0

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a08f378d9243f45bf6133c7d8d73a5, type: 3}
+  m_Name: Walk6
+  m_EditorClassIdentifier: 
+  pose:
+    rootOffsetX: 0
+    rootOffsetY: -0.05705923
+    rootRotation: 0
+    grip: 0
+    spine: 5.4265847
+    neck: -3.7132924
+    shoulderFront: 15.364698
+    elbowFront: 29.523523
+    shoulderBack: -15.364697
+    elbowBack: 18
+    hipFront: -26.940683
+    kneeFront: -33.095226
+    hipBack: 27.759518
+    kneeBack: -14.277131

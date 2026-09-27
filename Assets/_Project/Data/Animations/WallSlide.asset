@@ -14,7 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - pose: {fileID: 11400000, guid: 6585bda8882b9664c88e24417d09fdf2, type: 2}
-    frames: 1
-    easing: 1
-  loop: 0
+    frames: 12
+    easing: 5
+  - pose: {fileID: 11400000, guid: 6a3b65c9fde85974c89dad6628caa4ea, type: 2}
+    frames: 12
+    easing: 5
+  loop: 1
   fadeInFrames: 4
+  strideLength: 0

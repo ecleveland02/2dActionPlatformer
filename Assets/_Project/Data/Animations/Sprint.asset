@@ -14,22 +14,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entries:
   - pose: {fileID: 11400000, guid: 0d2766ee6e8084e4883b6b9c926f67b7, type: 2}
-    frames: 4
-    easing: 1
+    frames: 3
+    easing: 5
   - pose: {fileID: 11400000, guid: e6b27c1309e66b6438e13e1f6384e5a3, type: 2}
-    frames: 4
-    easing: 1
+    frames: 3
+    easing: 5
   - pose: {fileID: 11400000, guid: eba0972fefacb3244a6030f4e17c8439, type: 2}
-    frames: 4
-    easing: 1
+    frames: 3
+    easing: 5
   - pose: {fileID: 11400000, guid: 434b5de9cff10bf438c94f2f06afd79e, type: 2}
-    frames: 4
-    easing: 1
+    frames: 3
+    easing: 5
   - pose: {fileID: 11400000, guid: d5120f8d5e187bf4da37fc623985de9c, type: 2}
-    frames: 4
-    easing: 1
+    frames: 3
+    easing: 5
   - pose: {fileID: 11400000, guid: 46e2484a8713c8b4ebdaf4710ec515d4, type: 2}
-    frames: 4
-    easing: 1
+    frames: 3
+    easing: 5
+  - pose: {fileID: 11400000, guid: 2bc45571c8b666c48b340a8f46e2b483, type: 2}
+    frames: 3
+    easing: 5
+  - pose: {fileID: 11400000, guid: ce82c5f69d3bcf04ab7be6cc99519dde, type: 2}
+    frames: 3
+    easing: 5
   loop: 1
   fadeInFrames: 6
+  strideLength: 3.7315416

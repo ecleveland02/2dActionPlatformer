@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a08f378d9243f45bf6133c7d8d73a5, type: 3}
+  m_Name: Walk8
+  m_EditorClassIdentifier: 
+  pose:
+    rootOffsetX: 0
+    rootOffsetY: -0.08326024
+    rootRotation: 0
+    grip: 0
+    spine: 2.5734153
+    neck: -2.2867076
+    shoulderFront: -4.4638596
+    elbowFront: 18
+    shoulderBack: 4.463865
+    elbowBack: 21.347898
+    hipFront: 35.33104
+    kneeFront: -22.759481
+    hipBack: -27.577082
+    kneeBack: -5.1853423

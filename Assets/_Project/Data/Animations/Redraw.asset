@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9509f2e2cb7204c8290b88841e7030, type: 3}
+  m_Name: Redraw
+  m_EditorClassIdentifier: 
+  entries:
+  - pose: {fileID: 11400000, guid: 36c03fea7f7766c47ae9e232d444d9ff, type: 2}
+    frames: 8
+    easing: 5
+  - pose: {fileID: 11400000, guid: 54462cbdd2f1150488abe4918b174261, type: 2}
+    frames: 8
+    easing: 5
+  - pose: {fileID: 11400000, guid: 8ecc2e7b52763994ba3efd6cdc925264, type: 2}
+    frames: 8
+    easing: 5
+  - pose: {fileID: 11400000, guid: 3d94aebea8a641546bc284cb7929ea49, type: 2}
+    frames: 8
+    easing: 5
+  loop: 1
+  fadeInFrames: 6
+  strideLength: 0

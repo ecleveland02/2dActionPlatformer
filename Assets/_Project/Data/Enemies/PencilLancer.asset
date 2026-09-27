@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28f8d03f3874726409f63cb747af83b8, type: 3}
+  m_Name: PencilLancer
+  m_EditorClassIdentifier: 
+  maxHealth: 50
+  walkSpeed: 1.8
+  accelerationFrames: 8
+  patrolDistance: 1.5
+  patrolPauseFrames: 80
+  noticeRange: 8
+  noticeHeight: 2.5
+  giveUpRange: 13
+  alertFrames: 24
+  attackRange: 2
+  minAttackRange: 0.6
+  retreatDistance: 1.1
+  attacks:
+  - {fileID: 11400000, guid: 82c50c43875a9c643b7065792b4bb932, type: 2}
+  - {fileID: 11400000, guid: 82c50c43875a9c643b7065792b4bb932, type: 2}
+  - {fileID: 11400000, guid: b28cc95bdaf33cf4281ca7aa1b8f5d94, type: 2}
+  attackCooldownFrames: 60
+  personalSpace: 0.9
+  hoverHeight: 2.4
+  hoverSide: 2.2
+  flySpeed: 3.5
+  flyAccelerationFrames: 20
+  diveSpeed: 11
+  knockbackTaken: 0.9
+  deathFrames: 40
+  proportions: {fileID: 11400000, guid: 35e962bf82f618e4ebcb9d119730543b, type: 2}
+  idle: {fileID: 11400000, guid: ff4d9066f4c0eee44816ed544207bbd8, type: 2}
+  idleBreathing: {fileID: 11400000, guid: 54eaab96765b541478a8b90bb62bf5cb, type: 2}
+  walk: {fileID: 11400000, guid: 3b2fee6e1b045cb4990cb202cace4159, type: 2}
+  turn: {fileID: 11400000, guid: a846209535fac9045a109f5d9fa2f6bf, type: 2}
+  alert: {fileID: 11400000, guid: 200f9b4201d5e5448991817dc988cc22, type: 2}
+  hurt: {fileID: 11400000, guid: d9444d08d82aa874baaeb6fcca9ef863, type: 2}
+  knockdown: {fileID: 11400000, guid: 74b1d9d1be834d54b879d990918ab321, type: 2}
+  getUp: {fileID: 11400000, guid: 799ec684d48a934429286384c5835b43, type: 2}
+  defeated: {fileID: 11400000, guid: 8a2f28a1129825a4b9c24bd0569219f1, type: 2}
+  weaponLength: 1.4
+  weaponLook: {fileID: 0}

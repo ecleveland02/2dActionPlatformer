@@ -13,8 +13,18 @@ MonoBehaviour:
   m_Name: Dash
   m_EditorClassIdentifier: 
   entries:
+  - pose: {fileID: 11400000, guid: ad7668aed8bae4147bbfade6e6644b47, type: 2}
+    frames: 2
+    easing: 3
   - pose: {fileID: 11400000, guid: c4a6e403f08f6b645bb1472687096b6c, type: 2}
+    frames: 5
+    easing: 1
+  - pose: {fileID: 11400000, guid: 5682fdfa2896abb419921f979ba26bba, type: 2}
+    frames: 3
+    easing: 2
+  - pose: {fileID: 11400000, guid: 5682fdfa2896abb419921f979ba26bba, type: 2}
     frames: 1
     easing: 1
   loop: 0
   fadeInFrames: 0
+  strideLength: 0

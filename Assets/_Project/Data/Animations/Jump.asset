@@ -13,8 +13,15 @@ MonoBehaviour:
   m_Name: Jump
   m_EditorClassIdentifier: 
   entries:
+  - pose: {fileID: 11400000, guid: 2d3102fb696f89e40803bbbc61ad3f82, type: 2}
+    frames: 3
+    easing: 3
+  - pose: {fileID: 11400000, guid: e1fa7e7d1bde25d489be23957bb4561b, type: 2}
+    frames: 6
+    easing: 4
   - pose: {fileID: 11400000, guid: e1fa7e7d1bde25d489be23957bb4561b, type: 2}
     frames: 1
     easing: 1
   loop: 0
-  fadeInFrames: 3
+  fadeInFrames: 1
+  strideLength: 0

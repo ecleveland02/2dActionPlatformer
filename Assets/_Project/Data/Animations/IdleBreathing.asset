@@ -21,3 +21,4 @@ MonoBehaviour:
     easing: 4
   loop: 1
   fadeInFrames: 0
+  strideLength: 0

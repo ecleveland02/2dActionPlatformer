@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a751383b6c8e52d4aaa6ecd74f4bccbd, type: 3}
+  m_Name: LancerSweep
+  m_EditorClassIdentifier: 
+  button: 1
+  direction: 0
+  airborne: 0
+  startupFrames: 9
+  activeFrames: 4
+  recoveryFrames: 24
+  damage: 8
+  hitstopFrames: 8
+  hitstunFrames: 32
+  knockback: {x: 3, y: 10}
+  launches: 1
+  inkGain: 0
+  multiHit: 0
+  parryable: 1
+  cancelWindowStart: 37
+  cancelWindowEnd: 37
+  cancelsInto: []
+  chainsOnWhiff: 1
+  whiffChainDelay: 4
+  cancelsIntoJump: 1
+  cancelsIntoDash: 1
+  lungeSpeed: 0
+  lungeFirstFrame: 1
+  hopVelocity: 0
+  hopFrame: 1
+  airGravityScale: 1
+  hoverOnHit: 0
+  inkCost: 0
+  projectileSpeed: 0
+  projectileLifetimeFrames: 40
+  projectileSize: {x: 0.9, y: 1.3}
+  projectileOffset: {x: 0.8, y: 0.2}
+  hitboxes:
+  - firstFrame: 0
+    lastFrame: 0
+    boxes:
+    - offset: {x: 1.3, y: -0.35}
+      size: {x: 1.2, y: 0.5}
+  poseClip: {fileID: 11400000, guid: 349d49096ed73c84da8d62985bef9602, type: 2}
+  smear: 1
+  screenShake: 0.12
+  swingSound: swing_heavy
+  hitSound: hit_heavy

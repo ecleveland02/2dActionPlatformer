@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28f8d03f3874726409f63cb747af83b8, type: 3}
+  m_Name: DoodleGrunt
+  m_EditorClassIdentifier: 
+  maxHealth: 40
+  walkSpeed: 2.2
+  accelerationFrames: 6
+  patrolDistance: 2
+  patrolPauseFrames: 60
+  noticeRange: 7
+  noticeHeight: 2.5
+  giveUpRange: 12
+  alertFrames: 24
+  attackRange: 1.2
+  minAttackRange: 0
+  retreatDistance: 0
+  attacks:
+  - {fileID: 11400000, guid: b0d63bca6de177b45ba66cf846f7b242, type: 2}
+  attackCooldownFrames: 50
+  personalSpace: 0.9
+  hoverHeight: 2.4
+  hoverSide: 2.2
+  flySpeed: 3.5
+  flyAccelerationFrames: 20
+  diveSpeed: 11
+  knockbackTaken: 1
+  deathFrames: 40
+  proportions: {fileID: 11400000, guid: b820d7e54e0742240a0400fefb05d9c6, type: 2}
+  idle: {fileID: 11400000, guid: 92ec821dc2ae1fd4c9afcd1e6284d934, type: 2}
+  idleBreathing: {fileID: 11400000, guid: ab387b995c37167418a830ac6635550e, type: 2}
+  walk: {fileID: 11400000, guid: e06f62b77059a6644b988a4e8919aa35, type: 2}
+  turn: {fileID: 11400000, guid: 65eaab481fee5654592e36a092deb881, type: 2}
+  alert: {fileID: 11400000, guid: d4c6dc80af06a6b418dec5eb485ffd21, type: 2}
+  hurt: {fileID: 11400000, guid: 158f949eebd54af41aa8cc0320fc178e, type: 2}
+  knockdown: {fileID: 11400000, guid: 74b1d9d1be834d54b879d990918ab321, type: 2}
+  getUp: {fileID: 11400000, guid: 6bedc1826768c4945a5ad153c99e09d4, type: 2}
+  defeated: {fileID: 11400000, guid: 8a2f28a1129825a4b9c24bd0569219f1, type: 2}
+  weaponLength: 0
+  weaponLook: {fileID: 0}

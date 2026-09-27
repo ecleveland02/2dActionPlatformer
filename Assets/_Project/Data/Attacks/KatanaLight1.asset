@@ -25,6 +25,7 @@ MonoBehaviour:
   launches: 0
   inkGain: 5
   multiHit: 0
+  parryable: 1
   cancelWindowStart: 9
   cancelWindowEnd: 17
   cancelsInto:

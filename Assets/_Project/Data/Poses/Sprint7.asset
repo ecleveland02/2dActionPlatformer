@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a08f378d9243f45bf6133c7d8d73a5, type: 3}
+  m_Name: Sprint7
+  m_EditorClassIdentifier: 
+  pose:
+    rootOffsetX: 0
+    rootOffsetY: -0.02433526
+    rootRotation: 0
+    grip: 0
+    spine: 20.76393
+    neck: -14.381965
+    shoulderFront: 42.527863
+    elbowFront: 75
+    shoulderBack: -16.995924
+    elbowBack: 90
+    hipFront: 27.293873
+    kneeFront: -114.24177
+    hipBack: 0.015074216
+    kneeBack: -20.698013

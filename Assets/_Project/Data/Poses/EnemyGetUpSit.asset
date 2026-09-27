@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a08f378d9243f45bf6133c7d8d73a5, type: 3}
+  m_Name: EnemyGetUpSit
+  m_EditorClassIdentifier: 
+  pose:
+    rootOffsetX: 0
+    rootOffsetY: -0.499
+    rootRotation: -40
+    grip: 0
+    spine: -20
+    neck: 15
+    shoulderFront: 130
+    elbowFront: 30
+    shoulderBack: -60
+    elbowBack: 10
+    hipFront: 90
+    kneeFront: -120
+    hipBack: 90
+    kneeBack: -150

@@ -8,5 +8,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Gym.unity
     guid: 5819e4356d04a76458ce8d091555f559
+  - enabled: 1
+    path: Assets/_Project/Scenes/EnemyArena.unity
+    guid: 619d29313a7477741b67842a5322c0e9
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

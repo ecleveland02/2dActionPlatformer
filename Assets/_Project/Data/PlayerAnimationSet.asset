@@ -24,3 +24,18 @@ MonoBehaviour:
   dash: {fileID: 11400000, guid: 6123f0ce337bdae4fbb4b03d2b95947e, type: 2}
   wallSlide: {fileID: 11400000, guid: c00419d6e6914ab4d881c6eae808ad37, type: 2}
   wallJump: {fileID: 11400000, guid: f748ded220318e64d9e2c52d98c39113, type: 2}
+  hitstun: {fileID: 11400000, guid: cef0e15f848d6954fa3ad8f4236f18d6, type: 2}
+  parry: {fileID: 11400000, guid: 0bfebd2259e4cb844a067c16b0ffa249, type: 2}
+  redraw: {fileID: 11400000, guid: b15a7ebfa724942459918cd397e7fbb9, type: 2}
+  comboBreaker: {fileID: 11400000, guid: c882c64128e10044193a6c9af00b71bf, type: 2}
+  defeated: {fileID: 11400000, guid: 9538b02aa4dcbd04abf6ee8c6ac414b6, type: 2}
+  jumpApex: {fileID: 11400000, guid: f17282edb685b3644a69741f008673dd, type: 2}
+  turn: {fileID: 11400000, guid: 576e6b282168fea4f95ec98f0a1e4d92, type: 2}
+  runStop: {fileID: 11400000, guid: e6cc1aae07076214db68116c3e78f568, type: 2}
+  idleFidget: {fileID: 11400000, guid: dce124c8e53661f4fb0a5a78a82be901, type: 2}
+  hardLand: {fileID: 11400000, guid: 8da21c081bd4fc141903c70acda5baa3, type: 2}
+  parrySuccess: {fileID: 11400000, guid: df813fe3e907a5840a4eab2f85ff5b2d, type: 2}
+  apexVelocityBand: 2.5
+  hardLandingHeight: 4.5
+  fidgetAfterFrames: 300
+  runStopMinSpeed: 6

@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81a08f378d9243f45bf6133c7d8d73a5, type: 3}
+  m_Name: Run8
+  m_EditorClassIdentifier: 
+  pose:
+    rootOffsetX: 0
+    rootOffsetY: -0.15343855
+    rootRotation: 0
+    grip: 0
+    spine: 9.146831
+    neck: -6.5734153
+    shoulderFront: 48.97148
+    elbowFront: 65
+    shoulderBack: 13.900192
+    elbowBack: 87.94297
+    hipFront: 58.092697
+    kneeFront: -51.557503
+    hipBack: -36.7693
+    kneeBack: -14.538667

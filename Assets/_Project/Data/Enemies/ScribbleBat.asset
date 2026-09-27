@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28f8d03f3874726409f63cb747af83b8, type: 3}
+  m_Name: ScribbleBat
+  m_EditorClassIdentifier: 
+  maxHealth: 20
+  walkSpeed: 2.2
+  accelerationFrames: 6
+  patrolDistance: 1.5
+  patrolPauseFrames: 60
+  noticeRange: 7
+  noticeHeight: 4
+  giveUpRange: 12
+  alertFrames: 20
+  attackRange: 1.3
+  minAttackRange: 0
+  retreatDistance: 0
+  attacks:
+  - {fileID: 11400000, guid: ceb5abfc0edcf1441a554f6cd051bb68, type: 2}
+  attackCooldownFrames: 70
+  personalSpace: 0.9
+  hoverHeight: 2.4
+  hoverSide: 2.2
+  flySpeed: 3.5
+  flyAccelerationFrames: 20
+  diveSpeed: 11
+  knockbackTaken: 1.3
+  deathFrames: 30
+  proportions: {fileID: 0}
+  idle: {fileID: 0}
+  walk: {fileID: 0}
+  alert: {fileID: 0}
+  hurt: {fileID: 0}
+  defeated: {fileID: 0}
+  weaponLength: 0

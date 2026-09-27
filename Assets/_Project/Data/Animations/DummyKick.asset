@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9509f2e2cb7204c8290b88841e7030, type: 3}
+  m_Name: DummyKick
+  m_EditorClassIdentifier: 
+  entries:
+  - pose: {fileID: 11400000, guid: 815e59bb2b36ccd45ae491a9a364c794, type: 2}
+    frames: 8
+    easing: 0
+  - pose: {fileID: 11400000, guid: 815e59bb2b36ccd45ae491a9a364c794, type: 2}
+    frames: 2
+    easing: 2
+  - pose: {fileID: 11400000, guid: 752e4ce8d02390c448d9df3146b04820, type: 2}
+    frames: 4
+    easing: 0
+  - pose: {fileID: 11400000, guid: 752e4ce8d02390c448d9df3146b04820, type: 2}
+    frames: 24
+    easing: 3
+  - pose: {fileID: 11400000, guid: 9485a5c2ea789d9438454bef76e62aeb, type: 2}
+    frames: 1
+    easing: 1
+  loop: 0
+  fadeInFrames: 1

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9509f2e2cb7204c8290b88841e7030, type: 3}
+  m_Name: LancerGetUp
+  m_EditorClassIdentifier: 
+  entries:
+  - pose: {fileID: 11400000, guid: 5eb7a324bc4a5fc4cbbb554bfadf36a1, type: 2}
+    frames: 5
+    easing: 4
+  - pose: {fileID: 11400000, guid: a783b626d54709c448109783a21d8b5f, type: 2}
+    frames: 7
+    easing: 4
+  - pose: {fileID: 11400000, guid: 19bde529646a9e047869ad39642196a2, type: 2}
+    frames: 7
+    easing: 4
+  - pose: {fileID: 11400000, guid: bef20384529d98b4095655a7039500e4, type: 2}
+    frames: 5
+    easing: 4
+  - pose: {fileID: 11400000, guid: bef20384529d98b4095655a7039500e4, type: 2}
+    frames: 1
+    easing: 1
+  loop: 0
+  fadeInFrames: 0
+  strideLength: 0

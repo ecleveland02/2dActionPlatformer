@@ -14,14 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pose:
     rootOffsetX: 0
-    rootOffsetY: -0.0015830398
+    rootOffsetY: -0.004
+    rootRotation: 0
+    grip: 0
     spine: 3
     neck: -3
-    shoulderFront: 8
-    elbowFront: 12
+    shoulderFront: 18
+    elbowFront: 45
     shoulderBack: -5
-    elbowBack: 10
-    hipFront: 5
-    kneeFront: -6
-    hipBack: -4
-    kneeBack: -3
+    elbowBack: 15
+    hipFront: 8
+    kneeFront: -10
+    hipBack: -8
+    kneeBack: -6

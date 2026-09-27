@@ -13,8 +13,18 @@ MonoBehaviour:
   m_Name: Skid
   m_EditorClassIdentifier: 
   entries:
+  - pose: {fileID: 11400000, guid: d2d74ca5066577944af993e11826b946, type: 2}
+    frames: 3
+    easing: 3
+  - pose: {fileID: 11400000, guid: 8584ee70790c264498030ae2753896b2, type: 2}
+    frames: 8
+    easing: 4
+  - pose: {fileID: 11400000, guid: aed11ea48311579408cfdadd2dd8fecf, type: 2}
+    frames: 8
+    easing: 4
   - pose: {fileID: 11400000, guid: 8584ee70790c264498030ae2753896b2, type: 2}
     frames: 1
     easing: 1
   loop: 0
-  fadeInFrames: 3
+  fadeInFrames: 2
+  strideLength: 0
