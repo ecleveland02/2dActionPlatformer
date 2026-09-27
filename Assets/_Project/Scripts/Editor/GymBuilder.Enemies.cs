@@ -19,7 +19,7 @@ namespace Margin.EditorTools
 
         /// <summary>
         /// Menu: Margin > Build Enemy Arena. A flat 60-unit room with two one-way platforms and three mixed enemies
-        /// (spec M4 acceptance): a Doodle Grunt and a Pencil Lancer to the right, a grunt to the left.
+        /// (spec M4 acceptance): a Doodle Grunt and a Pencil Lancer to the right, a Scribble Bat to the left.
         /// Die and you respawn at x = 0 with every enemy reset.
         /// </summary>
         [MenuItem("Margin/Build Enemy Arena")]
@@ -57,14 +57,14 @@ namespace Margin.EditorTools
             OneWay(level, "OneWay Right", 3, 7, 2.5f, oneWayLayer);
 
             var labels = new GameObject("Labels").transform;
-            Label(labels, "ENEMY ARENA: GRUNTS AND A LANCER (red flash = can't parry)", 0, 6);
+            Label(labels, "ENEMY ARENA: GRUNT, LANCER, BAT (red flash = can't parry)", 0, 6);
             Label(labels, "parry = F / RB    combo breaker = parry in hitstun (50 ink)", 0, 5.2f);
 
             GameObject player = BuildPlayer(playerLayer, assets);
             var enemies = new GameObject("Enemies").transform;
             BuildEnemy("Doodle Grunt", new Vector3(8f, 1f, 0f), assets, enemyData.Grunt).transform.SetParent(enemies, true);
             BuildEnemy("Pencil Lancer", new Vector3(13f, 1f, 0f), assets, enemyData.Lancer).transform.SetParent(enemies, true);
-            BuildEnemy("Doodle Grunt", new Vector3(-10f, 1f, 0f), assets, enemyData.Grunt, faceRight: true).transform.SetParent(enemies, true);
+            BuildBat(new Vector3(-8f, 3.5f, 0f), assets, enemyData.Bat).transform.SetParent(enemies, true);
 
             var camObject = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camObject.AddComponent<Camera>();
@@ -90,6 +90,53 @@ namespace Margin.EditorTools
         /// <summary>Menu: Margin > Add Pencil Lancer. Puts a lancer 6 units to the right of the player in the open scene.</summary>
         [MenuItem("Margin/Add Pencil Lancer")]
         public static void AddPencilLancer() => AddEnemy("Pencil Lancer", r => r.Lancer);
+
+        /// <summary>Menu: Margin > Add Scribble Bat. Puts a bat 5 units right of and 2.5 above the player.</summary>
+        [MenuItem("Margin/Add Scribble Bat")]
+        public static void AddScribbleBat()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            PlayerController player = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+                if ((player = root.GetComponentInChildren<PlayerController>(true)) != null) break;
+
+            GymAssets assets = LoadAssets();
+            if (assets == null) return;
+            inkMaterial = assets.Ink;
+            EnemyData data = StarterEnemies.EnsureCreated().Bat;
+
+            Vector3 at = player != null ? player.transform.position + new Vector3(5f, 2.5f, 0f) : new Vector3(5f, 3.5f, 0f);
+            GameObject go = BuildBat(at, assets, data);
+            Selection.activeGameObject = go;
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
+        }
+
+        private static GameObject BuildBat(Vector3 position, GymAssets assets, EnemyData data)
+        {
+            var go = new GameObject("Scribble Bat");
+            go.transform.position = position;
+            var body = go.AddComponent<KinematicBody2D>();
+            go.GetComponent<BoxCollider2D>().size = new Vector2(0.6f, 0.5f);
+            var rb = go.GetComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            SetReference(body, "data", assets.BodyData);
+
+            go.AddComponent<Hurtbox>().Configure(Faction.Enemy, Vector2.zero, new Vector2(0.7f, 0.55f));
+
+            var visualObject = new GameObject("Visual");
+            visualObject.transform.SetParent(go.transform, false);
+            var visual = visualObject.AddComponent<ScribbleBatVisual>();
+            SetReference(visual, "lineMaterial", assets.Ink);
+
+            var enemy = go.AddComponent<FlyingEnemy>();
+            SetReference(enemy, "data", data);
+            SetReference(enemy, "physics", assets.Movement);
+            SetReference(enemy, "settings", assets.Combat.Settings);
+            SetReference(enemy, "visual", visual);
+            return go;
+        }
 
         private static void AddEnemy(string name, System.Func<StarterEnemies.Result, EnemyData> pick)
         {

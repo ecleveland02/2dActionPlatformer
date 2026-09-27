@@ -106,6 +106,33 @@ namespace Margin.Tests
 
         private EnemyBase Grunt(float x) => Enemy(x, gruntData);
 
+        /// <summary>A Scribble Bat (see StarterCombat / StarterEnemies) centered at (x, y).</summary>
+        private FlyingEnemy Bat(float x, float y)
+        {
+            AttackData dive = Attack("BatDive", startup: 22, active: 18, recovery: 24, damage: 10, hitstop: 6, hitstun: 20,
+                                     knockback: new Vector2(4f, 3f), center: Vector2.zero, size: new Vector2(0.8f, 0.6f));
+            EnemyData d = Track(ScriptableObject.CreateInstance<EnemyData>());
+            d.maxHealth = 20;
+            d.patrolDistance = 1.5f;
+            d.noticeRange = 7f;
+            d.noticeHeight = 4f;
+            d.alertFrames = 20;
+            d.attacks.Add(dive);
+            d.attackCooldownFrames = 70;
+
+            KinematicBody2D body = world.Body(new Vector2(x, y - TestWorld.HalfHeight));
+            body.GetComponent<BoxCollider2D>().size = new Vector2(0.6f, 0.5f);
+            GameObject go = body.gameObject;
+            go.layer = 0;
+            go.AddComponent<Hurtbox>().Configure(Faction.Enemy, Vector2.zero, new Vector2(0.7f, 0.55f));
+            var bat = go.AddComponent<FlyingEnemy>();
+            bat.Configure(d, movement, settings);
+            bat.SetTarget(player);
+            enemies.Add(bat);
+            bat.Tick();
+            return bat;
+        }
+
         private EnemyBase Enemy(float x, EnemyData data)
         {
             GameObject go = world.Body(new Vector2(x, 0.05f)).gameObject;
@@ -265,6 +292,56 @@ namespace Margin.Tests
             Steps(6);
             Assert.AreEqual(100 - 18, health.Health.Current, "Hit straight through the parry.");
             Assert.IsInstanceOf<HitstunState>(player.CurrentState);
+        }
+
+        [Test]
+        public void Bat_HoversInsteadOfFalling()
+        {
+            FlyingEnemy bat = Bat(20f, 4f);   // too far away to notice the player
+            float homeY = bat.Home.y;
+            Steps(120);
+            Assert.AreEqual(bat.Patrol, bat.CurrentState);
+            Assert.AreEqual(homeY, bat.Position.y, 0.3f, "Still hovering at its height.");
+        }
+
+        [Test]
+        public void Bat_TakesPositionAboveThePlayer_ThenDives()
+        {
+            FlyingEnemy bat = Bat(4f, 3.5f);
+            bool dived = false;
+            for (int i = 0; i < 600 && health.Health.Current == 100; i++)
+            {
+                Step();
+                if (bat.CurrentState == bat.Attack) dived = true;
+            }
+            Assert.IsTrue(dived);
+            Assert.AreEqual(90, health.Health.Current, "The dive hit for 10.");
+        }
+
+        [Test]
+        public void Bat_FallsWhileStunned_ThenFliesBackUp()
+        {
+            FlyingEnemy bat = Bat(15f, 4f);   // beyond give-up range, so it goes back to patrolling
+            float homeY = bat.Home.y;
+            AttackData hit = Attack("Hit", 4, 3, 10, damage: 1, hitstop: 0, hitstun: 30, knockback: Vector2.zero,
+                                    center: Vector2.zero, size: Vector2.one);
+            bat.ReceiveHit(new HitInfo(player, hit, Vector2.zero, bat.Position, false));
+
+            Steps(30);
+            Assert.Less(bat.Position.y, homeY - 0.3f, "Falls while stunned (juggle gravity).");
+            Steps(300);
+            Assert.AreEqual(homeY, bat.Position.y, 0.5f, "Flew back up to its patrol height.");
+        }
+
+        [Test]
+        public void Bat_Defeated_FallsToTheGround()
+        {
+            FlyingEnemy bat = Bat(12f, 4f);
+            AttackData big = Attack("Big", 4, 3, 10, damage: 50, hitstop: 0, hitstun: 20, knockback: Vector2.zero,
+                                    center: Vector2.zero, size: Vector2.one);
+            bat.ReceiveHit(new HitInfo(player, big, Vector2.zero, bat.Position, false));
+            Assert.IsTrue(bat.IsDead);
+            StepUntil(() => bat.Grounded, 120);
         }
 
         [Test]

@@ -21,6 +21,7 @@ namespace Margin.EditorTools
         {
             public EnemyData Grunt;
             public EnemyData Lancer;
+            public EnemyData Bat;
         }
 
         [MenuItem("Margin/Create Starter Enemy Data")]
@@ -78,9 +79,10 @@ namespace Margin.EditorTools
             EditorUtility.SetDirty(grunt);
 
             EnemyData lancer = CreateLancer(combat);
+            EnemyData bat = CreateBat(combat);
             AssetDatabase.SaveAssets();
 
-            return new Result { Grunt = grunt, Lancer = lancer };
+            return new Result { Grunt = grunt, Lancer = lancer, Bat = bat };
         }
 
         /// <summary>
@@ -131,6 +133,33 @@ namespace Margin.EditorTools
             if (lancer.defeated == null) lancer.defeated = StarterCombat.HoldClip("GruntDefeated", poses["Defeated"], 3, false);
             EditorUtility.SetDirty(lancer);
             return lancer;
+        }
+
+        /// <summary>
+        /// Scribble Bat: fragile (20 HP) and light (knocked around easily). Hovers above and beside you, then dives.
+        /// Drawn procedurally by ScribbleBatVisual, so it has no pose clips.
+        /// </summary>
+        private static EnemyData CreateBat(StarterCombat.Result combat)
+        {
+            var bat = StarterCombat.LoadOrCreate<EnemyData>($"{EnemyFolder}/ScribbleBat.asset", out bool isNew);
+            if (!isNew) return bat;
+            bat.maxHealth = 20;
+            bat.patrolDistance = 1.5f;
+            bat.noticeRange = 7f;
+            bat.noticeHeight = 4f;
+            bat.giveUpRange = 12f;
+            bat.alertFrames = 20;
+            bat.attacks = new List<AttackData> { combat.Attacks["BatDive"] };
+            bat.attackCooldownFrames = 70;
+            bat.knockbackTaken = 1.3f;
+            bat.deathFrames = 30;
+            bat.hoverHeight = 2.4f;
+            bat.hoverSide = 2.2f;
+            bat.flySpeed = 3.5f;
+            bat.flyAccelerationFrames = 20;
+            bat.diveSpeed = 11f;
+            EditorUtility.SetDirty(bat);
+            return bat;
         }
 
         /// <summary>A walk: the run cycle poses at <paramref name="framesPerPose"/> each (the run uses 5).</summary>

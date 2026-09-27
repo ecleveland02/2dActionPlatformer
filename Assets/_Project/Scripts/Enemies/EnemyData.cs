@@ -47,6 +47,18 @@ namespace Margin.Enemies
         [Tooltip("Stops this far behind another enemy so groups don't stack into one body.")]
         [Min(0f)] public float personalSpace = 0.9f;
 
+        [Header("Flying (FlyingEnemy only)")]
+        [Tooltip("Hovers this high above the player before diving (units).")]
+        [Min(0f)] public float hoverHeight = 2.4f;
+        [Tooltip("...and this far to the side.")]
+        [Min(0f)] public float hoverSide = 2.2f;
+        [Tooltip("Flying speed (units/s).")]
+        [Min(0f)] public float flySpeed = 3.5f;
+        [Tooltip("Frames to reach flying speed.")]
+        [Min(1)] public int flyAccelerationFrames = 20;
+        [Tooltip("Dive speed (units/s). The dive aims at where the player was when the wind-up ended.")]
+        [Min(0f)] public float diveSpeed = 11f;
+
         [Header("Hit reactions")]
         [Tooltip("Multiplier on knockback received. 1 = normal, lower = heavier enemy.")]
         [Range(0f, 2f)] public float knockbackTaken = 1f;

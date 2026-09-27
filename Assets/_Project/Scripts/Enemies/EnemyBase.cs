@@ -44,11 +44,11 @@ namespace Margin.Enemies
         private Vector2 home;
         private int hitstop, nextAttack;
 
-        // ---- States ----
-        public EnemyPatrolState Patrol { get; private set; }
+        // ---- States (a subclass such as FlyingEnemy may swap in its own movement states in Awake) ----
+        public EnemyState Patrol { get; protected set; }
         public EnemyAlertState Alert { get; private set; }
-        public EnemyApproachState Approach { get; private set; }
-        public EnemyAttackState Attack { get; private set; }
+        public EnemyState Approach { get; protected set; }
+        public EnemyAttackState Attack { get; protected set; }
         public EnemyHitstunState Hitstun { get; private set; }
         public EnemyDeadState Dead { get; private set; }
 
@@ -75,6 +75,10 @@ namespace Margin.Enemies
         /// <summary>Fighting the player: noticed them and not patrolling, stunned or dead. Counts toward attack slots.</summary>
         public bool IsEngaged => CurrentState == Alert || CurrentState == Approach || CurrentState == Attack;
         public int HitstopRemaining => hitstop;
+        /// <summary>Flying enemies ignore ledges, and hitstun ends mid-air.</summary>
+        public virtual bool Flies => false;
+        /// <summary>Whether gravity pulls on the enemy this tick. Flyers only fall while stunned or dead.</summary>
+        protected virtual bool GravityApplies => true;
 
         // IHitboxSource
         public Faction Faction => Faction.Enemy;
@@ -170,7 +174,7 @@ namespace Margin.Enemies
         {
             bool grounded = Body.Collisions.Grounded;
             float dy = Velocity.y * GameTime.TickDelta;
-            if (!grounded || Velocity.y > 0f)
+            if (GravityApplies && (!grounded || Velocity.y > 0f))
             {
                 // Juggle: airborne enemies in hitstun fall slower so air combos can keep them up.
                 bool juggled = CurrentState == Hitstun || CurrentState == Dead;
@@ -198,6 +202,9 @@ namespace Margin.Enemies
             float step = data.walkSpeed / data.accelerationFrames;
             Velocity.x = MovementMath.Approach(Velocity.x, dir * data.walkSpeed, step);
         }
+
+        /// <summary>Stands (or hovers) still. Used while alert.</summary>
+        public virtual void Hold() => Walk(0);
 
         /// <summary>Slows to a stop on the ground (knockback slide).</summary>
         public void Brake(float scale = 1f)
@@ -333,7 +340,7 @@ namespace Margin.Enemies
         public void Vanish()
         {
             if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(Position, Vector2.up, 25);
-            if (rig != null) rig.gameObject.SetActive(false);
+            SetVisible(false);
             if (hurtbox != null) hurtbox.enabled = false;
         }
 
@@ -353,31 +360,39 @@ namespace Margin.Enemies
             Cooldown = 0;
             nextAttack = 0;
             Health.Refill();
-            if (rig != null)
-            {
-                rig.gameObject.SetActive(true);
-                rig.Tint = null;
-            }
+            SetVisible(true);
+            if (rig != null) rig.Tint = null;
             if (hurtbox != null) hurtbox.enabled = true;
             machine.ForceState(Patrol);
         }
 
         // ---------------- visuals ----------------
 
-        private void UpdateVisual()
+        /// <summary>Shows or hides the enemy's drawing (hidden after the defeat animation).</summary>
+        protected virtual void SetVisible(bool visible)
+        {
+            if (rig != null) rig.gameObject.SetActive(visible);
+        }
+
+        /// <summary>Red flash while an unparryable attack winds up (spec 6.5). Null = normal ink.</summary>
+        protected Color? FlashColor()
+        {
+            AttackData a = runner.Current;
+            bool flash = a != null && !a.parryable && runner.Frame <= a.startupFrames;
+            return flash ? (runner.Frame / 3 % 2 == 0 ? FlashA : FlashB) : (Color?)null;
+        }
+
+        protected virtual void UpdateVisual()
         {
             if (rig == null) return;
             rig.transform.localScale = new Vector3(Facing, 1f, 1f);
 
-            // Unparryable attacks flash red while winding up (spec 6.5).
-            AttackData a = runner.Current;
-            bool flash = a != null && !a.parryable && runner.Frame <= a.startupFrames;
-            rig.Tint = flash ? (runner.Frame / 3 % 2 == 0 ? FlashA : FlashB) : (Color?)null;
+            rig.Tint = FlashColor();
 
             if (animator != null) animator.Tick();
         }
 
-        private void ShakeVisual(bool shaking)
+        protected virtual void ShakeVisual(bool shaking)
         {
             if (rig == null) return;
             // Alternate left/right each tick during hitstop (spec 6.4: target shakes 0.05 units).

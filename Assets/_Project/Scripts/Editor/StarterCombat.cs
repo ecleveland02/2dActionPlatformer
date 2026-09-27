@@ -63,6 +63,8 @@ namespace Margin.EditorTools
             public bool Unparryable;
             public float AirGravity = 1f, Hover;
             public int InkCost;
+            /// <summary>No pose clip (the attacker isn't a stick figure, e.g. the Scribble Bat).</summary>
+            public bool NoClip;
             public float ProjectileSpeed;
             public int ProjectileLifetime = 40;
             public Vector2 ProjectileSize = new Vector2(0.9f, 1.3f), ProjectileOffset = new Vector2(0.8f, 0.2f);
@@ -164,6 +166,12 @@ namespace Margin.EditorTools
                 Damage = 18, Hitstop = 9, Hitstun = 28, Ink = 0, Knockback = new Vector2(7f, 3f), CancelStart = 71, CancelEnd = 71,
                 Lunge = 8f, LungeFirst = 33, BoxCenter = new Vector2(1.5f, 0.17f), BoxSize = new Vector2(1.4f, 0.35f),
                 Shake = 0.18f, FadeIn = 2, Swing = "swing_heavy", Hit = "hit_heavy", Unparryable = true },
+
+            // Scribble Bat (spec 9: flies, dive attacks). 22-frame wind-up (wings raised), then an 18-frame dive with
+            // the hitbox around its body. No follow-up: a single dive.
+            new Move { Name = "BatDive", Button = AttackButton.Heavy, Startup = 22, Active = 18, Recovery = 24,
+                Damage = 10, Hitstop = 6, Hitstun = 20, Ink = 0, Knockback = new Vector2(4f, 3f), CancelStart = 64, CancelEnd = 64,
+                BoxCenter = Vector2.zero, BoxSize = new Vector2(0.8f, 0.6f), Shake = 0.08f, NoClip = true },
 
             // Special (spec 7): costs 50 ink, throws a crescent of ink. The blade itself has no hitbox.
             new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 16,
@@ -314,7 +322,7 @@ namespace Margin.EditorTools
             if (m.BoxSize != Vector2.zero)   // projectile-only moves have no blade hitbox
                 a.hitboxes.Add(new HitboxWindow { boxes = new List<HitboxShape> { new HitboxShape { offset = m.BoxCenter, size = m.BoxSize } } });
             a.screenShake = m.Shake; a.swingSound = m.Swing; a.hitSound = m.Hit;
-            a.poseClip = AttackClip(m, poses, overwrite);
+            a.poseClip = m.NoClip ? null : AttackClip(m, poses, overwrite);
             EditorUtility.SetDirty(a);
         }
 

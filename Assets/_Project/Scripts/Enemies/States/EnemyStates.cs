@@ -66,7 +66,7 @@ namespace Margin.Enemies
         public override EnemyState CheckTransitions() =>
             Enemy.FramesInState >= Data.alertFrames ? Enemy.Approach : null;
 
-        public override void Tick() => Enemy.Walk(0);
+        public override void Tick() => Enemy.Hold();
     }
 
     /// <summary>
@@ -113,7 +113,7 @@ namespace Margin.Enemies
     /// Runs an opener and any combo follow-ups (EnemyAttackRunner). Holds an attack slot the whole time.
     /// Lunging attacks move forward from lungeFirstFrame through their active frames; otherwise it plants.
     /// </summary>
-    public sealed class EnemyAttackState : EnemyState
+    public class EnemyAttackState : EnemyState
     {
         private bool attacking;
 
@@ -132,8 +132,13 @@ namespace Margin.Enemies
         {
             if (!attacking) return;
             attacking = Enemy.TickAttack();
-            AttackData a = Enemy.Runner.Current;
-            int frame = Enemy.Runner.Frame;
+            MoveDuringAttack(Enemy.Runner.Current, Enemy.Runner.Frame);
+        }
+
+        /// <summary>Called every attack tick after the runner (a is null once the string ended). Subclasses such as
+        /// the bat's dive override this. Ground attacks: optional forward lunge from lungeFirstFrame through the active frames, else plant.</summary>
+        protected virtual void MoveDuringAttack(AttackData a, int frame)
+        {
             bool lunging = a != null && a.lungeSpeed > 0f && frame >= a.lungeFirstFrame && frame <= a.Timing.LastActiveFrame;
             if (lunging && Enemy.GroundAhead(Enemy.Facing)) Enemy.Velocity.x = Enemy.Facing * a.lungeSpeed;
             else Enemy.Brake();
@@ -162,7 +167,7 @@ namespace Margin.Enemies
 
         public override EnemyState CheckTransitions()
         {
-            if (Enemy.FramesInState < Frames || !Enemy.Grounded) return null;
+            if (Enemy.FramesInState < Frames || (!Enemy.Grounded && !Enemy.Flies)) return null;
             return Enemy.PlayerFightable() ? (EnemyState)Enemy.Approach : Enemy.Patrol;
         }
 
