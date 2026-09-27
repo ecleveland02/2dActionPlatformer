@@ -39,6 +39,14 @@ namespace Margin.Rendering
 
         public FigurePose FirstPose => poses[0];
 
+        /// <summary>The entry before (-1) or after (+1) entry i: wraps around in a loop, stops at the ends otherwise.</summary>
+        private int Neighbour(int i, int step)
+        {
+            int j = i + step;
+            if (Loop) return (j % poses.Length + poses.Length) % poses.Length;
+            return Math.Max(0, Math.Min(poses.Length - 1, j));
+        }
+
         /// <summary>The pose at a tick (0 = first tick of the clip).</summary>
         public FigurePose Sample(int tick)
         {
@@ -51,8 +59,10 @@ namespace Margin.Rendering
             {
                 if (tick < start + frames[i])
                 {
-                    int next = i + 1 < poses.Length ? i + 1 : (Loop ? 0 : i);
+                    int next = Neighbour(i, +1);
                     float u = (tick - start) / (float)frames[i];
+                    if (easings[i] == PoseEasing.Smooth)
+                        return FigurePose.CatmullRom(poses[Neighbour(i, -1)], poses[i], poses[next], poses[Neighbour(next, +1)], u);
                     return FigurePose.Lerp(poses[i], poses[next], PoseEasingMath.Apply(easings[i], u));
                 }
                 start += frames[i];

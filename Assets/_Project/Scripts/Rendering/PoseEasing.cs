@@ -12,6 +12,11 @@ namespace Margin.Rendering
         EaseOut,
         /// <summary>Slow at both ends (idle, breathing, anticipation).</summary>
         EaseInOut,
+        /// <summary>
+        /// Curved path through this pose and its neighbours (Catmull-Rom spline) instead of a straight line, so
+        /// motion flows through keyframes without sudden changes of direction. Best for cycles (run, walk).
+        /// </summary>
+        Smooth,
     }
 
     public static class PoseEasingMath

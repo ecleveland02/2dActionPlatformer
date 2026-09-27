@@ -81,6 +81,39 @@ namespace Margin.Rendering
             return result;
         }
 
+        /// <summary>
+        /// Catmull-Rom spline between p1 (t = 0) and p2 (t = 1), shaped by the poses before (p0) and after (p3).
+        /// The curve passes exactly through every keyframe and its speed changes smoothly across them, so a cycle
+        /// of keyframes plays as one flowing motion. Angles are unwrapped first so they take the short way round.
+        /// </summary>
+        public static FigurePose CatmullRom(FigurePose p0, FigurePose p1, FigurePose p2, FigurePose p3, float t)
+        {
+            if (t <= 0f) return p1;
+            if (t >= 1f) return p2;
+
+            var result = new FigurePose
+            {
+                rootOffsetX = Spline(p0.rootOffsetX, p1.rootOffsetX, p2.rootOffsetX, p3.rootOffsetX, t),
+                rootOffsetY = Spline(p0.rootOffsetY, p1.rootOffsetY, p2.rootOffsetY, p3.rootOffsetY, t),
+            };
+            foreach (PoseJoint joint in AllJoints)
+            {
+                float a1 = p1.Get(joint);
+                float a0 = a1 + DeltaAngle(a1, p0.Get(joint));
+                float a2 = a1 + DeltaAngle(a1, p2.Get(joint));
+                float a3 = a2 + DeltaAngle(p2.Get(joint), p3.Get(joint));
+                result.Set(joint, NormalizeAngle(Spline(a0, a1, a2, a3, t)));
+            }
+            return result;
+        }
+
+        /// <summary>Uniform Catmull-Rom for one value.</summary>
+        private static float Spline(float v0, float v1, float v2, float v3, float t)
+        {
+            float t2 = t * t, t3 = t2 * t;
+            return 0.5f * (2f * v1 + (v2 - v0) * t + (2f * v0 - 5f * v1 + 4f * v2 - v3) * t2 + (3f * v1 - v0 - 3f * v2 + v3) * t3);
+        }
+
         /// <summary>Swaps front and back limbs (e.g. turns run pose 1 into its opposite-leg twin).</summary>
         public FigurePose Mirrored()
         {

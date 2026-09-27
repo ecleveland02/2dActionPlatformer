@@ -43,6 +43,11 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Animation: `PoseClip` (entries: pose, frames, easing; loop; fadeInFrames) played by `PoseAnimator` on the rig.
   `PlayerAnimator` (TickOrder 10, after the player) maps states to clips via `PlayerAnimationSet`, so animation
   pauses/frame-steps with the game. **Margin > Wire Player References** upgrades a capsule player to the stick figure.
+  Smoothness: `PoseEasing.Smooth` = Catmull-Rom through neighbouring keys (cycles use it); `PoseAnimator` blends
+  previous->current tick pose in LateUpdate (like Rigidbody2D interpolation; holds still when it didn't tick) and
+  applies `SecondaryMotion` springs per `PoseMotionSettings` (head/back arm sprung; sword arm and legs never, so
+  attacks and foot contact stay exact); `PlayerAnimator` leans into ground acceleration (run/idle only).
+  Cycles: 8 keys from `Gait` tables in StarterPoses (Run1-8, Sprint1-8, Walk1-8); **Margin > Upgrade Run Cycles**.
 - **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
   cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
   on hit, "Cancels into" + jump/dash inside the window; on whiff, jump/dash from the window start and follow-up

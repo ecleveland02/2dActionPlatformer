@@ -18,6 +18,7 @@ namespace Margin.Player
         private PlayerController player;
         private bool reportedMissing;
         private int lastAttackSerial = -1;
+        private float lastVelocityX, lean;
 
         public int TickOrder => 10;
         public PoseAnimator PoseAnimator => poseAnimator;
@@ -63,7 +64,27 @@ namespace Margin.Player
                 poseAnimator.Play(next, keepPhase: cycleSwap);
             }
             poseAnimator.SetAdditive(player.CurrentState is IdleState ? animations.idleBreathing : null);
+            poseAnimator.Lean = UpdateLean();
             poseAnimator.Tick();
+        }
+
+        /// <summary>
+        /// Leans into acceleration while running or standing on the ground: speeding up tips the body forward,
+        /// stopping tips it back before it settles. Smoothed, and off in every other state (attacks, air, hurt)
+        /// so authored poses stay exact.
+        /// </summary>
+        private float UpdateLean()
+        {
+            PoseMotionSettings m = poseAnimator.Motion;
+            float acceleration = (player.Velocity.x - lastVelocityX) / GameTime.TickDelta;
+            lastVelocityX = player.Velocity.x;
+
+            bool allowed = player.Grounded && (player.CurrentState is RunState || player.CurrentState is IdleState);
+            float target = allowed
+                ? Mathf.Clamp(acceleration * player.Facing * m.leanPerAcceleration, -m.maxLeanDegrees, m.maxLeanDegrees)
+                : 0f;
+            lean = Mathf.Lerp(lean, target, m.leanSmoothing);
+            return lean;
         }
 
         /// <summary>The clip for the current state. Subclasses are checked before their base (WallJump before Jump).</summary>

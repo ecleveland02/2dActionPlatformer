@@ -36,7 +36,98 @@ namespace Margin.EditorTools
         }
 
         /// <summary>Creates any missing poses, clips and the animation set without asking. Returns the set.</summary>
-        internal static PlayerAnimationSet EnsureCreated() => CreateAll(overwrite: false);
+        internal static PlayerAnimationSet EnsureCreated()
+        {
+            // Projects made before the 8-key cycles have a 6-entry Run clip: upgrade the generated cycles once.
+            var run = AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/Run.asset");
+            if (run != null && run.entries.Count == 6) UpgradeCycles();
+            return CreateAll(overwrite: false);
+        }
+
+        /// <summary>
+        /// Menu: Margin > Upgrade Run Cycles. Rewrites the generated run, sprint and walk poses (Run1-8, Sprint1-8,
+        /// Walk1-8) and their clips with the current generator. Other poses and clips are not touched.
+        /// </summary>
+        [MenuItem("Margin/Upgrade Run Cycles")]
+        public static void UpgradeCyclesFromMenu()
+        {
+            if (!EditorUtility.DisplayDialog("Upgrade Run Cycles",
+                "Rewrite the Run, Sprint and Walk poses and clips (and the Grunt/Lancer walk clips) with the smooth " +
+                "8-key cycles? Hand edits to those poses will be replaced. Nothing else is changed.", "Upgrade", "Cancel"))
+                return;
+            UpgradeCycles();
+        }
+
+        internal static void UpgradeCycles()
+        {
+            StickFigureRigEditor.EnsureFolder(Folder);
+            StickFigureRigEditor.EnsureFolder(ClipFolder);
+            var table = new Dictionary<string, FigurePose>();
+            foreach (Gait gait in Gaits) AddCycle(table, gait);
+            foreach (KeyValuePair<string, FigurePose> entry in table) WritePose(entry.Key, entry.Value);
+
+            Dictionary<string, ClipSpec> specs = ClipTable();
+            foreach (string name in new[] { "Run", "Sprint" }) WriteClip(name, specs[name]);
+            foreach ((string clip, int frames) in EnemyWalks)
+                if (AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{clip}.asset") != null)
+                    WriteCycleClip(clip, "Walk", frames);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Run, sprint and walk cycles upgraded to smooth 8-key cycles.");
+        }
+
+        private static void WritePose(string name, FigurePose pose)
+        {
+            string path = PathFor(name);
+            var asset = AssetDatabase.LoadAssetAtPath<PoseData>(path);
+            if (asset == null)
+            {
+                asset = ScriptableObject.CreateInstance<PoseData>();
+                asset.pose = pose;
+                AssetDatabase.CreateAsset(asset, path);
+            }
+            else
+            {
+                asset.pose = pose;
+                EditorUtility.SetDirty(asset);
+            }
+        }
+
+        /// <summary>Enemy walk clips and their frames per key (grunt: 40-frame stride, lancer: 48).</summary>
+        internal static readonly (string clip, int framesPerKey)[] EnemyWalks = { ("GruntWalk", 5), ("LancerWalk", 6) };
+
+        /// <summary>Creates or rewrites a looping 8-key cycle clip from poses named prefix1..prefix8.</summary>
+        internal static PoseClip WriteCycleClip(string clipName, string posePrefix, int framesPerKey)
+        {
+            WriteClip(clipName, Cycle(posePrefix, framesPerKey, fadeIn: 4));
+            return AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{clipName}.asset");
+        }
+
+        private static void WriteClip(string name, ClipSpec spec)
+        {
+            string path = $"{ClipFolder}/{name}.asset";
+            var clip = AssetDatabase.LoadAssetAtPath<PoseClip>(path);
+            bool isNew = clip == null;
+            if (isNew) clip = ScriptableObject.CreateInstance<PoseClip>();
+            FillClip(clip, spec);
+            if (isNew) AssetDatabase.CreateAsset(clip, path);
+            else EditorUtility.SetDirty(clip);
+        }
+
+        private static void FillClip(PoseClip clip, ClipSpec spec)
+        {
+            clip.entries.Clear();
+            foreach ((string pose, int frames, PoseEasing easing) in spec.Entries)
+            {
+                clip.entries.Add(new PoseClip.Entry
+                {
+                    pose = AssetDatabase.LoadAssetAtPath<PoseData>(PathFor(pose)),
+                    frames = frames,
+                    easing = easing,
+                });
+            }
+            clip.loop = spec.Loop;
+            clip.fadeInFrames = spec.FadeIn;
+        }
 
         private static PlayerAnimationSet CreateAll(bool overwrite)
         {
@@ -77,7 +168,7 @@ namespace Margin.EditorTools
 
         // ---------------- clips ----------------
 
-        private struct ClipSpec
+        internal struct ClipSpec
         {
             public (string pose, int frames, PoseEasing easing)[] Entries;
             public bool Loop;
@@ -89,15 +180,16 @@ namespace Margin.EditorTools
             Entries = new[] { (pose, 1, PoseEasing.Linear) }, Loop = false, FadeIn = fadeIn,
         };
 
-        private static ClipSpec Cycle(string prefix, int framesPerPose, int fadeIn)
+        /// <summary>An 8-key cycle, blended with curves (Smooth) so it flows through the keys.</summary>
+        internal static ClipSpec Cycle(string prefix, int framesPerPose, int fadeIn)
         {
-            var entries = new (string, int, PoseEasing)[6];
-            for (int i = 0; i < 6; i++) entries[i] = ($"{prefix}{i + 1}", framesPerPose, PoseEasing.Linear);
+            var entries = new (string, int, PoseEasing)[CycleKeys];
+            for (int i = 0; i < CycleKeys; i++) entries[i] = ($"{prefix}{i + 1}", framesPerPose, PoseEasing.Smooth);
             return new ClipSpec { Entries = entries, Loop = true, FadeIn = fadeIn };
         }
 
         /// <summary>
-        /// Starter timing. Run: 6 poses x 5 frames = a full stride every 0.5 s. Sprint: x 4 frames.
+        /// Starter timing. Run: 8 keys x 4 frames = a full stride every 0.53 s. Sprint: 8 x 3 = 0.4 s.
         /// Single-pose clips rely on the crossfade (FadeIn frames) for motion; Dash snaps instantly for crispness.
         /// </summary>
         private static Dictionary<string, ClipSpec> ClipTable() => new Dictionary<string, ClipSpec>
@@ -108,8 +200,8 @@ namespace Margin.EditorTools
                 Entries = new[] { ("Idle", 45, PoseEasing.EaseInOut), ("IdleBreath", 45, PoseEasing.EaseInOut) },
                 Loop = true, FadeIn = 0,
             },
-            ["Run"] = Cycle("Run", 5, fadeIn: 4),
-            ["Sprint"] = Cycle("Sprint", 4, fadeIn: 6),
+            ["Run"] = Cycle("Run", 4, fadeIn: 4),
+            ["Sprint"] = Cycle("Sprint", 3, fadeIn: 6),
             ["Skid"] = Hold("Skid", 3),
             ["Jump"] = Hold("Jump", 3),
             ["Fall"] = Hold("Fall", 8),
@@ -135,18 +227,7 @@ namespace Margin.EditorTools
 
                 if (isNew || overwrite)
                 {
-                    clip.entries.Clear();
-                    foreach ((string pose, int frames, PoseEasing easing) in spec.Value.Entries)
-                    {
-                        clip.entries.Add(new PoseClip.Entry
-                        {
-                            pose = AssetDatabase.LoadAssetAtPath<PoseData>(PathFor(pose)),
-                            frames = frames,
-                            easing = easing,
-                        });
-                    }
-                    clip.loop = spec.Value.Loop;
-                    clip.fadeInFrames = spec.Value.FadeIn;
+                    FillClip(clip, spec.Value);
 
                     if (isNew) { AssetDatabase.CreateAsset(clip, path); created++; }
                     else { EditorUtility.SetDirty(clip); updated++; }
@@ -208,31 +289,81 @@ namespace Margin.EditorTools
                 ["FastFall"] = P(0, 0f, spine: 10, neck: -10, sf: 170, ef: 0, sb: 165, eb: 0, hf: 5, kf: 0, hb: -5, kb: -5),
             };
 
-            AddCycle(t, "Run", legSwing: 35f, kneeLift: 50f, armSwing: 30f, elbow: 75f, spine: 12f, neck: -8f);
-            AddCycle(t, "Sprint", legSwing: 50f, kneeLift: 65f, armSwing: 50f, elbow: 90f, spine: 22f, neck: -15f);
+            foreach (Gait gait in Gaits) AddCycle(t, gait);
             return t;
         }
 
-        /// <summary>
-        /// Six-frame run cycle from sine waves. Legs swing opposite each other, each knee bends while its leg
-        /// swings forward, and arms swing opposite their leg. Every frame is planted, so the hips bob up and down
-        /// naturally as the legs spread and pass (twice per cycle).
-        /// </summary>
-        private static void AddCycle(Dictionary<string, FigurePose> table, string name, float legSwing, float kneeLift,
-                                     float armSwing, float elbow, float spine, float neck)
+        // ---------------- run, sprint and walk cycles ----------------
+
+        private const int CycleKeys = 8;
+
+        /// <summary>Shape of one gait. Angles in degrees; see AddCycle for what each one does.</summary>
+        private sealed class Gait
         {
-            for (int i = 0; i < 6; i++)
+            public string Name;
+            public float LegSwing, KneeDrive, ContactBend, StanceBend, Tuck;
+            public float ArmSwing, ArmLag, Elbow, ElbowSwing;
+            public float Spine, Wobble, Neck, Flight;
+        }
+
+        private static readonly Gait[] Gaits =
+        {
+            new Gait { Name = "Run", LegSwing = 38, KneeDrive = 22, ContactBend = 12, StanceBend = 28, Tuck = 80,
+                ArmSwing = 35, ArmLag = 0.06f, Elbow = 80, ElbowSwing = 20, Spine = 12, Wobble = 3, Neck = -8, Flight = 0.05f },
+            new Gait { Name = "Sprint", LegSwing = 52, KneeDrive = 35, ContactBend = 12, StanceBend = 32, Tuck = 105,
+                ArmSwing = 55, ArmLag = 0.05f, Elbow = 90, ElbowSwing = 15, Spine = 22, Wobble = 4, Neck = -15, Flight = 0.08f },
+            // Enemies walk: always one foot down (no flight), small arm swing.
+            new Gait { Name = "Walk", LegSwing = 24, KneeDrive = 8, ContactBend = 4, StanceBend = 10, Tuck = 38,
+                ArmSwing = 16, ArmLag = 0.08f, Elbow = 18, ElbowSwing = 12, Spine = 4, Wobble = 1.5f, Neck = -3, Flight = 0f },
+        };
+
+        /// <summary>
+        /// An 8-key gait cycle. Phase 0 = the front foot touches down ahead of the body; the back leg runs half a
+        /// cycle behind. Over one stride each leg: lands with a slight bend, sinks under the weight (stance bend),
+        /// pushes off nearly straight, tucks its heel up behind (recovery), then drives the knee forward and
+        /// reaches for the next step. Arms swing against their leg and trail it slightly (arm lag), bending more on
+        /// the forward swing. The lean and head counter-bob twice per stride. Every key is planted (lowest foot on
+        /// the ground), then lifted by Flight just before each landing so both feet leave the ground in a run.
+        /// Played with Smooth (curved) blending between keys.
+        /// </summary>
+        private static void AddCycle(Dictionary<string, FigurePose> table, Gait g)
+        {
+            for (int i = 0; i < CycleKeys; i++)
             {
-                float p = i * Mathf.PI * 2f / 6f;
-                float swing = Mathf.Sin(p);
-                float forward = Mathf.Cos(p);          // > 0 while the front leg moves forward
-                table[$"{name}{i + 1}"] = Planted(P(0f, 0f,
-                    spine: spine, neck: neck,
-                    sf: -armSwing * swing, ef: elbow,
-                    sb: armSwing * swing, eb: elbow,
-                    hf: legSwing * swing, kf: -(10f + kneeLift * Mathf.Max(0f, forward)),
-                    hb: -legSwing * swing, kb: -(10f + kneeLift * Mathf.Max(0f, -forward))));
+                float phase = i / (float)CycleKeys;
+                (float hf, float kf) = Leg(g, phase);
+                (float hb, float kb) = Leg(g, phase + 0.5f);
+                (float sf, float ef) = Arm(g, phase);
+                (float sb, float eb) = Arm(g, phase + 0.5f);
+                float sway = Mathf.Cos(4f * Mathf.PI * (phase - 0.1f));
+
+                FigurePose pose = Planted(P(0f, 0f, spine: g.Spine + g.Wobble * sway, neck: g.Neck - 0.5f * g.Wobble * sway,
+                                            sf: sf, ef: ef, sb: sb, eb: eb, hf: hf, kf: kf, hb: hb, kb: kb));
+                pose.rootOffsetY += g.Flight * (Bump(phase, 0.42f, 0.06f) + Bump(phase, 0.92f, 0.06f));
+                table[$"{g.Name}{i + 1}"] = pose;
             }
+        }
+
+        /// <summary>Hip and knee angles of a leg at a phase (0 = this foot lands).</summary>
+        private static (float hip, float knee) Leg(Gait g, float phase)
+        {
+            float hip = g.LegSwing * Mathf.Cos(2f * Mathf.PI * phase) + g.KneeDrive * Bump(phase, 0.85f, 0.1f);
+            float knee = -(g.ContactBend + g.StanceBend * Bump(phase, 0.12f, 0.08f) + g.Tuck * Bump(phase, 0.72f, 0.13f));
+            return (hip, knee);
+        }
+
+        /// <summary>Shoulder and elbow of the arm on the same side as the leg at this phase (it swings opposite).</summary>
+        private static (float shoulder, float elbow) Arm(Gait g, float phase)
+        {
+            float c = Mathf.Cos(2f * Mathf.PI * (phase - g.ArmLag));
+            return (-g.ArmSwing * c, g.Elbow + g.ElbowSwing * Mathf.Max(0f, -c));
+        }
+
+        /// <summary>A smooth bump (bell curve) centered on a phase, wrapping around the cycle.</summary>
+        private static float Bump(float phase, float center, float width)
+        {
+            float d = Mathf.Repeat(phase - center + 0.5f, 1f) - 0.5f;
+            return Mathf.Exp(-d * d / (2f * width * width));
         }
 
         /// <summary>

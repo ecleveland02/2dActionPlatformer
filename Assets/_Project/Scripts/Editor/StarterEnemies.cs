@@ -72,7 +72,7 @@ namespace Margin.EditorTools
 
             // Clips: fill any that are missing (also upgrades an EnemyData made by hand without clips).
             if (grunt.idle == null) grunt.idle = StarterCombat.HoldClip("GruntIdle", poses["GruntIdle"], 6, false);
-            if (grunt.walk == null) grunt.walk = WalkClip("GruntWalk", 7);
+            if (grunt.walk == null) grunt.walk = WalkClip("GruntWalk", 5);
             if (grunt.alert == null) grunt.alert = StarterCombat.HoldClip("GruntAlert", poses["GruntAlert"], 0, false);
             if (grunt.hurt == null) grunt.hurt = StarterCombat.HoldClip("GruntHurt", poses["DummyHit"], 0, false);
             if (grunt.defeated == null) grunt.defeated = StarterCombat.HoldClip("GruntDefeated", poses["Defeated"], 3, false);
@@ -127,7 +127,7 @@ namespace Margin.EditorTools
             }
 
             if (lancer.idle == null) lancer.idle = StarterCombat.HoldClip("LancerIdle", poses["LancerIdle"], 6, false);
-            if (lancer.walk == null) lancer.walk = WalkClip("LancerWalk", 8);
+            if (lancer.walk == null) lancer.walk = WalkClip("LancerWalk", 6);
             if (lancer.alert == null) lancer.alert = StarterCombat.HoldClip("LancerAlert", poses["LancerAlert"], 3, false);
             if (lancer.hurt == null) lancer.hurt = StarterCombat.HoldClip("GruntHurt", poses["DummyHit"], 0, false);
             if (lancer.defeated == null) lancer.defeated = StarterCombat.HoldClip("GruntDefeated", poses["Defeated"], 3, false);
@@ -162,25 +162,11 @@ namespace Margin.EditorTools
             return bat;
         }
 
-        /// <summary>A walk: the run cycle poses at <paramref name="framesPerPose"/> each (the run uses 5).</summary>
-        private static PoseClip WalkClip(string name, int framesPerPose)
+        /// <summary>The smooth 8-key walk cycle (Walk1-8 poses) at <paramref name="framesPerKey"/> frames per key.</summary>
+        private static PoseClip WalkClip(string name, int framesPerKey)
         {
-            PoseClip clip = StarterCombat.LoadOrCreate<PoseClip>($"{ClipFolder}/{name}.asset", out bool isNew);
-            if (!isNew) return clip;
-            clip.loop = true;
-            clip.fadeInFrames = 4;
-            clip.entries = new List<PoseClip.Entry>();
-            for (int i = 1; i <= 6; i++)
-            {
-                clip.entries.Add(new PoseClip.Entry
-                {
-                    pose = AssetDatabase.LoadAssetAtPath<PoseData>(StarterPoses.PathFor("Run" + i)),
-                    frames = framesPerPose,
-                    easing = PoseEasing.Linear,
-                });
-            }
-            EditorUtility.SetDirty(clip);
-            return clip;
+            var existing = AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/{name}.asset");
+            return existing != null ? existing : StarterPoses.WriteCycleClip(name, "Walk", framesPerKey);
         }
     }
 }

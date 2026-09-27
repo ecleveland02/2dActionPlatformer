@@ -1,3 +1,4 @@
+using Margin.Core;
 using UnityEngine;
 
 namespace Margin.Rendering
@@ -6,12 +7,21 @@ namespace Margin.Rendering
     /// Plays PoseClips on a StickFigureRig, one step per gameplay tick (spec 4.2).
     /// - Play(clip) switches clips with a short crossfade (the clip's fadeInFrames).
     /// - An optional additive clip (e.g. breathing) adds its motion on top of the base clip.
+    /// - Follow-through (PoseMotionSettings): loose joints (head, free arm) trail and settle via springs.
     /// It does not tick itself: its owner (e.g. PlayerAnimator) calls Tick() once per gameplay tick,
     /// so animation pauses and frame-steps together with the game.
+    ///
+    /// Smooth at any refresh rate: gameplay ticks 60 times a second, but a 180 Hz screen draws 3 frames per tick.
+    /// Between ticks, LateUpdate blends from the previous tick's pose to the current one (the same way Unity
+    /// interpolates the Rigidbody2D's position), so limbs glide instead of stepping. Code that reads joint
+    /// positions during a tick (smears, hit effects) still sees the exact tick pose.
     /// </summary>
+    [DefaultExecutionOrder(-50)]   // LateUpdate before StickFigureRig and WeaponLine draw the pose
     public sealed class PoseAnimator : MonoBehaviour
     {
         [SerializeField] private StickFigureRig rig;
+        [Tooltip("Follow-through tuning. Empty = defaults.")]
+        [SerializeField] private PoseMotionSettings motion;
 
         private PoseClip clip;
         private PoseTimeline timeline;
@@ -26,6 +36,11 @@ namespace Margin.Rendering
         private int additiveTick;
         private float additiveWeight;
 
+        private readonly SecondaryMotion secondary = new SecondaryMotion();
+        private FigurePose previousOutput;
+        private float lastTickFixedTime = -1f;
+        private bool hasTicked;
+
         public StickFigureRig Rig
         {
             get => rig;
@@ -35,6 +50,13 @@ namespace Margin.Rendering
         public PoseClip CurrentClip => clip;
         public int ClipTick => clipTick;
         public FigurePose Output { get; private set; }
+        /// <summary>Extra forward lean in degrees added to the spine this tick (e.g. leaning into acceleration).</summary>
+        public float Lean { get; set; }
+        public PoseMotionSettings Motion
+        {
+            get => motion != null ? motion : PoseMotionSettings.Defaults;
+            set => motion = value;
+        }
 
         /// <summary>
         /// Switches to a clip (no-op if it is already playing). keepPhase: continue at the same point of the
@@ -83,6 +105,7 @@ namespace Margin.Rendering
         {
             if (timeline == null || rig == null) return;
 
+            previousOutput = hasTicked ? Output : timeline.Sample(clipTick);
             FigurePose pose = timeline.Sample(clipTick++);
 
             if (additiveTimeline != null && additiveWeight > 0f)
@@ -98,8 +121,35 @@ namespace Margin.Rendering
                 pose = FigurePose.Lerp(fadeFrom, pose, t);
             }
 
+            PoseMotionSettings m = Motion;
+            if (m.enabled)
+            {
+                pose.spine += Lean;
+                pose = secondary.Step(pose, m.Weights, m.frequency, m.damping, GameTime.TickDelta);
+            }
+
             Output = pose;
             rig.ApplyPose(pose);
+            lastTickFixedTime = Time.fixedTime;
+            hasTicked = true;
+        }
+
+        /// <summary>Settles the follow-through springs instantly (after a teleport or respawn).</summary>
+        public void SnapMotion() => secondary.Reset(Output);
+
+        private void LateUpdate()
+        {
+            if (!hasTicked || rig == null || !Application.isPlaying) return;
+
+            // Didn't tick on the latest fixed step (hitstop, pause, frozen): hold the exact pose, don't wobble.
+            if (!Mathf.Approximately(lastTickFixedTime, Time.fixedTime))
+            {
+                rig.ApplyPose(Output);
+                return;
+            }
+
+            float alpha = Mathf.Clamp01((Time.time - Time.fixedTime) / Time.fixedDeltaTime);
+            rig.ApplyPose(FigurePose.Lerp(previousOutput, Output, alpha));
         }
     }
 }
