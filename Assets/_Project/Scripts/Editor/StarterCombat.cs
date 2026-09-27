@@ -71,53 +71,55 @@ namespace Margin.EditorTools
         }
 
         // Light hitstun is 6 frames longer than the spec example so a held (hold-to-heavy) branch still combos.
+        // Speed pass (fast-paced): player recoveries are ~25% shorter than the first tuning; each cancel window keeps
+        // its offset from the active frames (scaled) and still ends with the move. Enemy moves keep their timing.
         private static readonly Move[] Moves =
         {
-            new Move { Name = "KatanaLight1", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 10,
-                Damage = 8, Hitstop = 4, Hitstun = 24, Ink = 5, Knockback = new Vector2(4f, 1f), CancelStart = 9, CancelEnd = 17,
+            new Move { Name = "KatanaLight1", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 8,
+                Damage = 8, Hitstop = 4, Hitstun = 24, Ink = 5, Knockback = new Vector2(4f, 1f), CancelStart = 9, CancelEnd = 15,
                 Lunge = 1.5f, BoxCenter = new Vector2(1.05f, 0.15f), BoxSize = new Vector2(1.4f, 0.6f), Shake = 0.05f, FadeIn = 2 },
-            new Move { Name = "KatanaLight2", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 11,
-                Damage = 9, Hitstop = 4, Hitstun = 26, Ink = 5, Knockback = new Vector2(3f, 2f), CancelStart = 9, CancelEnd = 18,
+            new Move { Name = "KatanaLight2", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 8,
+                Damage = 9, Hitstop = 4, Hitstun = 26, Ink = 5, Knockback = new Vector2(3f, 2f), CancelStart = 9, CancelEnd = 15,
                 Lunge = 1.5f, BoxCenter = new Vector2(0.85f, 0.5f), BoxSize = new Vector2(1.2f, 1.8f), Shake = 0.05f },
-            new Move { Name = "KatanaLight3", Button = AttackButton.Light, Startup = 6, Active = 3, Recovery = 12,
-                Damage = 11, Hitstop = 5, Hitstun = 28, Ink = 6, Knockback = new Vector2(5f, 1f), CancelStart = 11, CancelEnd = 21,
+            new Move { Name = "KatanaLight3", Button = AttackButton.Light, Startup = 6, Active = 3, Recovery = 9,
+                Damage = 11, Hitstop = 5, Hitstun = 28, Ink = 6, Knockback = new Vector2(5f, 1f), CancelStart = 11, CancelEnd = 18,
                 Lunge = 7f, LungeFirst = 3, BoxCenter = new Vector2(1.25f, 0.2f), BoxSize = new Vector2(1.6f, 0.4f), Shake = 0.07f },
-            new Move { Name = "KatanaLight4", Button = AttackButton.Light, Startup = 7, Active = 5, Recovery = 18,
-                Damage = 16, Hitstop = 7, Hitstun = 28, Ink = 8, Knockback = new Vector2(9f, 3f), CancelStart = 18, CancelEnd = 30,
+            new Move { Name = "KatanaLight4", Button = AttackButton.Light, Startup = 7, Active = 5, Recovery = 14,
+                Damage = 16, Hitstop = 7, Hitstun = 28, Ink = 8, Knockback = new Vector2(9f, 3f), CancelStart = 17, CancelEnd = 26,
                 Lunge = 3f, BoxCenter = new Vector2(0.9f, 0.3f), BoxSize = new Vector2(2.0f, 1.4f), Shake = 0.12f,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
-            new Move { Name = "KatanaHeavy", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 18,
-                Damage = 18, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(9f, 4f), CancelStart = 19, CancelEnd = 32,
+            new Move { Name = "KatanaHeavy", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 14,
+                Damage = 18, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(9f, 4f), CancelStart = 18, CancelEnd = 28,
                 Lunge = 4f, BoxCenter = new Vector2(1.05f, 0.15f), BoxSize = new Vector2(1.5f, 1.5f), Shake = 0.15f, FadeIn = 2,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
-            new Move { Name = "KatanaIaido", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 18,
-                Damage = 16, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(10f, 2f), CancelStart = 17, CancelEnd = 30,
+            new Move { Name = "KatanaIaido", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 14,
+                Damage = 16, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(10f, 2f), CancelStart = 16, CancelEnd = 26,
                 Lunge = 12f, LungeFirst = 9, BoxCenter = new Vector2(1.35f, -0.05f), BoxSize = new Vector2(1.8f, 0.5f), Shake = 0.15f,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
             // Launcher: you rise with the target (hop 11) and can chain straight into the air string on hit.
-            new Move { Name = "KatanaRisingMoon", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 20,
+            new Move { Name = "KatanaRisingMoon", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 15,
                 Damage = 14, Hitstop = 8, Hitstun = 40, Ink = 10, Knockback = new Vector2(1f, 12f), Launches = true,
-                CancelStart = 17, CancelEnd = 32, Hop = 11f, HopFrame = 9,
+                CancelStart = 16, CancelEnd = 27, Hop = 11f, HopFrame = 9,
                 BoxCenter = new Vector2(0.75f, 0.6f), BoxSize = new Vector2(1.3f, 2.0f), Shake = 0.15f,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
-            new Move { Name = "KatanaFallingBlossom", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 20,
-                Damage = 22, Hitstop = 10, Hitstun = 35, Ink = 12, Knockback = new Vector2(6f, 1f), CancelStart = 20, CancelEnd = 34,
+            new Move { Name = "KatanaFallingBlossom", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 15,
+                Damage = 22, Hitstop = 10, Hitstun = 35, Ink = 12, Knockback = new Vector2(6f, 1f), CancelStart = 19, CancelEnd = 29,
                 Hop = 9f, HopFrame = 1, BoxCenter = new Vector2(1.0f, -0.1f), BoxSize = new Vector2(1.6f, 1.8f), Shake = 0.2f,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
 
             // Air string: each hit bumps the target up a little (knockback y 5) and holds you level with it
             // (low gravity while attacking, hover on hit). Air Slam spikes the target back to the ground.
-            new Move { Name = "KatanaAirLight1", Button = AttackButton.Light, Airborne = true, Startup = 4, Active = 3, Recovery = 10,
-                Damage = 6, Hitstop = 4, Hitstun = 24, Ink = 4, Knockback = new Vector2(1.5f, 5f), CancelStart = 8, CancelEnd = 17,
+            new Move { Name = "KatanaAirLight1", Button = AttackButton.Light, Airborne = true, Startup = 4, Active = 3, Recovery = 8,
+                Damage = 6, Hitstop = 4, Hitstun = 24, Ink = 4, Knockback = new Vector2(1.5f, 5f), CancelStart = 8, CancelEnd = 15,
                 AirGravity = 0.3f, Hover = 2.5f, BoxCenter = new Vector2(1.05f, 0.3f), BoxSize = new Vector2(1.5f, 0.8f), Shake = 0.05f, FadeIn = 2 },
-            new Move { Name = "KatanaAirLight2", Button = AttackButton.Light, Airborne = true, Startup = 4, Active = 3, Recovery = 10,
-                Damage = 6, Hitstop = 4, Hitstun = 24, Ink = 4, Knockback = new Vector2(1.5f, 5f), CancelStart = 8, CancelEnd = 17,
+            new Move { Name = "KatanaAirLight2", Button = AttackButton.Light, Airborne = true, Startup = 4, Active = 3, Recovery = 8,
+                Damage = 6, Hitstop = 4, Hitstun = 24, Ink = 4, Knockback = new Vector2(1.5f, 5f), CancelStart = 8, CancelEnd = 15,
                 AirGravity = 0.3f, Hover = 2.5f, BoxCenter = new Vector2(0.8f, 0.8f), BoxSize = new Vector2(1.3f, 1.8f), Shake = 0.05f },
-            new Move { Name = "KatanaAirLight3", Button = AttackButton.Light, Airborne = true, Startup = 5, Active = 3, Recovery = 12,
-                Damage = 8, Hitstop = 5, Hitstun = 26, Ink = 5, Knockback = new Vector2(2f, 5f), CancelStart = 9, CancelEnd = 20,
+            new Move { Name = "KatanaAirLight3", Button = AttackButton.Light, Airborne = true, Startup = 5, Active = 3, Recovery = 9,
+                Damage = 8, Hitstop = 5, Hitstun = 26, Ink = 5, Knockback = new Vector2(2f, 5f), CancelStart = 9, CancelEnd = 17,
                 AirGravity = 0.3f, Hover = 2.5f, BoxCenter = new Vector2(1.25f, 0.45f), BoxSize = new Vector2(1.6f, 0.5f), Shake = 0.07f },
-            new Move { Name = "KatanaAirSlam", Button = AttackButton.Heavy, Airborne = true, Startup = 6, Active = 4, Recovery = 16,
-                Damage = 14, Hitstop = 10, Hitstun = 40, Ink = 8, Knockback = new Vector2(2f, -22f), CancelStart = 13, CancelEnd = 26,
+            new Move { Name = "KatanaAirSlam", Button = AttackButton.Heavy, Airborne = true, Startup = 6, Active = 4, Recovery = 12,
+                Damage = 14, Hitstop = 10, Hitstun = 40, Ink = 8, Knockback = new Vector2(2f, -22f), CancelStart = 12, CancelEnd = 22,
                 AirGravity = 0.3f, BoxCenter = new Vector2(0.9f, -0.2f), BoxSize = new Vector2(1.6f, 1.6f), Shake = 0.2f, FadeIn = 2,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
 
@@ -174,9 +176,9 @@ namespace Margin.EditorTools
                 BoxCenter = Vector2.zero, BoxSize = new Vector2(0.8f, 0.6f), Shake = 0.08f, NoClip = true },
 
             // Special (spec 7): costs 50 ink, throws a crescent of ink. The blade itself has no hitbox.
-            new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 16,
+            new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 12,
                 Damage = 20, Hitstop = 6, Hitstun = 30, Ink = 0, InkCost = 50, Knockback = new Vector2(7f, 2f),
-                CancelStart = 20, CancelEnd = 27, ProjectileSpeed = 14f, ProjectileLifetime = 40, Shake = 0.12f, FadeIn = 2,
+                CancelStart = 18, CancelEnd = 23, ProjectileSpeed = 14f, ProjectileLifetime = 40, Shake = 0.12f, FadeIn = 2,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
         };
 

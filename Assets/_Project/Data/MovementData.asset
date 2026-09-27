@@ -12,29 +12,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b41fee84276702947a04db72dd005017, type: 3}
   m_Name: MovementData
   m_EditorClassIdentifier: 
-  runSpeed: 9
+  runSpeed: 11.25
   runInputThreshold: 0.25
-  groundAccelerationFrames: 4
+  groundAccelerationFrames: 3
   groundDecelerationFrames: 3
-  airAccelerationFrames: 8
-  airDecelerationFrames: 8
+  airAccelerationFrames: 6
+  airDecelerationFrames: 6
+  sprintSpeed: 16
+  framesToStartSprint: 30
+  sprintAccelerationFrames: 12
+  skidFrames: 15
   jumpHeight: 3.2
   minJumpHeight: 1.2
-  framesToApex: 22
+  framesToApex: 18
   coyoteFrames: 6
   fallGravityMultiplier: 1.8
-  maxFallSpeed: 20
-  fastFallSpeed: 28
+  maxFallSpeed: 24
+  fastFallSpeed: 32
   apexHangThreshold: 1.5
   apexHangGravityMultiplier: 0.5
   apexHangRequiresJumpHeld: 1
   landFrames: 2
   cornerCorrectionDistance: 0.15
-  dashFrames: 10
-  dashSpeed: 16
-  dashInvulnerableFrames: 8
+  dashFrames: 8
+  dashSpeed: 20
+  dashInvulnerableFrames: 7
   airDashes: 1
-  dashCooldownFrames: 20
-  wallSlideSpeed: 4
-  wallJumpHorizontalSpeed: 9
-  wallJumpControlLockFrames: 8
+  dashCooldownFrames: 15
+  wallSlideSpeed: 5
+  wallJumpHorizontalSpeed: 11.25
+  wallJumpControlLockFrames: 6
