@@ -142,6 +142,16 @@ namespace Margin.Level
             safePoint = checkpoint.RespawnPoint;
         }
 
+        /// <summary>Where a death respawns the player (room + point). Boss arenas move it for quick retries.</summary>
+        public Vector2 RespawnPoint => player != null && player.Health != null ? player.Health.SpawnPoint : safePoint;
+
+        /// <summary>Makes deaths respawn at this point in this room (e.g. a boss arena's retry spot).</summary>
+        public void SetRespawn(Room room, Vector2 point)
+        {
+            if (room != null) CheckpointRoom = room;
+            if (player != null && player.Health != null) player.Health.SpawnPoint = point;
+        }
+
         // ---------------- tick ----------------
 
         public void Tick()

@@ -137,6 +137,27 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   drawn by `InkPainter` (Painter2D) inside `InkElement`s, re-seeded every `boilFrames` for a subtle boil.
   Pure logic: `InkLines`, `ChipBar`, `MenuCursor`, `BossBars`. Tuning: `Data/UI/UISettings` (+ `MarginTheme.tss`).
   The F2 debug overlay sits top-right because the HUD owns the top-left.
+- **Rooms (M5):** `Scripts/Level/`. A world is one scene of `Room`s (camera bounds = confiner + pit line; children
+  hold geometry, enemies, doors, pots, decor) placed 200 units apart; `LevelDirector` (TickOrder 30) keeps only the
+  current room active. `RoomDoor`s link in pairs; touching one fades to paper (`TransitionTimer`), switches rooms and
+  arrives walking in (`IScriptedInput` on InputReader; `PlayerHealth.Protected` meanwhile). Falling below a room:
+  `LevelSettings.pitDamage` via `PlayerHealth.TakeHazardDamage`, back to the entry door's safe point. Death fades out
+  over the defeat, `Respawn` goes to the `CheckpointRoom`. `Checkpoint` = ink pot (sets SpawnPoint, heals).
+  Entering a room calls `IRoomReset.ResetForRoom` on its contents (enemies, bosses). `LevelBlock` draws geometry from
+  its BoxCollider2D (ink outline + hatch, or a notebook line for one-way) and redraws in the editor. Decor:
+  `ParallaxLayer` (scroll 0.9 ruled lines, 0.6 doodles, 1.1 smudges), shapes from pure `LevelArt`.
+  **Camera:** `CameraFollow` + `CameraSettings` (custom, not Cinemachine: no package, counts game frames):
+  dead zone 0.6 wide / +2.4 / -1.2, look-ahead 0.5, grounded recentering, room confiner, snaps on `LevelEvents.CameraCut`.
+  Menu **Margin > Build World 1** writes `Scenes/World1.unity` (first in Build Settings): 9 rooms from
+  `Editor/GymBuilder.World.cs`; edit layouts there (rooms are graybox-simple on purpose until playtesting).
+- **Bosses (M5):** `Scripts/Bosses/`. `BossBase` (TickOrder 22): Dormant > Intro > Rest/Attacking (pool from the
+  current `BossPhase`, pure `BossMovePicker`: weighted, range-checked, never 3 in a row) > Staggered (parry) /
+  PhaseShift (at each phase's healthThreshold) > Defeated > Gone (`Beaten`). Super armor: only parries stagger.
+  Intros/phase changes play short after the first view. `BossArena` on the arena Room: fight starts past triggerX,
+  seals the entrance, deaths respawn at its retry point (retry under 3 s), beating it opens the exit + shows the
+  reward. The Highlighter (`Bosses/Highlighter/`): Swipe (parry), Dash Stroke (red, jump/dash), Cap Toss (parry it
+  back = 45 dmg + stagger); phase 2 flies, floods the floor (`Level/InkFlood`, 1-frame hitstun bounce) with Line Sweep
+  (parry) and Drip Rain (red, lanes). Data in `Data/Bosses/Highlighter` (`Editor/StarterBosses.cs`, never overwritten).
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

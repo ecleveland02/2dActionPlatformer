@@ -77,6 +77,19 @@ namespace Margin.Physics
         }
 
         /// <summary>
+        /// Moves without testing for collisions (a flying boss gliding over platforms). Unlike Teleport the motion
+        /// stays interpolated. Collision state is cleared: the body is treated as airborne.
+        /// </summary>
+        public void MoveFree(Vector2 delta)
+        {
+            Position += delta;
+            body.MovePosition(Position);
+            state = default;
+            groundCollider = null;
+            dropThroughCollider = null;
+        }
+
+        /// <summary>
         /// Fall through the one-way platform currently underfoot (Down + Jump). Only that platform is ignored,
         /// so a stack of one-way platforms still catches you on the next one down.
         /// </summary>

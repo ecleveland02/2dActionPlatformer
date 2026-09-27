@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Margin.Bosses;
 using Margin.Core;
 using Margin.Enemies;
 using Margin.Level;
@@ -269,10 +270,61 @@ namespace Margin.EditorTools
 
             var gate = new GameObject("Boss Gate").transform;
             gate.SetParent(r.Room.transform, false);
-            GameObject seal = r.Solid("Exit Seal", 35f, 0f, 36f, DoorHeight + 0.2f);
-            seal.transform.SetParent(gate, true);
+            GameObject exitSeal = r.Solid("Exit Seal", 35f, 0f, 36f, DoorHeight + 0.2f);
+            exitSeal.transform.SetParent(gate, true);
+            GameObject entranceSeal = r.Solid("Entrance Seal", 0f, 0f, 1f, DoorHeight + 0.2f);
+            entranceSeal.transform.SetParent(gate, true);
+            entranceSeal.SetActive(false);
+
+            StarterBosses.Result bossData = StarterBosses.EnsureCreated();
+            InkFlood flood = BuildFlood(r, bossData, kit.Assets);
+            HighlighterBoss boss = BuildHighlighter(r, bossData, flood, kit.Assets);
+            r.Room.gameObject.AddComponent<BossArena>().Configure(boss, 5f, entranceSeal, exitSeal, null, new Vector2(2f, 0.95f));
             r.Paper(83);
             return r;
+        }
+
+        /// <summary>The phase 2 ink pool across the whole arena floor (empty until the boss floods it).</summary>
+        private static InkFlood BuildFlood(RoomKit r, StarterBosses.Result bossData, GymAssets assets)
+        {
+            var go = new GameObject("Ink Flood");
+            go.transform.SetParent(r.Room.transform, false);
+            go.transform.position = r.P(18f, 0f);
+            var flood = go.AddComponent<InkFlood>();
+            flood.Configure(bossData.Flood, assets.Combat.Settings, 38f, 1.4f);
+            SetReference(flood, "lineMaterial", assets.Ink);
+            return flood;
+        }
+
+        /// <summary>The Highlighter: asleep on the right of the arena, facing the door.</summary>
+        private static HighlighterBoss BuildHighlighter(RoomKit r, StarterBosses.Result bossData, InkFlood flood, GymAssets assets)
+        {
+            const float halfHeight = 1.5f;
+            var go = new GameObject("The Highlighter");
+            go.transform.SetParent(r.Room.transform, false);
+            go.transform.position = r.P(28f, halfHeight);
+            var body = go.AddComponent<Margin.Physics.KinematicBody2D>();   // also adds BoxCollider2D + Rigidbody2D
+            go.GetComponent<BoxCollider2D>().size = new Vector2(1.2f, halfHeight * 2f);
+            var rb = go.GetComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            SetReference(body, "data", assets.BodyData);
+            go.AddComponent<Margin.Combat.Hurtbox>().Configure(Margin.Combat.Faction.Enemy, Vector2.zero, bossData.Highlighter.bodySize);
+
+            var visualObject = new GameObject("Visual");
+            visualObject.transform.SetParent(go.transform, false);
+            visualObject.transform.localPosition = new Vector3(0f, -halfHeight, 0f);
+            var visual = visualObject.AddComponent<HighlighterVisual>();
+            SetReference(visual, "lineMaterial", assets.Ink);
+
+            var boss = go.AddComponent<HighlighterBoss>();
+            SetReference(boss, "data", bossData.Highlighter);
+            SetReference(boss, "settings", assets.Combat.Settings);
+            SetReference(boss, "physics", assets.Movement);
+            SetReference(boss, "visual", visual);
+            SetReference(boss, "flood", flood);
+            SetReference(boss, "lineMaterial", assets.Ink);
+            return boss;
         }
 
         private static RoomKit LooseLeaf(WorldKit kit, int index)
