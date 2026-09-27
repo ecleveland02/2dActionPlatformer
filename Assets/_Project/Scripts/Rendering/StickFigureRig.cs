@@ -34,7 +34,6 @@ namespace Margin.Rendering
         [SerializeField, HideInInspector] private Vector2 rootOffset;
         [SerializeField, HideInInspector] private LineRenderer spineLine, headLine, armFrontLine, armBackLine, legFrontLine, legBackLine;
 
-        private static Material runtimeMaterial;
         private static StickFigureProportions defaultProportions;
         private Vector3[] headPoints;
 
@@ -66,6 +65,12 @@ namespace Margin.Rendering
         }
 
         public bool IsBuilt => hips != null && footBack != null && legBackLine != null;
+
+        /// <summary>The six ink lines (body, head, arms, legs), e.g. for afterimages to copy.</summary>
+        public LineRenderer[] Lines => new[] { legBackLine, armBackLine, spineLine, headLine, legFrontLine, armFrontLine };
+
+        /// <summary>World position of the front shoulder (the sword arm's pivot).</summary>
+        public Vector3 ShoulderPosition => shoulderFront.position;
 
         public Vector3 HipsPosition => hips.position;
         public Vector3 ChestPosition => chest.position;
@@ -259,22 +264,11 @@ namespace Margin.Rendering
         private void AssignLineMaterial()
         {
             if (!IsBuilt) return;
-            Material material = lineMaterial != null ? lineMaterial : RuntimeMaterial();
+            Material material = lineMaterial != null ? lineMaterial : InkMaterial.Runtime;
             foreach (LineRenderer line in new[] { spineLine, headLine, armFrontLine, armBackLine, legFrontLine, legBackLine })
                 line.sharedMaterial = material;
         }
 
-        private static Material RuntimeMaterial()
-        {
-            if (runtimeMaterial != null) return runtimeMaterial;
-            // URP's unlit sprite shader renders pink under the built-in renderer, so pick by active pipeline.
-            Shader shader = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline != null
-                ? Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default")
-                : null;
-            if (shader == null) shader = Shader.Find("Sprites/Default");
-            runtimeMaterial = new Material(shader) { name = "StickFigureInk (runtime)", hideFlags = HideFlags.DontSave };
-            return runtimeMaterial;
-        }
 
         private static Transform NewChild(string name, Transform parent)
         {

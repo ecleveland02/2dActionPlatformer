@@ -3,6 +3,7 @@ using System.Linq;
 using Margin.Combat;
 using Margin.Core;
 using Margin.Enemies;
+using Margin.FX;
 using Margin.Input;
 using Margin.Level;
 using Margin.Physics;
@@ -137,6 +138,7 @@ namespace Margin.EditorTools
             camObject.transform.position = new Vector3(0, 2, -10);
             camObject.AddComponent<CameraFollow>().Target = player.transform;
             camObject.AddComponent<AudioListener>();
+            EnsureSceneEffects(assets);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -171,6 +173,7 @@ namespace Margin.EditorTools
                 WirePlayer(controller, controller.GetComponent<InputReader>(),
                            controller.GetComponent<KinematicBody2D>(), null, assets);
             }
+            EnsureSceneEffects(assets);
 
             EditorSceneManager.MarkSceneDirty(scene);
             if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
@@ -188,6 +191,7 @@ namespace Margin.EditorTools
             public StickFigureProportions Proportions;
             public PlayerAnimationSet Animations;
             public StarterCombat.Result Combat;
+            public FeelSettings Feel;
         }
 
         /// <summary>Loads the data assets, creating any that are missing (existing tuning is never overwritten).</summary>
@@ -203,6 +207,7 @@ namespace Margin.EditorTools
                 Proportions = LoadOrCreate<StickFigureProportions>($"{DataFolder}/StickFigureProportions.asset"),
                 Animations = StarterPoses.EnsureCreated(),   // poses, clips and the set; only adds what's missing
                 Combat = StarterCombat.EnsureCreated(),      // attacks, Brush Katana, combat settings
+                Feel = LoadOrCreate<FeelSettings>($"{DataFolder}/FeelSettings.asset"),
             };
 
             if (assets.Controls == null)
@@ -288,7 +293,27 @@ namespace Margin.EditorTools
             return ok;
         }
 
-        /// <summary>Adds PlayerCombat (Brush Katana), the blade line and the player's hurtbox.</summary>
+        /// <summary>Screen shake on the main camera and one ink splatter emitter, both using the FeelSettings asset.</summary>
+        private static void EnsureSceneEffects(GymAssets assets)
+        {
+            Camera cam = null;
+            foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
+                if ((cam = root.GetComponentInChildren<Camera>()) != null) break;
+            if (cam != null)
+            {
+                var shake = cam.GetComponent<CameraShake>();
+                if (shake == null) shake = cam.gameObject.AddComponent<CameraShake>();
+                SetReference(shake, "settings", assets.Feel);
+            }
+
+            InkSplatter splatter = null;
+            foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
+                if ((splatter = root.GetComponentInChildren<InkSplatter>()) != null) break;
+            if (splatter == null) splatter = new GameObject("[InkSplatter]").AddComponent<InkSplatter>();
+            SetReference(splatter, "settings", assets.Feel);
+        }
+
+        /// <summary>Adds PlayerCombat (Brush Katana), PlayerFX, the blade line and the player's hurtbox.</summary>
         private static bool WireCombat(PlayerController controller, Transform visual, StickFigureRig rig, GymAssets assets)
         {
             Transform bladeObject = visual.Find("Blade");
@@ -307,6 +332,10 @@ namespace Margin.EditorTools
             ok &= SetReference(combat, "weapon", assets.Combat.Weapon);
             ok &= SetReference(combat, "settings", assets.Combat.Settings);
             ok &= SetReference(combat, "weaponLine", blade);
+
+            var fx = controller.GetComponent<PlayerFX>();
+            if (fx == null) fx = controller.gameObject.AddComponent<PlayerFX>();
+            ok &= SetReference(fx, "settings", assets.Feel);
 
             var hurtbox = controller.GetComponent<Hurtbox>();
             if (hurtbox == null) hurtbox = controller.gameObject.AddComponent<Hurtbox>();

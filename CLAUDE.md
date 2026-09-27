@@ -51,6 +51,10 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Hitstop: below `CombatSettings.globalHitstopThreshold` (8) only attacker/target freeze; at/above it `GameLoop.Freeze`.
   Weapons list only *starter* moves (Light1, Heavy, Up, Air...); follow-ups (Light2/3) come from cancel lists.
   Menus: **Margin > Create Starter Combat Data**, **Margin > Add Training Dummy**.
+- **Feel (M3 chunk 3):** `Scripts/FX/`. `FeelSettings` asset (Data/FeelSettings) tunes shake, smear, trail,
+  splatter, afterimages. `CameraShake` (camera, real-time, uses AttackData.screenShake x screenShakeScale),
+  `InkSplatter` (one per scene, listens to `CombatEvents.Hit`), `PlayerFX` (TickOrder 11: smear on swing frames,
+  blade trail while attacking, dash afterimages; frozen in hitstop). `FeelBootstrap` adds any missing ones at runtime.
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)
