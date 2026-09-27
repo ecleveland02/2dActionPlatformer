@@ -73,7 +73,9 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   reaches; hip/knee from 2-bone IK, a key every frame, so the measured stride is exact
   (run 3.87 u = ~5 steps/s at 10 u/s; sprint 5.08 u). Upper body (lean, sword hold) from the drawings. Jump/Apex/Fall are a designed N+-style family (`air_family` in the offline tool: push-off, relaxed tuck, open
   at the top, legs reaching down with the free arm up; the fall loop only flutters); only the sword arm comes from
-  the drawings (the traced jump flicked a leg, the traced fall pedalled). Air posing
+  the drawings (the traced jump flicked a leg, the traced fall pedalled). Idle/IdleFidget keep both feet planted at
+  fixed spots (legs solved by IK, knees give as the hips breathe); IdleBreathing's legs/hips are held at its first
+  pose so the additive layer only moves torso, head and arms. Air posing
   is N+-style: `AirPoseBlend` (pure) + `PoseAnimator.SetBlend` flow jump -> apex -> fall with vertical speed
   (`PlayerAnimationSet.airBlendRiseSpeed/FallSpeed`; 0 = old threshold switching). Attack clips are 9 keys (Entry, Windup,
   WindupDeep, SwingMid, Strike, StrikeEnd, FollowThrough, Recover, Exit; `AttackSpec`). SwingMid splits the swing so
