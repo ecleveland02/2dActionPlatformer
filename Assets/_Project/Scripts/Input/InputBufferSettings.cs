@@ -16,6 +16,11 @@ namespace Margin.Input
         [Min(1)] public int dashFrames = 6;
         [Min(1)] public int parryFrames = 6;
 
+        [Header("Attack button (left click / right trigger)")]
+        [Tooltip("Frames the Attack button must be held to count as a heavy attack. Released sooner = light attack " +
+                 "(which starts on release). Lower = heavies come out faster but slow taps may turn into heavies.")]
+        [Min(2)] public int attackHoldFrames = 10;
+
         public void ApplyTo(InputBuffer buffer)
         {
             buffer.SetWindow(BufferedAction.Jump, jumpFrames);

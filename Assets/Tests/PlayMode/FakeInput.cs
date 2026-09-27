@@ -13,6 +13,7 @@ namespace Margin.Tests
         public bool JumpHeld { get; set; }
         public bool DownHeld { get; set; }
         public bool UpHeld { get; set; }
+        public bool AttackHoldPending { get; set; }
         public InputBuffer Buffer { get; }
     }
 }

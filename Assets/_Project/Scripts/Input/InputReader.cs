@@ -30,6 +30,8 @@ namespace Margin.Input
 
         private InputAction moveAction;
         private InputAction jumpAction;
+        private InputAction attackAction;               // tap = light, hold = heavy
+        private readonly TapHoldButton attackButton = new TapHoldButton(10);
 
         // Maps each Input System action to the BufferedAction it feeds. Order matches BufferedAction.
         private InputAction[] bufferedActions;
@@ -44,12 +46,17 @@ namespace Margin.Input
         public bool JumpHeld { get; private set; }
         public bool DownHeld => Move.y <= -directionThreshold;
         public bool UpHeld => Move.y >= directionThreshold;
+        public bool AttackHoldPending => attackButton.Pending;
 
         /// <summary>Creates the buffer. Call once before the first tick, passing the game's frame counter.</summary>
         public void Initialize(IFrameSource clock)
         {
             Buffer = new InputBuffer(clock);
-            if (bufferSettings != null) bufferSettings.ApplyTo(Buffer);
+            if (bufferSettings != null)
+            {
+                bufferSettings.ApplyTo(Buffer);
+                attackButton.HoldFrames = bufferSettings.attackHoldFrames;
+            }
         }
 
         private void Awake()
@@ -73,6 +80,9 @@ namespace Margin.Input
             InputActionMap map = actions.FindActionMap(GameplayMap, throwIfNotFound: true);
             moveAction = map.FindAction("Move", throwIfNotFound: true);
             jumpAction = map.FindAction("Jump", throwIfNotFound: true);
+            attackAction = map.FindAction("Attack", throwIfNotFound: false);
+            if (attackAction == null)
+                Debug.LogWarning("MarginControls has no 'Attack' action; the tap/hold attack button is disabled.", this);
 
             bufferedActions = new[]
             {
@@ -89,6 +99,11 @@ namespace Margin.Input
         private void OnEnable()
         {
             foreach (InputAction action in bufferedActions) action.performed += OnButtonPerformed;
+            if (attackAction != null)
+            {
+                attackAction.performed += OnAttackPressed;
+                attackAction.canceled += OnAttackReleased;
+            }
             actions.FindActionMap(GameplayMap).Enable();
             GameLoop.Register(this);
         }
@@ -96,9 +111,18 @@ namespace Margin.Input
         private void OnDisable()
         {
             foreach (InputAction action in bufferedActions) action.performed -= OnButtonPerformed;
+            if (attackAction != null)
+            {
+                attackAction.performed -= OnAttackPressed;
+                attackAction.canceled -= OnAttackReleased;
+            }
+            attackButton.Reset();
             actions.FindActionMap(GameplayMap).Disable();
             GameLoop.Unregister(this);
         }
+
+        private void OnAttackPressed(InputAction.CallbackContext context) => attackButton.QueuePress();
+        private void OnAttackReleased(InputAction.CallbackContext context) => attackButton.QueueRelease();
 
         private void OnButtonPerformed(InputAction.CallbackContext context)
         {
@@ -117,6 +141,13 @@ namespace Margin.Input
                 if (!pendingPresses[i]) continue;
                 Buffer.Record((BufferedAction)i);
                 pendingPresses[i] = false;
+            }
+
+            // Tap/hold Attack button: a tap becomes a buffered light attack, a hold a buffered heavy attack.
+            switch (attackButton.Tick())
+            {
+                case TapHoldResult.Tap: Buffer.Record(BufferedAction.LightAttack); break;
+                case TapHoldResult.Hold: Buffer.Record(BufferedAction.HeavyAttack); break;
             }
 
             Move = moveAction.ReadValue<Vector2>();

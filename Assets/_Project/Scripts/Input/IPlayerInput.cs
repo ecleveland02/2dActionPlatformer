@@ -12,6 +12,8 @@ namespace Margin.Input
         bool JumpHeld { get; }
         bool DownHeld { get; }
         bool UpHeld { get; }
+        /// <summary>The tap/hold Attack button is down and not yet decided (light on release, heavy when held).</summary>
+        bool AttackHoldPending { get; }
         InputBuffer Buffer { get; }
     }
 }

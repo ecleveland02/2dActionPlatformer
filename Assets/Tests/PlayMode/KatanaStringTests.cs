@@ -144,6 +144,31 @@ namespace Margin.Tests
         }
 
         [Test]
+        public void HoldingAttackPastTheEnd_WaitsThenBranches()
+        {
+            // Tap/hold button: Light 1 finishes while Attack is still held and undecided.
+            Step(light: true);
+            input.AttackHoldPending = true;
+            for (int i = 0; i < 30; i++) Step();
+            Assert.AreEqual(l1, Current, "Light 1 waits in its last pose while the hold is undecided.");
+
+            // The hold completes: the button becomes a heavy press, which branches from Light 1.
+            input.AttackHoldPending = false;
+            Step(heavyPress: true);
+            Assert.AreEqual(h1, Current, "A hold that finishes after Light 1 still gives the Light 1 branch (Iaido).");
+        }
+
+        [Test]
+        public void NotHolding_AttackEndsNormally_AndLateHeavyIsNeutral()
+        {
+            Step(light: true);
+            for (int i = 0; i < 25; i++) Step();
+            Assert.IsNull(Current, "Without a pending hold, the attack ends on its last frame.");
+            Step(heavyPress: true);
+            Assert.AreEqual(heavy, Current);
+        }
+
+        [Test]
         public void HeavyFromNeutral_IsTheOverheadCleave()
         {
             Step(heavyPress: true);

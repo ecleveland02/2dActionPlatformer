@@ -17,6 +17,7 @@ namespace Margin.Player
         public AttackData Attack { get; private set; }
         public bool HasHit { get; private set; }
         public bool Airborne { get; private set; }
+        private bool waitedForHold;
 
         /// <summary>Attack frame this state is on (1 = first tick).</summary>
         public int Frame => Player.FramesInState;
@@ -25,6 +26,7 @@ namespace Margin.Player
         {
             Attack = Player.Combat.PendingAttack;
             HasHit = false;
+            waitedForHold = false;
             Airborne = !Player.Grounded;
             Player.Combat.BeginAttack(Attack);
         }
@@ -39,7 +41,14 @@ namespace Margin.Player
             int next = Frame + 1;             // the frame about to run
             AttackTiming timing = Attack.Timing;
 
-            if (timing.AllowsAttackCancel(next, HasHit) && Player.Combat.TryCancelInto(Attack))
+            // Past the last frame but the tap/hold Attack button is still undecided: the attack waits in its
+            // final pose, and whatever the button becomes (light on release, heavy when held) still chains.
+            bool waitingForHold = next > timing.TotalFrames && Player.Controls.AttackHoldPending;
+            if (waitingForHold) waitedForHold = true;
+            // Only an attack that waited for a hold may chain after its last frame; otherwise normal rules apply.
+            bool chainOpen = timing.AllowsAttackCancel(next, HasHit) || waitedForHold;
+
+            if (chainOpen && Player.Combat.TryCancelInto(Attack))
                 return Player.Attack;         // re-enter with the new attack
 
             if (timing.AllowsMovementCancel(next, HasHit))
@@ -52,7 +61,7 @@ namespace Margin.Player
             // Air attacks end when you land.
             if (Airborne && Player.Grounded && Player.Velocity.y <= 0f) return Player.Land;
 
-            if (next > timing.TotalFrames)
+            if (next > timing.TotalFrames && !waitingForHold)
             {
                 if (!Player.Grounded) return Player.Fall;
                 return Player.InputX != 0 ? (PlayerState)Player.Run : Player.Idle;

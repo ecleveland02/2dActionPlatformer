@@ -53,16 +53,17 @@ namespace Margin.EditorTools
             public string Swing = "swing_light", Hit = "hit_light";
         }
 
+        // Light hitstun is 6 frames longer than the spec example so a held (hold-to-heavy) branch still combos.
         private static readonly Move[] Moves =
         {
             new Move { Name = "KatanaLight1", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 10,
-                Damage = 8, Hitstop = 4, Hitstun = 18, Ink = 5, Knockback = new Vector2(4f, 1f), CancelStart = 9, CancelEnd = 17,
+                Damage = 8, Hitstop = 4, Hitstun = 24, Ink = 5, Knockback = new Vector2(4f, 1f), CancelStart = 9, CancelEnd = 17,
                 Lunge = 1.5f, BoxCenter = new Vector2(1.05f, 0.15f), BoxSize = new Vector2(1.4f, 0.6f), Shake = 0.05f, FadeIn = 2 },
             new Move { Name = "KatanaLight2", Button = AttackButton.Light, Startup = 4, Active = 3, Recovery = 11,
-                Damage = 9, Hitstop = 4, Hitstun = 20, Ink = 5, Knockback = new Vector2(3f, 2f), CancelStart = 9, CancelEnd = 18,
+                Damage = 9, Hitstop = 4, Hitstun = 26, Ink = 5, Knockback = new Vector2(3f, 2f), CancelStart = 9, CancelEnd = 18,
                 Lunge = 1.5f, BoxCenter = new Vector2(0.85f, 0.5f), BoxSize = new Vector2(1.2f, 1.8f), Shake = 0.05f },
             new Move { Name = "KatanaLight3", Button = AttackButton.Light, Startup = 6, Active = 3, Recovery = 12,
-                Damage = 11, Hitstop = 5, Hitstun = 22, Ink = 6, Knockback = new Vector2(5f, 1f), CancelStart = 11, CancelEnd = 21,
+                Damage = 11, Hitstop = 5, Hitstun = 28, Ink = 6, Knockback = new Vector2(5f, 1f), CancelStart = 11, CancelEnd = 21,
                 Lunge = 7f, LungeFirst = 3, BoxCenter = new Vector2(1.25f, 0.2f), BoxSize = new Vector2(1.6f, 0.4f), Shake = 0.07f },
             new Move { Name = "KatanaLight4", Button = AttackButton.Light, Startup = 7, Active = 5, Recovery = 18,
                 Damage = 16, Hitstop = 7, Hitstun = 28, Ink = 8, Knockback = new Vector2(9f, 3f), CancelStart = 18, CancelEnd = 30,

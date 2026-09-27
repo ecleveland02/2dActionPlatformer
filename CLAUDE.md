@@ -16,6 +16,10 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Coyote time uses the same rule (first airborne tick is frame 1; frame 6 succeeds, frame 7 fails).
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
+- **Attack button:** one tap/hold button (left mouse / right trigger) via `TapHoldButton` (pure): a tap (released
+  before `InputBufferSettings.attackHoldFrames`, default 10) buffers LightAttack on release; a hold buffers HeavyAttack
+  on the hold frame. J/K and gamepad X/Y remain instant light/heavy. Special is on the left trigger.
+  While the button is undecided (`IPlayerInput.AttackHoldPending`) a finished attack waits so the result still chains.
 - **Tick order:** `GameLoop` (one per scene) advances the `FrameCounter` then ticks every `ITickable` by `TickOrder`:
   `InputReader` (-100), then `PlayerController` (0). Pausing/frame-stepping only needs to control `GameLoop`.
 - **Layers:** 6 `Ground` (solid), 7 `OneWayPlatform`, 8 `Player`. `KinematicBodyData` holds the masks.
