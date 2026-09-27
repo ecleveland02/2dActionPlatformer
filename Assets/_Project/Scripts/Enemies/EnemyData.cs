@@ -11,6 +11,11 @@ namespace Margin.Enemies
     {
         [Header("Health")]
         [Min(1)] public int maxHealth = 40;
+        [Tooltip("Name on the big health bar at the bottom of the screen while fighting it. Empty = no boss bar " +
+                 "(regular enemies). Set it on a mini-boss, or on any enemy to try the bar out.")]
+        public string bossBarName = "";
+        [Tooltip("Health fractions where the boss changes phase, drawn as notches on its bar (e.g. 0.5).")]
+        public float[] bossPhaseMarks = new float[0];
 
         [Header("Movement")]
         [Tooltip("Walking speed (units/s).")]

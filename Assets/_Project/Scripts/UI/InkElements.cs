@@ -1,0 +1,130 @@
+using System;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace Margin.UI
+{
+    /// <summary>
+    /// Base for elements drawn in ink. Each has its own seed so no two boxes wobble alike, mixed with the boil seed
+    /// so the lines are gently redrawn a few times a second. Call Refresh() once per frame; it only repaints when
+    /// something changed.
+    /// </summary>
+    public abstract class InkElement : VisualElement
+    {
+        private static int nextSeed = 1;
+        private int drawnBoil = int.MinValue;
+
+        protected readonly UISettings Settings;
+        protected readonly int BaseSeed;
+
+        protected InkElement(UISettings settings)
+        {
+            Settings = settings;
+            BaseSeed = nextSeed++ * 7919;
+            pickingMode = PickingMode.Ignore;
+            generateVisualContent += ctx => Draw(ctx.painter2D, contentRect, BaseSeed + drawnBoil * 131);
+        }
+
+        /// <summary>Repaints if the boil moved on (values changed? call MarkDirtyRepaint yourself).</summary>
+        public void Refresh()
+        {
+            int boil = InkPainter.BoilSeed(Settings);
+            if (boil == drawnBoil) return;
+            drawnBoil = boil;
+            MarkDirtyRepaint();
+        }
+
+        protected abstract void Draw(Painter2D painter, Rect rect, int seed);
+    }
+
+    /// <summary>A sheet of paper with a sketched ink border (HUD cards, the pause menu).</summary>
+    public sealed class InkPanel : InkElement
+    {
+        public InkPanel(UISettings settings) : base(settings) { }
+
+        protected override void Draw(Painter2D painter, Rect rect, int seed)
+        {
+            float inset = Settings.overshoot + Settings.wobble;
+            Rect inner = new Rect(rect.x + inset, rect.y + inset, rect.width - inset * 2f, rect.height - inset * 2f);
+            InkPainter.FillBox(painter, inner, Settings.paper, Settings, seed);
+            InkPainter.SketchBox(painter, inner, Settings.ink, Settings, seed + 1);
+        }
+    }
+
+    /// <summary>
+    /// A meter: faint empty track, a red damage chip (Trail), the ink fill (Value), notch marks (e.g. the 50 ink
+    /// needed for a special), and a sketched outline that can pulse red.
+    /// </summary>
+    public sealed class InkBar : InkElement
+    {
+        private float value = 1f, trail = 1f, alert;
+        private float[] notches = Array.Empty<float>();
+
+        public InkBar(UISettings settings) : base(settings) { }
+
+        /// <summary>Sets the fill (0..1), the chip trail (0..1, at or above the fill) and how red the outline is (0..1).</summary>
+        public void SetValues(float fill, float chip, float outlineAlert)
+        {
+            if (Mathf.Approximately(fill, value) && Mathf.Approximately(chip, trail) && Mathf.Approximately(outlineAlert, alert)) return;
+            value = fill;
+            trail = Mathf.Max(fill, chip);
+            alert = outlineAlert;
+            MarkDirtyRepaint();
+        }
+
+        /// <summary>Tick marks across the bar at these fractions.</summary>
+        public void SetNotches(params float[] marks)
+        {
+            notches = marks ?? Array.Empty<float>();
+            MarkDirtyRepaint();
+        }
+
+        protected override void Draw(Painter2D painter, Rect rect, int seed)
+        {
+            UISettings s = Settings;
+            float inset = s.overshoot * 0.5f + s.wobble;
+            Rect track = new Rect(rect.x + inset, rect.y + inset * 0.5f, rect.width - inset * 2f, rect.height - inset);
+
+            InkPainter.FillBox(painter, track, s.faint, s, seed, 0.5f);
+            InkPainter.FillBox(painter, new Rect(track.x, track.y, track.width * trail, track.height), s.accent, s, seed + 1, 0.5f);
+            InkPainter.FillBox(painter, new Rect(track.x, track.y, track.width * value, track.height), s.ink, s, seed + 2, 0.5f);
+
+            for (int i = 0; i < notches.Length; i++)
+            {
+                float x = track.x + track.width * notches[i];
+                InkPainter.Line(painter, new Vector2(x, track.y - 4f), new Vector2(x, track.yMax + 4f), s.paper, s, seed + 10 + i, 0.8f);
+            }
+
+            Color outline = Color.Lerp(s.ink, s.accent, alert);
+            InkPainter.SketchBox(painter, track, outline, s, seed + 3, alert > 0f ? 1f + 0.4f * alert : 1f);
+        }
+    }
+
+    /// <summary>A quick hand-drawn underline with a tick mark in front: marks the selected menu item.</summary>
+    public sealed class InkSelectionMark : InkElement
+    {
+        public InkSelectionMark(UISettings settings) : base(settings) { }
+
+        protected override void Draw(Painter2D painter, Rect rect, int seed)
+        {
+            UISettings s = Settings;
+            float y = rect.yMax - 4f;
+            InkPainter.Line(painter, new Vector2(rect.x + 30f, y), new Vector2(rect.xMax - 4f, y + 2f), s.ink, s, seed, 1.2f);
+            // A little arrow ">" in the left margin.
+            float cy = rect.y + rect.height * 0.5f;
+            InkPainter.Line(painter, new Vector2(rect.x + 4f, cy - 9f), new Vector2(rect.x + 18f, cy), s.ink, s, seed + 1, 1.2f);
+            InkPainter.Line(painter, new Vector2(rect.x + 18f, cy), new Vector2(rect.x + 4f, cy + 9f), s.ink, s, seed + 2, 1.2f);
+        }
+    }
+
+    /// <summary>A full-screen wash of paper color that dims the game behind a menu.</summary>
+    public sealed class InkDim : VisualElement
+    {
+        public InkDim(UISettings settings)
+        {
+            style.position = Position.Absolute;
+            style.left = style.top = style.right = style.bottom = 0f;
+            style.backgroundColor = settings.pauseDim;
+        }
+    }
+}

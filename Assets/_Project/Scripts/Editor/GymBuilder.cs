@@ -193,6 +193,7 @@ namespace Margin.EditorTools
             public PlayerAnimationSet Animations;
             public StarterCombat.Result Combat;
             public FeelSettings Feel;
+            public Margin.UI.UISettings UI;
         }
 
         /// <summary>Loads the data assets, creating any that are missing (existing tuning is never overwritten).</summary>
@@ -209,6 +210,7 @@ namespace Margin.EditorTools
                 Animations = StarterPoses.EnsureCreated(),   // poses, clips and the set; only adds what's missing
                 Combat = StarterCombat.EnsureCreated(),      // attacks, Brush Katana, combat settings
                 Feel = LoadOrCreate<FeelSettings>($"{DataFolder}/FeelSettings.asset"),
+                UI = StarterUI.EnsureCreated(),              // HUD and menu look (Data/UI)
             };
 
             if (assets.Controls == null)
@@ -294,7 +296,7 @@ namespace Margin.EditorTools
             return ok;
         }
 
-        /// <summary>Screen shake on the main camera and one ink splatter emitter, both using the FeelSettings asset.</summary>
+        /// <summary>Screen shake on the main camera, one ink splatter emitter (FeelSettings), and the UI root (HUD + pause menu).</summary>
         private static void EnsureSceneEffects(GymAssets assets)
         {
             Camera cam = null;
@@ -312,6 +314,8 @@ namespace Margin.EditorTools
                 if ((splatter = root.GetComponentInChildren<InkSplatter>()) != null) break;
             if (splatter == null) splatter = new GameObject("[InkSplatter]").AddComponent<InkSplatter>();
             SetReference(splatter, "settings", assets.Feel);
+
+            StarterUI.EnsureInScene(assets.UI);   // HUD + pause menu
         }
 
         /// <summary>Adds PlayerCombat (Brush Katana), PlayerFX, the blade line and the player's hurtbox.</summary>

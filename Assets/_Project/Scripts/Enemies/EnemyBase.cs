@@ -5,6 +5,7 @@ using Margin.FX;
 using Margin.Physics;
 using Margin.Player;
 using Margin.Rendering;
+using Margin.UI;
 using UnityEngine;
 
 namespace Margin.Enemies
@@ -21,7 +22,7 @@ namespace Margin.Enemies
     /// Everything resets when the player respawns.
     /// </summary>
     [RequireComponent(typeof(KinematicBody2D))]
-    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource
+    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource, IBossBarSource
     {
         [SerializeField] private EnemyData data;
         [Tooltip("Gravity and friction come from here (the player's MovementData is fine).")]
@@ -120,6 +121,7 @@ namespace Margin.Enemies
             all.Add(this);
             GameLoop.Register(this);
             HitboxSources.Register(this);
+            BossBars.Register(this);
             PlayerEvents.Respawned += OnPlayerRespawned;
         }
 
@@ -129,6 +131,7 @@ namespace Margin.Enemies
             Tokens.Release(this);
             GameLoop.Unregister(this);
             HitboxSources.Unregister(this);
+            BossBars.Unregister(this);
             PlayerEvents.Respawned -= OnPlayerRespawned;
         }
 
@@ -380,7 +383,19 @@ namespace Margin.Enemies
             if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(Position, Vector2.up, 25);
             SetVisible(false);
             if (hurtbox != null) hurtbox.enabled = false;
+            vanished = true;
         }
+
+        // ---------------- boss bar (IBossBarSource) ----------------
+
+        private bool vanished;
+
+        public string BossName => data != null ? data.bossBarName : "";
+        public float HealthFraction => Health != null ? Health.Fraction : 0f;
+        public IReadOnlyList<float> PhaseMarks => data != null ? data.bossPhaseMarks : null;
+        /// <summary>Only enemies with a boss bar name, from the moment they notice the player until they vanish.</summary>
+        public bool ShowBossBar => data != null && !string.IsNullOrEmpty(data.bossBarName) && machine != null &&
+                                   CurrentState != Patrol && !vanished;
 
         // ---------------- reset ----------------
 
@@ -390,6 +405,7 @@ namespace Margin.Enemies
         public void ResetEnemy()
         {
             if (machine == null) return;
+            vanished = false;
             runner.Cancel();
             ReleaseAttackSlot();
             Body.Teleport(home);

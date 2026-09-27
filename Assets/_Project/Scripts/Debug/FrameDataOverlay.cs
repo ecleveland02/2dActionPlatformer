@@ -68,7 +68,8 @@ namespace Margin.DebugTools
             BuildText();
             var content = new GUIContent(text.ToString());
             Vector2 size = style.CalcSize(content);
-            GUI.Box(new Rect(10, 10, size.x, size.y), content, style);
+            // Top-right: the HUD owns the top-left corner (spec 14).
+            GUI.Box(new Rect(Screen.width - size.x - 10, 10, size.x, size.y), content, style);
         }
 
         private void BuildText()
