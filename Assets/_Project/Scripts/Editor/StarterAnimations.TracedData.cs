@@ -4,6 +4,7 @@
 // </auto-generated>
 using System.Collections.Generic;
 using Margin.Rendering;
+using static Margin.EditorTools.StarterPoses;
 
 namespace Margin.EditorTools
 {
