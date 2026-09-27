@@ -62,9 +62,17 @@ namespace Margin.UI
             GUI.Label(new Rect(x, y - 20f, w, 18f), $"INK  {ink.Value}/{ink.Max}", label);
             Fill(new Rect(x, y, w, h), Faint);
             Fill(new Rect(x, y, w * ink.Fraction, h), Ink);
-            // Notch at 50: enough for the special. A full bar (100) allows Redraw (Down + Special).
+            // Notch at 50: enough for the special or the combo breaker. A full bar (100) allows Redraw (Down + Special).
             Fill(new Rect(x + w * 0.5f - 1f, y - 3f, 2f, h + 6f), Paper);
             if (ink.Value >= ink.Max) GUI.Label(new Rect(x + w - 70f, y - 20f, 90f, 18f), "REDRAW", label);
+
+            // While being comboed: hits taken, and a prompt when the combo breaker (Parry) is affordable.
+            if (hasHealth && player.Health.ComboTaken.Active)
+            {
+                bool canBreak = ink.CanSpend(player.Combat.Settings.comboBreakerInkCost);
+                GUI.Label(new Rect(x + 110f, y - 60f, 130f, 18f),
+                          $"{player.Health.ComboTaken.Hits} HIT" + (canBreak ? "  BREAK!" : ""), label);
+            }
         }
 
         private void Fill(Rect rect, Color color)

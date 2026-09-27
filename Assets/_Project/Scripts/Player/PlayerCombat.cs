@@ -26,6 +26,7 @@ namespace Margin.Player
         private readonly List<AabbBox> activeBoxes = new List<AabbBox>();
         private HitboxWindow lastWindow;
         private InkMeter ink;
+        private AttackData breakerPush;
 
         public WeaponData Weapon => weapon;
         public CombatSettings Settings => settings != null ? settings : CombatSettings.Defaults;
@@ -170,6 +171,52 @@ namespace Margin.Player
             Vector2 origin = player.Body.Position;
             var at = new Vector2(origin.x + attack.projectileOffset.x * player.Facing, origin.y + attack.projectileOffset.y);
             InkWaveProjectile.Spawn(this, attack, at, player.Facing, Settings);
+        }
+
+        /// <summary>
+        /// The combo breaker's shockwave: pushes every enemy within CombatSettings.comboBreakerSize away from the
+        /// player and stuns them (which cancels their attack). Deals no damage. Returns the number pushed.
+        /// </summary>
+        public int ComboBreakerPush()
+        {
+            CombatSettings s = Settings;
+            AttackData push = BreakerPushAttack(s);
+            Vector2 origin = player.Body.Position;
+            float halfWidth = s.comboBreakerSize.x * 0.5f;
+            hitThisAttack.Clear();
+
+            // Two half boxes, so enemies on each side are knocked away from the player.
+            int hits = 0;
+            foreach (int side in new[] { player.Facing, -player.Facing })
+            {
+                AabbBox box = HitboxMath.ToWorld(origin.x, origin.y, side, halfWidth * 0.5f, 0f, halfWidth, s.comboBreakerSize.y);
+                hits += HitResolver.Resolve(this, Faction.Player, push, box, side, hitThisAttack, s);
+            }
+            return hits;
+        }
+
+        /// <summary>A hidden AttackData built from the settings, so the push goes through the normal hit rules.</summary>
+        private AttackData BreakerPushAttack(CombatSettings s)
+        {
+            if (breakerPush == null)
+            {
+                breakerPush = ScriptableObject.CreateInstance<AttackData>();
+                breakerPush.name = "ComboBreaker";
+                breakerPush.hideFlags = HideFlags.DontSave;
+            }
+            breakerPush.damage = 0;
+            breakerPush.inkGain = 0;
+            breakerPush.hitstopFrames = 0;   // the breaker freezes the game itself
+            breakerPush.hitstunFrames = s.comboBreakerStunFrames;
+            breakerPush.knockback = s.comboBreakerKnockback;
+            breakerPush.parryable = false;
+            breakerPush.screenShake = 0f;
+            return breakerPush;
+        }
+
+        private void OnDestroy()
+        {
+            if (breakerPush != null) Destroy(breakerPush);
         }
 
         private void ApplyHitstop(int frames)

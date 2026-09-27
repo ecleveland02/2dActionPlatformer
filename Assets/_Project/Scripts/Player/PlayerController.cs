@@ -47,6 +47,7 @@ namespace Margin.Player
         public HitstunState Hitstun { get; private set; }
         public ParryState Parry { get; private set; }
         public RedrawState Redraw { get; private set; }
+        public ComboBreakerState ComboBreaker { get; private set; }
 
         // ---- Runtime values the states read and write ----
         /// <summary>Units per second. Public field so states can set .x / .y directly.</summary>
@@ -139,6 +140,7 @@ namespace Margin.Player
             Hitstun = new HitstunState(this);
             Parry = new ParryState(this);
             Redraw = new RedrawState(this);
+            ComboBreaker = new ComboBreakerState(this);
 
             machine = new PlayerStateMachine();
             machine.ForceState(Fall);
@@ -299,6 +301,21 @@ namespace Margin.Player
         {
             if (Combat == null) return null;
             return Controls.Buffer.Consume(BufferedAction.Parry) ? Parry : null;
+        }
+
+        /// <summary>
+        /// Combo breaker: Parry pressed during hitstun with enough ink bursts out of an enemy combo.
+        /// Without enough ink the press is left in the buffer (it may still parry once hitstun ends).
+        /// </summary>
+        public PlayerState CheckComboBreaker()
+        {
+            if (Combat == null) return null;
+            int cost = Combat.Settings.comboBreakerInkCost;
+            if (!Combat.Ink.CanSpend(cost) || !Controls.Buffer.IsBuffered(BufferedAction.Parry)) return null;
+
+            Controls.Buffer.Consume(BufferedAction.Parry);
+            Combat.Ink.TrySpend(cost);
+            return ComboBreaker;
         }
 
         /// <summary>Down + Special with a full ink meter and missing health: Redraw heal (spec 6.6). Ground only.</summary>

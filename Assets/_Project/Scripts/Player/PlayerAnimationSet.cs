@@ -26,5 +26,7 @@ namespace Margin.Player
         public PoseClip hitstun;
         public PoseClip parry;
         public PoseClip redraw;
+        [Tooltip("Combo breaker burst. Falls back to the parry clip.")]
+        public PoseClip comboBreaker;
     }
 }

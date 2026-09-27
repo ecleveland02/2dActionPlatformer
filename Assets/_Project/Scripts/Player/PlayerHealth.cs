@@ -9,8 +9,10 @@ namespace Margin.Player
     /// The player's health and how the player takes hits (spec 6.5, 6.7):
     ///   - during an active parry, a parryable attack is parried: no damage, the attacker staggers, the game
     ///     freezes 12 frames, +20 ink, and the player can act again immediately;
-    ///   - otherwise the hit deals damage, knocks the player back into hitstun, and gives 45 frames of flickering
-    ///     invulnerability. Dash i-frames also prevent hits.
+    ///   - otherwise the hit deals damage and knocks the player back into hitstun. Hits that land while the player
+    ///     is still in hitstun continue the combo (enemies can combo the player), with damage scaled down per hit
+    ///     (ComboScaling). When hitstun ends, the combo is over and 45 frames of flickering invulnerability start.
+    ///     Dash i-frames and the combo breaker also prevent hits.
     /// Reaching 0 health refills it for now; death and respawn arrive in Milestone 4.
     /// </summary>
     [RequireComponent(typeof(PlayerController))]
@@ -19,6 +21,7 @@ namespace Margin.Player
         private PlayerController player;
         private Health health;
         private Renderer[] flickerRenderers;
+        private readonly ComboScaling comboTaken = new ComboScaling();
 
         public int TickOrder => 12;
 
@@ -30,6 +33,9 @@ namespace Margin.Player
                 return health;
             }
         }
+
+        /// <summary>The combo currently being taken (hit count and damage). Empty when not in hitstun.</summary>
+        public ComboScaling ComboTaken => comboTaken;
 
         private CombatSettings Settings =>
             player != null && player.Combat != null ? player.Combat.Settings : CombatSettings.Defaults;
@@ -49,8 +55,11 @@ namespace Margin.Player
             }
 
             CombatSettings s = Settings;
-            int taken = Health.TakeDamage(hit.Damage, s.hurtInvulnerableFrames);
-            Debug.Log($"[Player] hit by {hit.Attack.name}: -{taken} ({Health.Current}/{Health.Max})", this);
+            // No invulnerability per hit: it starts when the combo ends (see Tick).
+            int damage = comboTaken.Register(hit.Damage, s.comboDamageStep, s.comboDamageFloor);
+            int taken = Health.TakeDamage(damage, 0);
+            Debug.Log($"[Player] hit by {hit.Attack.name}: -{taken} ({Health.Current}/{Health.Max})" +
+                      (comboTaken.Hits > 1 ? $"  combo taken: {comboTaken.Hits} hits, {comboTaken.Damage} dmg" : ""), this);
 
             // Target side of hitstop: the player freezes too (unless the whole game already froze).
             if (!hit.GlobalHitstop && player.Combat != null)
@@ -84,6 +93,13 @@ namespace Margin.Player
         public void Tick()
         {
             Health.Tick();
+
+            // Runs after PlayerController, so the tick hitstun ends is frame 1 of the invulnerability.
+            if (comboTaken.Active && !(player.CurrentState is HitstunState))
+            {
+                comboTaken.End();
+                Health.StartInvulnerability(Settings.hurtInvulnerableFrames);
+            }
             Flicker(Health.IsInvulnerable && (Health.InvulnerableFramesLeft / 4) % 2 == 1);
         }
 

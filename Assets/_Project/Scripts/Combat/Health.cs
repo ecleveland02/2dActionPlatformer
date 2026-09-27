@@ -31,6 +31,13 @@ namespace Margin.Combat
             return taken;
         }
 
+        /// <summary>
+        /// Starts (or extends) invulnerability without taking damage. The player gets it when a combo ends,
+        /// so enemies can combo them but can't restart a new combo right away.
+        /// </summary>
+        public void StartInvulnerability(int frames) =>
+            InvulnerableFramesLeft = Math.Max(InvulnerableFramesLeft, Math.Max(0, frames));
+
         /// <summary>Restores health, clamped to Max. Returns the amount actually healed.</summary>
         public int Heal(int amount)
         {

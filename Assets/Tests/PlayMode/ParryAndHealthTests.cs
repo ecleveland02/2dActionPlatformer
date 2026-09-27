@@ -11,7 +11,10 @@ using UnityEngine;
 
 namespace Margin.Tests
 {
-    /// <summary>Parry (spec 6.5), player health and hurt invulnerability (6.7), Redraw heal (6.6), dash i-frames.</summary>
+    /// <summary>
+    /// Parry (spec 6.5), player health and hurt invulnerability (6.7), Redraw heal (6.6), dash i-frames,
+    /// enemy combos on the player and the combo breaker.
+    /// </summary>
     public class ParryAndHealthTests
     {
         private TestWorld world;
@@ -94,6 +97,96 @@ namespace Margin.Tests
 
         private void Steps(int n) { for (int i = 0; i < n; i++) Step(); }
 
+        private void StepUntilHitstunEnds()
+        {
+            for (int i = 0; i < 300 && player.CurrentState is HitstunState; i++) Step();
+            Assert.IsNotInstanceOf<HitstunState>(player.CurrentState, "Hitstun should end.");
+        }
+
+        private void StepUntilHitstunActs()
+        {
+            for (int i = 0; i < 300 && !(player.CurrentState is HitstunState && !player.InHitstop); i++) Step();
+            Assert.IsInstanceOf<HitstunState>(player.CurrentState);
+        }
+
+        /// <summary>The starter enemy string: jab > cross > kick, each chaining only on hit.</summary>
+        private AttackData EnemyString()
+        {
+            AttackData kick = EnemyAttack("Kick", startup: 10, active: 4, recovery: 24, damage: 10, parryable: true);
+            kick.hitstopFrames = 8; kick.hitstunFrames = 30; kick.knockback = new Vector2(7f, 6f);
+            kick.hitboxes[0].boxes[0] = new HitboxShape { offset = new Vector2(0.75f, -0.2f), size = new Vector2(1.0f, 0.6f) };
+
+            AttackData cross = EnemyAttack("Cross", startup: 8, active: 3, recovery: 18, damage: 6, parryable: true);
+            cross.hitstunFrames = 18; cross.knockback = new Vector2(1.5f, 0f);
+            cross.cancelWindowStart = 13; cross.cancelWindowEnd = 20;
+            cross.cancelsInto.Add(kick);
+
+            jab.knockback = new Vector2(1.5f, 0f);
+            jab.cancelWindowStart = 20; jab.cancelWindowEnd = 28;
+            jab.cancelsInto.Add(cross);
+            return jab;
+        }
+
+        [Test]
+        public void EnemyString_ChainsOnHit_WithScaledDamage_ThenInvulnerable()
+        {
+            attacker.StartAttack(EnemyString());
+            int mostHits = 0;
+            for (int i = 0; i < 150; i++)
+            {
+                Step();
+                mostHits = Mathf.Max(mostHits, health.ComboTaken.Hits);
+            }
+
+            Assert.AreEqual(3, mostHits, "Jab, cross and kick all land as one combo.");
+            // 8 at 100%, 6 at 85% (5.1 -> 5), 10 at 70% (7).
+            Assert.AreEqual(100 - 8 - 5 - 7, health.Health.Current);
+            Assert.IsNull(attacker.Current, "The kick ends the string.");
+        }
+
+        [Test]
+        public void EnemyString_MissedOpener_DoesNotChain()
+        {
+            player.ResetTo(new Vector2(-6f, 0.05f));
+            Steps(5);
+            attacker.StartAttack(EnemyString());
+            Steps(39);                           // the jab's 39 frames
+            Assert.IsNull(attacker.Current, "A missed jab doesn't chain into the cross.");
+            Assert.AreEqual(100, health.Health.Current);
+        }
+
+        [Test]
+        public void ComboBreaker_SpendsInk_PushesAndStunsTheAttacker_EndsTheCombo()
+        {
+            combat.Ink.Gain(50);
+            attacker.StartAttack(EnemyString());
+            StepUntilHitstunActs();
+            Assert.AreEqual(92, health.Health.Current);
+
+            Step(parry: true);
+            Assert.IsInstanceOf<ComboBreakerState>(player.CurrentState);
+            Assert.AreEqual(0, combat.Ink.Value, "The breaker costs 50 ink.");
+            Assert.IsTrue(dummy.IsStunned, "The attacker is stunned by the burst.");
+            Assert.Greater(dummy.Velocity.x, 0f, "Pushed away from the player (to the right).");
+            Assert.IsNull(attacker.Current, "Its string is cancelled.");
+            Assert.IsFalse(health.CanBeHit, "Can't be hit during the burst.");
+
+            Steps(60);
+            Assert.AreEqual(92, health.Health.Current, "No more hits from the string.");
+            Assert.IsNotInstanceOf<ComboBreakerState>(player.CurrentState);
+        }
+
+        [Test]
+        public void ComboBreaker_WithoutEnoughInk_StaysInHitstun()
+        {
+            combat.Ink.Gain(49);
+            attacker.StartAttack(jab);
+            StepUntilHitstunActs();
+            Step(parry: true);
+            Assert.IsInstanceOf<HitstunState>(player.CurrentState);
+            Assert.AreEqual(49, combat.Ink.Value);
+        }
+
         [Test]
         public void Parry_OnParryableJab_NoDamage_StaggersAttacker_GivesInk_CancelsRecovery()
         {
@@ -123,16 +216,18 @@ namespace Margin.Tests
         }
 
         [Test]
-        public void GettingHit_DamagesAndKnocksBack_ThenInvulnerableFor45Frames()
+        public void GettingHit_DamagesAndKnocksBack_ThenInvulnerableFor45FramesAfterHitstun()
         {
             attacker.StartAttack(jab);
             Steps(17);
             Assert.AreEqual(92, health.Health.Current);
             Assert.IsInstanceOf<HitstunState>(player.CurrentState);
-            Assert.IsTrue(health.Health.IsInvulnerable);
+            Assert.IsTrue(health.CanBeHit, "Still hittable during hitstun, so enemies can combo.");
+            Assert.AreEqual(1, health.ComboTaken.Hits);
 
-            Assert.IsFalse(health.CanBeHit);
-
+            StepUntilHitstunEnds();
+            Assert.IsFalse(health.CanBeHit, "Frame 1 of the invulnerability: the tick hitstun ended.");
+            Assert.IsFalse(health.ComboTaken.Active);
             Steps(44);
             Assert.IsFalse(health.CanBeHit, "Frame 45 of the invulnerability window.");
             Step();

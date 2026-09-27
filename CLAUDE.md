@@ -56,9 +56,15 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   `PlayerCombat` (gain on hit, spec decay); attacks with `inkCost` can't start without the ink. `InkWaveProjectile`
   spawns on an attack's first active frame when `projectileSpeed > 0`. Placeholder HUD: `UI/PlayerHUD` (health + ink).
   Defense: `PlayerHealth` (IHitReceiver; pure `Health`) parries during `ParryState.IsActive` (parryable attacks only),
-  otherwise damages, forces `HitstunState` and grants 45 i-frames. `IHitReceiver.ReceiveHit` returns false when the
+  otherwise damages and forces `HitstunState`. `IHitReceiver.ReceiveHit` returns false when the
   hit didn't land (parried). Redraw = Down + Special at 100 ink. `SparringAttacker` makes a dummy attack
   (menu **Margin > Add Sparring Dummy**); attackers implement `IParryable` to be staggered.
+- **Enemy combos:** hits during player hitstun land (no per-hit i-frames); the 45 i-frames start the tick hitstun
+  ends. Damage per combo hit scales via pure `ComboScaling` (-15% per hit, floor 50%, in CombatSettings). Enemies
+  chain into `cancelsInto[0]` at the hit-cancel window only if the player is still in hitstun; a miss never chains,
+  so only a string's opener needs the 12+ frame telegraph. Starter string: DummyJab > DummyJab2 > DummyKick.
+  Combo breaker: Parry during hitstun with 50 ink enters `ComboBreakerState` (invulnerable, pushes and stuns enemies
+  via `PlayerCombat.ComboBreakerPush`, 0 damage).
 - **Feel (M3 chunk 3):** `Scripts/FX/`. `FeelSettings` asset (Data/FeelSettings) tunes shake, smear, trail,
   splatter, afterimages. `CameraShake` (camera, real-time, uses AttackData.screenShake x screenShakeScale),
   `InkSplatter` (one per scene, listens to `CombatEvents.Hit`), `PlayerFX` (TickOrder 11: smear on swing frames,

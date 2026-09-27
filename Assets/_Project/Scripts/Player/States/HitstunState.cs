@@ -2,6 +2,7 @@ namespace Margin.Player
 {
     /// <summary>
     /// Knocked back by a hit (spec 5.4: any state can be interrupted by Hitstun). No control until it ends.
+    /// Parry with enough ink breaks out early (ComboBreakerState).
     /// Basic version: knockback slides out and gravity applies. Knockdown, death and respawn come in Milestone 4.
     /// </summary>
     public sealed class HitstunState : PlayerState
@@ -12,6 +13,8 @@ namespace Margin.Player
 
         public override PlayerState CheckTransitions()
         {
+            PlayerState breaker = Player.CheckComboBreaker();
+            if (breaker != null) return breaker;
             if (Player.FramesInState < Frames) return null;
             return Player.Grounded ? (PlayerState)Player.Idle : Player.Fall;
         }

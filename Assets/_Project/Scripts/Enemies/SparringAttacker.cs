@@ -11,6 +11,9 @@ namespace Margin.Enemies
     /// when the player is in range it turns to face them and cycles through its attacks with a pause between.
     /// Unparryable attacks flash red during their startup. Every attack should have 12+ startup frames.
     /// Being hit or parried cancels the attack in progress; a parry staggers the dummy for a punish.
+    /// Enemy combos: when an attack hits, it chains into the first attack in its "Cancels into" list at the
+    /// start of its cancel window, but only while the player is still in hitstun (a true combo). A miss never
+    /// chains, so only a string's first attack needs the long telegraph; follow-ups may be faster.
     /// </summary>
     [RequireComponent(typeof(TrainingDummy))]
     public sealed class SparringAttacker : MonoBehaviour, ITickable, IParryable
@@ -29,6 +32,7 @@ namespace Margin.Enemies
         private PlayerController target;
         private readonly HashSet<IHitReceiver> hitThisAttack = new HashSet<IHitReceiver>();
         private int next, cooldown, hitstop;
+        private bool landedHit;
 
         public int TickOrder => 21;
         public AttackData Current { get; private set; }
@@ -55,6 +59,7 @@ namespace Margin.Enemies
             if (target != null) dummy.SetFacing(target.Body.Position.x >= dummy.Position.x ? 1 : -1);
             Current = attack;
             Frame = 0;
+            landedHit = false;
             hitThisAttack.Clear();
         }
 
@@ -99,6 +104,8 @@ namespace Margin.Enemies
                 dummy.Rig.Tint = !Current.parryable && Frame <= timing.Startup ? (Frame / 3 % 2 == 0 ? FlashA : FlashB) : (Color?)null;
 
             if (timing.IsActive(Frame)) ResolveHits();
+            if (Current == null) return;   // parried
+            if (landedHit && TryChain(timing)) return;
 
             if (Frame >= timing.TotalFrames) Finish();
         }
@@ -112,9 +119,24 @@ namespace Margin.Enemies
                 AabbBox box = HitboxMath.ToWorld(origin.x, origin.y, dummy.Facing, shape.offset.x, shape.offset.y, shape.size.x, shape.size.y);
                 if (Current == null) return;   // parried by an earlier box this frame
                 int hits = HitResolver.Resolve(this, Faction.Enemy, Current, box, dummy.Facing, hitThisAttack, Settings);
-                if (hits > 0 && Current != null && Current.hitstopFrames < Settings.globalHitstopThreshold)
-                    hitstop = Current.hitstopFrames;
+                if (hits > 0 && Current != null)
+                {
+                    landedHit = true;
+                    if (Current.hitstopFrames < Settings.globalHitstopThreshold) hitstop = Current.hitstopFrames;
+                }
             }
+        }
+
+        /// <summary>Continues the combo into the next attack of the string if the player is still in hitstun.</summary>
+        private bool TryChain(AttackTiming timing)
+        {
+            if (Current.cancelsInto == null || Current.cancelsInto.Count == 0) return false;
+            AttackData follow = Current.cancelsInto[0];
+            if (follow == null || !timing.AllowsAttackCancel(Frame, hasHit: true)) return false;
+            if (target == null || !(target.CurrentState is HitstunState)) return false;
+
+            StartAttack(follow);
+            return true;
         }
 
         private void Finish()

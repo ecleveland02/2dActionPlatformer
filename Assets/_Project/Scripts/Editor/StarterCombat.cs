@@ -34,7 +34,7 @@ namespace Margin.EditorTools
             public CombatSettings Settings;
             public PoseData DummyIdle;
             public PoseData DummyHit;
-            /// <summary>The sparring dummy's attack pattern: jab, jab, unparryable smash.</summary>
+            /// <summary>The sparring dummy's attack pattern: jab, jab, unparryable smash. A jab that hits becomes jab > cross > kick.</summary>
             public List<AttackData> SparringAttacks;
         }
 
@@ -117,9 +117,18 @@ namespace Margin.EditorTools
 
             // Sparring dummy attacks (spec 9: at least 12 frames of visible startup). The smash can't be parried
             // and flashes red while winding up (spec 6.5).
+            // The jab opens a string (jab > cross > kick) when it hits: small knockback keeps the player in reach,
+            // and each follow-up connects while the player is still in hitstun. A missed jab never chains.
             new Move { Name = "DummyJab", Button = AttackButton.Light, Startup = 16, Active = 3, Recovery = 20,
-                Damage = 8, Hitstop = 6, Hitstun = 16, Ink = 0, Knockback = new Vector2(5f, 2f), CancelStart = 40, CancelEnd = 40,
+                Damage = 8, Hitstop = 6, Hitstun = 16, Ink = 0, Knockback = JabKnockback, CancelStart = 20, CancelEnd = 28,
                 BoxCenter = new Vector2(0.75f, 0.35f), BoxSize = new Vector2(0.9f, 0.5f), Shake = 0.06f, FadeIn = 0 },
+            new Move { Name = "DummyJab2", Button = AttackButton.Light, Startup = 8, Active = 3, Recovery = 18,
+                Damage = 6, Hitstop = 6, Hitstun = 18, Ink = 0, Knockback = JabKnockback, CancelStart = 13, CancelEnd = 20,
+                BoxCenter = new Vector2(0.8f, 0.35f), BoxSize = new Vector2(1.0f, 0.5f), Shake = 0.06f, FadeIn = 0 },
+            new Move { Name = "DummyKick", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 24,
+                Damage = 10, Hitstop = 8, Hitstun = 30, Ink = 0, Knockback = new Vector2(7f, 6f), CancelStart = 39, CancelEnd = 39,
+                BoxCenter = new Vector2(0.75f, -0.2f), BoxSize = new Vector2(1.0f, 0.6f), Shake = 0.12f, FadeIn = 1,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
             new Move { Name = "DummySmash", Button = AttackButton.Heavy, Startup = 24, Active = 4, Recovery = 28,
                 Damage = 18, Hitstop = 8, Hitstun = 24, Ink = 0, Knockback = new Vector2(8f, 4f), CancelStart = 56, CancelEnd = 56,
                 BoxCenter = new Vector2(0.8f, 0.1f), BoxSize = new Vector2(1.2f, 1.2f), Shake = 0.15f, FadeIn = 0,
@@ -132,6 +141,9 @@ namespace Margin.EditorTools
                 Swing = "swing_heavy", Hit = "hit_heavy" },
         };
 
+        private static readonly Vector2 JabKnockback = new Vector2(1.5f, 0f);
+        private static readonly Vector2 OldJabKnockback = new Vector2(5f, 2f);
+
         /// <summary>Which moves each move chains into (the combo tree). Heavies end the string.</summary>
         private static readonly Dictionary<string, string[]> Chains = new Dictionary<string, string[]>
         {
@@ -142,6 +154,9 @@ namespace Margin.EditorTools
             ["KatanaAirLight1"] = new[] { "KatanaAirLight2", "KatanaAirSlam" },
             ["KatanaAirLight2"] = new[] { "KatanaAirLight3", "KatanaAirSlam" },
             ["KatanaAirLight3"] = new[] { "KatanaAirSlam" },
+            // Sparring dummy string. Enemies always take the first entry.
+            ["DummyJab"] = new[] { "DummyJab2" },
+            ["DummyJab2"] = new[] { "DummyKick" },
         };
 
         [MenuItem("Margin/Create Starter Combat Data")]
@@ -184,7 +199,8 @@ namespace Margin.EditorTools
             {
                 bool write = created.Contains(chain.Key) || overwrite ||
                              (chain.Key == "KatanaLight1" && created.Contains("KatanaLight2")) ||
-                             (chain.Key == "KatanaRisingMoon" && created.Contains("KatanaAirLight1"));
+                             (chain.Key == "KatanaRisingMoon" && created.Contains("KatanaAirLight1")) ||
+                             (chain.Key == "DummyJab" && created.Contains("DummyJab2"));
                 if (!write) continue;
 
                 AttackData from = attacks[chain.Key];
@@ -200,6 +216,17 @@ namespace Margin.EditorTools
                 if (Mathf.Approximately(moon.hopVelocity, 6f)) moon.hopVelocity = 11f;
                 if (moon.knockback == new Vector2(1.5f, 14f)) moon.knockback = new Vector2(1f, 12f);
                 EditorUtility.SetDirty(moon);
+            }
+
+            // Upgrade a jab from before enemy combos (it knocked the player out of reach and never chained),
+            // unless it was retuned by hand.
+            AttackData jab = attacks["DummyJab"];
+            if (created.Contains("DummyJab2") && !created.Contains("DummyJab") && jab.knockback == OldJabKnockback)
+            {
+                jab.knockback = JabKnockback;
+                jab.cancelWindowStart = 20;
+                jab.cancelWindowEnd = 28;
+                EditorUtility.SetDirty(jab);
             }
 
             WeaponData katana = LoadOrCreate<WeaponData>($"{WeaponFolder}/BrushKatana.asset", out _);
@@ -307,6 +334,15 @@ namespace Margin.EditorTools
                 ["DummyJabWindup"] = Planted(-10, 5, -60, 90, -30, 60, 20, -30, -20, -20),
                 ["DummyJabStrike"] = Planted(15, -5, 100, 0, -40, 50, 35, -30, -30, -10),
                 ["DummyJabRecover"] = Planted(8, 0, 60, 30, -30, 50, 25, -25, -20, -10),
+                // Cross: the back hand punches (the jab's front hand pulls back). Kick: knee chambers, then extends.
+                ["DummyJab2Windup"] = Planted(-5, 0, 40, 60, -50, 90, 25, -30, -25, -15),
+                ["DummyJab2Strike"] = Planted(15, -5, -30, 60, 100, 0, 30, -25, -35, -10),
+                ["DummyJab2Recover"] = Planted(8, 0, -20, 60, 70, 30, 25, -25, -25, -10),
+                ["DummyKickWindup"] = Planted(-15, 5, 60, 40, -40, 50, 70, -110, -10, -15),
+                ["DummyKickStrike"] = Planted(-25, 10, 70, 30, -30, 40, 95, 0, -15, -5),
+                ["DummyKickRecover"] = Planted(-10, 5, 50, 40, -30, 40, 40, -40, -15, -10),
+                // Combo breaker: arms flung wide, body upright.
+                ["ComboBreaker"] = Planted(-5, 0, 110, 10, -110, 10, 20, -20, -20, -20),
                 ["DummySmashWindup"] = Planted(-20, 10, 185, 10, 175, 10, 25, -40, -15, -30),
                 ["DummySmashStrike"] = Planted(35, -15, 90, 0, 85, 0, 50, -60, -30, -10),
                 ["DummySmashRecover"] = Planted(25, -10, 40, 20, 35, 20, 45, -60, -30, -10),
@@ -337,6 +373,7 @@ namespace Margin.EditorTools
             if (set.parry == null || overwrite) set.parry = HoldClip("Parry", poses["Parry"], 0, overwrite);
             if (set.redraw == null || overwrite) set.redraw = HoldClip("Redraw", poses["Redraw"], 6, overwrite);
             if (set.hitstun == null || overwrite) set.hitstun = HoldClip("Hurt", poses["Hurt"], 0, overwrite);
+            if (set.comboBreaker == null || overwrite) set.comboBreaker = HoldClip("ComboBreaker", poses["ComboBreaker"], 0, overwrite);
             EditorUtility.SetDirty(set);
         }
 

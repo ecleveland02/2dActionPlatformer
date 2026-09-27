@@ -44,5 +44,26 @@ namespace Margin.Tests
             Assert.AreEqual(20, h.HealFraction(0.3f), "Only up to Max.");
             Assert.AreEqual(100, h.Current);
         }
+
+        [Test]
+        public void StartInvulnerability_WithoutDamage_LastsExactlyTheWindow()
+        {
+            var h = new Health(100);
+            h.StartInvulnerability(45);
+            Assert.AreEqual(100, h.Current);
+            for (int i = 0; i < 44; i++) h.Tick();
+            Assert.IsTrue(h.IsInvulnerable, "Frame 45.");
+            h.Tick();
+            Assert.IsFalse(h.IsInvulnerable);
+        }
+
+        [Test]
+        public void StartInvulnerability_NeverShortensALongerWindow()
+        {
+            var h = new Health(100);
+            h.StartInvulnerability(45);
+            h.StartInvulnerability(10);
+            Assert.AreEqual(45, h.InvulnerableFramesLeft);
+        }
     }
 }

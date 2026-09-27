@@ -17,8 +17,28 @@ namespace Margin.Combat
 
         [Header("Player (spec 6.7)")]
         [Min(1)] public int playerMaxHealth = 100;
-        [Tooltip("Invulnerable frames after being hit (the player flickers).")]
+        [Tooltip("Invulnerable frames after a combo on the player ends (the player flickers). Hits during hitstun " +
+                 "still land, so enemies can combo; this stops a fresh combo starting right away.")]
         [Min(0)] public int hurtInvulnerableFrames = 45;
+
+        [Tooltip("Each later hit of a combo on the player does this much less damage (0.15 = 100%, 85%, 70%...).")]
+        [Range(0f, 1f)] public float comboDamageStep = 0.15f;
+        [Tooltip("Combo damage never scales below this fraction.")]
+        [Range(0.1f, 1f)] public float comboDamageFloor = 0.5f;
+
+        [Header("Combo breaker")]
+        [Tooltip("Parry pressed during hitstun with this much ink: break out of the combo.")]
+        [Min(0)] public int comboBreakerInkCost = 50;
+        [Tooltip("Frames of the breaker burst. The player can't act or be hit during it.")]
+        [Min(1)] public int comboBreakerFrames = 14;
+        [Tooltip("Size of the push area (units), centered on the player.")]
+        public Vector2 comboBreakerSize = new Vector2(3.2f, 2.4f);
+        [Tooltip("Knockback given to enemies caught in the burst (x is away from the player).")]
+        public Vector2 comboBreakerKnockback = new Vector2(8f, 4f);
+        [Tooltip("Frames enemies are stunned by the burst (cancels their attack).")]
+        [Min(0)] public int comboBreakerStunFrames = 30;
+        [Tooltip("Whole-game freeze when the burst goes off.")]
+        [Min(0)] public int comboBreakerHitstopFrames = 6;
 
         [Header("Parry (spec 6.5)")]
         [Tooltip("Parry is active from its first frame (0 startup) for this many frames.")]

@@ -107,6 +107,8 @@ namespace Margin.DebugTools
             {
                 var hp = player.Health.Health;
                 text.AppendLine($"Health   {hp.Current}/{hp.Max}" + (hp.IsInvulnerable ? $"   <color=#60c0ff>hurt i-frames {hp.InvulnerableFramesLeft}</color>" : ""));
+                var taken = player.Health.ComboTaken;
+                if (taken.Active) text.AppendLine($"<color=#ff7070>Comboed  {taken.Hits} hits, {taken.Damage} dmg</color>");
             }
             if (player.CurrentState is ParryState parry)
                 text.AppendLine(parry.Succeeded ? "<color=#80ff80>PARRY SUCCESS</color>"

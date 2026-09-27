@@ -225,7 +225,10 @@ Rule: any state can be interrupted by Hitstun. Attack states expose cancel windo
 
 ### 6.7 Player Health and Damage
 
-- Player health: 100. Invulnerability after being hit: 45 frames, flicker effect.
+- Player health: 100. Invulnerability after being hit: 45 frames, flicker effect. (Amended: the 45 frames start
+  when hitstun ends, so enemies can combo the player. Hits in one combo scale down 15% each, to a 50% floor.
+  Enemies only chain on hit, and only while the player is still in hitstun.)
+- Combo breaker: Parry during hitstun with 50 ink bursts out: enemies nearby are pushed back and stunned, no damage.
 - Enemy contact does not damage the player (avoids cheap hits). Only attacks do.
 
 ## 7. Weapons
