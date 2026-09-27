@@ -166,6 +166,14 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   than RopeLength), pump with Left/Right, reel Up/Down, a short yank on attach; Jump lets go with a boost and gives
   the air dash back. `GrappleRope` (auto-added) draws the line from the back hand and highlights the target ring;
   `PoseAnimator.Tilt` leans the body along the line. Tuning in MovementData (Grapple Line header).
+- **Audio (M5, spec 13):** `Scripts/Audio/`. Sounds are the developer's pack in `Audio/ink-audio-pack-v1`
+  (48 kHz WAV; `name_N` = variant N). `SoundBank` (Data/Audio, filled by **Margin > Set Up Audio** / the builders,
+  only empty entries) maps ids to clips + per-sound volume/pitch spread. `AudioDirector` (one per scene, auto-added;
+  TickOrder 40) listens to events, never called by gameplay: steps every half stride, whoosh the frame before an
+  attack's first active frame (`AttackData.swingSound`), `hitSound` on hits, `CombatEvents.Swing` for enemies,
+  `BossEvents` (tell sound per move via `BossMoveEntry.tellSound` or the boss's default), level/ability events;
+  UI and one-offs use `Sfx.Play(id)`. Music: world loop; boss + layer stems start together with `PlayScheduled`,
+  the layer fades in over 2 bars at phase 2. `MarginAudioImport` streams music, decompresses SFX (first import only).
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

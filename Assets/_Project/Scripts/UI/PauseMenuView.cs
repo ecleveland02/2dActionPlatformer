@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
+using Margin.Audio;
 
 namespace Margin.UI
 {
@@ -65,7 +66,11 @@ namespace Margin.UI
             bindingList.style.marginBottom = 24f;
             controlsColumn.Add(bindingList);
             backButton = new UIButton(s, "Back", s.iconBack);
-            backButton.Clicked += () => ShowPage(Page.Main);
+            backButton.Clicked += () =>
+            {
+                Sfx.Play("ui_back");
+                ShowPage(Page.Main);
+            };
             controlsColumn.Add(backButton);
 
             cursor = new MenuCursor(buttons.Count);
@@ -109,16 +114,25 @@ namespace Margin.UI
             if (page == Page.Main)
             {
                 int direction = navigate.y > 0.5f ? -1 : navigate.y < -0.5f ? 1 : 0;
-                if (cursor.Hold(direction, realFrames, s.menuRepeatDelay, s.menuRepeatInterval)) Select(cursor.Index);
+                if (cursor.Hold(direction, realFrames, s.menuRepeatDelay, s.menuRepeatInterval))
+                {
+                    Select(cursor.Index);
+                    Sfx.Play("ui_move");
+                }
                 if (submit)
                 {
                     pressedButton = buttons[cursor.Index];
                     pressedButton.SetPressed(true);
+                    Sfx.Play("ui_select");
                     actions[cursor.Index]?.Invoke();
                 }
                 else if (cancel) return false;
             }
-            else if (submit || cancel) ShowPage(Page.Main);
+            else if (submit || cancel)
+            {
+                Sfx.Play("ui_back");
+                ShowPage(Page.Main);
+            }
 
             mainCard.Refresh();
             controlsCard.Refresh();
@@ -153,8 +167,16 @@ namespace Margin.UI
         {
             int index = buttons.Count;
             var button = new UIButton(s, text, icon);
-            button.Hovered += () => Select(index);
-            button.Clicked += () => action?.Invoke();
+            button.Hovered += () =>
+            {
+                if (cursor.Index != index) Sfx.Play("ui_move");
+                Select(index);
+            };
+            button.Clicked += () =>
+            {
+                Sfx.Play("ui_select");
+                action?.Invoke();
+            };
             column.Add(button);
             buttons.Add(button);
             actions.Add(action);

@@ -180,3 +180,52 @@ namespace Margin.Tests
         }
     }
 }
+
+namespace Margin.Tests
+{
+    using Margin.Audio;
+    using NUnit.Framework;
+
+    /// <summary>Audio helpers (spec 13).</summary>
+    public class AudioMathTests
+    {
+        [Test]
+        public void BarsToSeconds_MatchesTheBossTempo()
+        {
+            Assert.AreEqual(3.75f, AudioMath.BarsToSeconds(2f, 128f), 1e-4f, "two bars at 128 BPM");
+            Assert.AreEqual(90f, AudioMath.BarsToSeconds(48f, 128f), 1e-3f, "the 48-bar boss loop is 90 s");
+            Assert.AreEqual(0f, AudioMath.BarsToSeconds(2f, 0f));
+        }
+
+        [Test]
+        public void PickVariant_NeverRepeatsBackToBack_AndCoversAll()
+        {
+            var seen = new bool[3];
+            int last = -1;
+            for (int i = 0; i < 300; i++)
+            {
+                int pick = AudioMath.PickVariant(3, last, (i * 0.6180339f) % 1f);
+                Assert.That(pick, Is.InRange(0, 2));
+                Assert.AreNotEqual(last, pick);
+                seen[pick] = true;
+                last = pick;
+            }
+            Assert.IsTrue(seen[0] && seen[1] && seen[2]);
+        }
+
+        [Test]
+        public void PickVariant_SingleOrNone_IsSafe()
+        {
+            Assert.AreEqual(0, AudioMath.PickVariant(1, 0, 0.9f));
+            Assert.AreEqual(0, AudioMath.PickVariant(0, -1, 0.5f));
+            Assert.AreEqual(1, AudioMath.PickVariant(2, 0, 0.99f));
+        }
+
+        [Test]
+        public void DbToGain()
+        {
+            Assert.AreEqual(1f, AudioMath.DbToGain(0f), 1e-5f);
+            Assert.AreEqual(0.5012f, AudioMath.DbToGain(-6f), 1e-3f);
+        }
+    }
+}

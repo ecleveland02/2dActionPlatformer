@@ -19,6 +19,8 @@ namespace Margin.Bosses
         [Min(0f)] public float minRange;
         [Tooltip("Only picked when the player is at most this far away. 0 = any distance.")]
         [Min(0f)] public float maxRange;
+        [Tooltip("Sound played as the telegraph starts (a SoundBank id, e.g. boss_swipe_tell). Empty = the boss's default.")]
+        public string tellSound;
     }
 
     /// <summary>

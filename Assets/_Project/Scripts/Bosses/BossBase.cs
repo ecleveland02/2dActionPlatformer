@@ -140,6 +140,7 @@ namespace Margin.Bosses
             seen.Add(key);
             Enter(BossMode.Intro, repeat ? data.introFramesRepeat : data.introFrames);
             OnIntroStart(repeat);
+            BossEvents.RaiseEngaged(this);
         }
 
         public void Tick()
@@ -193,6 +194,7 @@ namespace Margin.Bosses
                         SetHurtbox(false);
                         OnVanish();
                         Beaten?.Invoke(this);
+                        BossEvents.RaiseBeaten(this);
                     }
                     break;
             }
@@ -244,6 +246,7 @@ namespace Margin.Bosses
             Enter(BossMode.Attacking, 0);
             FacePlayer();
             OnMoveStart(move);
+            BossEvents.RaiseMoveStarted(this, TellSound(move));
         }
 
         // ---------------- taking hits ----------------
@@ -295,6 +298,7 @@ namespace Margin.Bosses
             BossPhase p = Phase;
             Enter(BossMode.PhaseShift, p == null ? 0 : repeat ? p.transitionFramesRepeat : p.transitionFrames);
             OnPhaseShiftStart(phase, repeat);
+            BossEvents.RaisePhaseChanged(this, phase);
         }
 
         private void EnterDefeated()
@@ -339,6 +343,7 @@ namespace Margin.Bosses
             picker.Reseed((uint)System.Environment.TickCount);
             SetHurtbox(true);
             OnReset();
+            BossEvents.RaiseReset(this);
             UpdateVisual();
         }
 
@@ -422,6 +427,9 @@ namespace Margin.Bosses
         public bool ShowBossBar => Engaged;
 
         // ---------------- hooks ----------------
+
+        /// <summary>The move's telegraph sound (spec 10: every attack has a consistent sound). Empty = none.</summary>
+        protected virtual string TellSound(BossMoveEntry move) => move.tellSound;
 
         /// <summary>Whether a move may be picked right now (e.g. not tossing a cap that's already flying).</summary>
         protected virtual bool CanUse(BossMoveEntry move) => true;

@@ -194,6 +194,7 @@ namespace Margin.EditorTools
             public StarterCombat.Result Combat;
             public FeelSettings Feel;
             public Margin.UI.UISettings UI;
+            public Margin.Audio.SoundBank Sound;
         }
 
         /// <summary>Loads the data assets, creating any that are missing (existing tuning is never overwritten).</summary>
@@ -211,6 +212,7 @@ namespace Margin.EditorTools
                 Combat = StarterCombat.EnsureCreated(),      // attacks, Brush Katana, combat settings
                 Feel = LoadOrCreate<FeelSettings>($"{DataFolder}/FeelSettings.asset"),
                 UI = StarterUI.EnsureCreated(),              // HUD and menu look (Data/UI)
+                Sound = StarterAudio.EnsureCreated(),        // sounds and music (Data/Audio)
             };
 
             if (assets.Controls == null)
@@ -316,6 +318,12 @@ namespace Margin.EditorTools
             SetReference(splatter, "settings", assets.Feel);
 
             StarterUI.EnsureInScene(assets.UI);   // HUD + pause menu
+
+            Margin.Audio.AudioDirector audio = null;
+            foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
+                if ((audio = root.GetComponentInChildren<Margin.Audio.AudioDirector>()) != null) break;
+            if (audio == null) audio = new GameObject("[Audio]").AddComponent<Margin.Audio.AudioDirector>();
+            SetReference(audio, "bank", assets.Sound);
         }
 
         /// <summary>Adds PlayerCombat (Brush Katana), PlayerFX, the blade line and the player's hurtbox.</summary>

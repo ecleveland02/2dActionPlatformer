@@ -381,8 +381,12 @@ namespace Margin.Enemies
         }
 
         /// <summary>Called by EnemyDeadState when the defeat pose is over: vanish in a burst of ink.</summary>
+        /// <summary>Any enemy finished its defeat and burst into ink (sounds, counters).</summary>
+        public static event System.Action<EnemyBase> Vanished;
+
         public void Vanish()
         {
+            Vanished?.Invoke(this);
             if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(Position, Vector2.up, 25);
             SetVisible(false);
             if (hurtbox != null) hurtbox.enabled = false;

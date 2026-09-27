@@ -168,6 +168,20 @@ namespace Margin.Bosses
 
         // ---------------- moves ----------------
 
+        protected override string TellSound(BossMoveEntry move)
+        {
+            if (!string.IsNullOrEmpty(move.tellSound)) return move.tellSound;
+            switch (move.move)
+            {
+                case Swipe: return "boss_swipe_tell";
+                case DashStroke: return "boss_dash_tell";
+                case CapToss: return "boss_cap_tell";
+                case LineSweep: return "boss_sweep_tell";
+                case DripRain: return "boss_drip_tell";
+                default: return "";
+            }
+        }
+
         protected override bool CanUse(BossMoveEntry move)
         {
             if (move.move == CapToss) return cap == null;
@@ -437,6 +451,7 @@ namespace Margin.Bosses
             if (!CanBeHit) return;
             if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(Position + Vector2.up, Vector2.up, 18);
             CameraShake.Shake(0.15f);
+            Margin.Audio.Sfx.Play("cap_reflect");
             TakeDamage(H.capReflectDamage);
             if (!IsBeaten && Mode != BossMode.PhaseShift) Stagger(Data.parryStaggerFrames);
         }

@@ -139,6 +139,7 @@ namespace Margin.UI
             GameLoop.Paused = true;
             Time.timeScale = 0f;   // particles, trails and camera shake stop too
             if (reader != null) reader.SetGameplayInput(false);
+            Margin.Audio.Sfx.Play("ui_select");
             pauseMenu.Open(reader != null ? reader.Actions : null);
         }
 
@@ -146,6 +147,7 @@ namespace Margin.UI
         {
             if (!IsPaused) return;
             pauseMenu.Close();
+            Margin.Audio.Sfx.Play("ui_back");
             GameLoop.Paused = wasPaused;
             Time.timeScale = timeScaleBefore;
             if (reader != null) reader.SetGameplayInput(true);

@@ -58,5 +58,10 @@ namespace Margin.Combat
         public static event System.Action<HitInfo> Parry;
 
         public static void RaiseParry(in HitInfo hit) => Parry?.Invoke(hit);
+
+        /// <summary>An enemy attack is about to strike (the frame before its first active frame): swing sounds.</summary>
+        public static event System.Action<UnityEngine.Component, AttackData> Swing;
+
+        public static void RaiseSwing(UnityEngine.Component attacker, AttackData attack) => Swing?.Invoke(attacker, attack);
     }
 }

@@ -66,6 +66,7 @@ namespace Margin.Enemies
             activeBoxes.Clear();
             AttackTiming timing = Current.Timing;
 
+            if (Frame == System.Math.Max(1, timing.FirstActiveFrame - 1)) CombatEvents.RaiseSwing(attacker, Current);
             if (timing.IsActive(Frame)) ResolveHits(attacker, origin, facing, settings);
             if (Current == null) return false;   // parried: the attacker cancelled us
 
