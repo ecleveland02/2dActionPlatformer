@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9509f2e2cb7204c8290b88841e7030, type: 3}
+  m_Name: KatanaLight2
+  m_EditorClassIdentifier: 
+  entries:
+  - pose: {fileID: 11400000, guid: 17f1cf7b8e7d30347b9793e761ec1e35, type: 2}
+    frames: 2
+    easing: 0
+  - pose: {fileID: 11400000, guid: 17f1cf7b8e7d30347b9793e761ec1e35, type: 2}
+    frames: 2
+    easing: 2
+  - pose: {fileID: 11400000, guid: 2bfd0bb44d494be4ca83c511fd01ba2b, type: 2}
+    frames: 3
+    easing: 0
+  - pose: {fileID: 11400000, guid: 2bfd0bb44d494be4ca83c511fd01ba2b, type: 2}
+    frames: 11
+    easing: 3
+  - pose: {fileID: 11400000, guid: e35e0e077033cd54da36e33c8d973919, type: 2}
+    frames: 1
+    easing: 1
+  loop: 0
+  fadeInFrames: 1
