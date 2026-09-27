@@ -17,7 +17,7 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
 - **Attack buttons:** Light = left click / right trigger (also J, gamepad X). Heavy = right click / left trigger
-  (also K, gamepad Y). Special = U / left bumper. Parry = I / right bumper.
+  (also K, gamepad Y). Special = U / left bumper. Parry = F / right bumper.
   Optional tap/hold mode: `TapHoldButton` (pure) is supported by InputReader if an "Attack" action is added to
   MarginControls (tap = light on release, hold = heavy after `attackHoldFrames`); unbound by default because
   separate buttons respond instantly. A finished attack waits while `AttackHoldPending` so late holds still chain.

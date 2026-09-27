@@ -413,7 +413,7 @@ namespace Margin.EditorTools
             labelObject.transform.SetParent(dummy.transform, false);
             labelObject.transform.localPosition = new Vector3(0f, 1.35f, 0f);
             var label = labelObject.AddComponent<TextMesh>();
-            label.text = sparring ? "sparring: parry my jabs (I / RB)\nred flash = can't parry, dodge!" : "hit me";
+            label.text = sparring ? "sparring: parry my jabs (F / RB)\nred flash = can't parry, dodge!" : "hit me";
             label.anchor = TextAnchor.LowerCenter;
             label.alignment = TextAlignment.Center;
             label.characterSize = 0.05f;
