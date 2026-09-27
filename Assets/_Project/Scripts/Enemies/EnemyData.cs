@@ -86,5 +86,7 @@ namespace Margin.Enemies
         public PoseClip defeated;
         [Tooltip("Length of a held weapon line from the front hand (e.g. the Lancer's pencil). 0 = unarmed.")]
         [Min(0f)] public float weaponLength = 0f;
+        [Tooltip("How that weapon is drawn (e.g. the Lancer's pencil).")]
+        public WeaponLook weaponLook;
     }
 }

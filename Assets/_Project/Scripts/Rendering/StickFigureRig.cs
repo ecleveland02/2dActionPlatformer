@@ -67,6 +67,14 @@ namespace Margin.Rendering
         /// <summary>Overrides the ink colors (e.g. red flash on an unparryable attack's wind-up). Null = normal.</summary>
         public Color? Tint { get; set; }
 
+        [SerializeField, HideInInspector] private float gripAngle;
+        /// <summary>The current pose's wrist angle (FigurePose.grip), read by WeaponLine and TwoHandGrip.</summary>
+        public float GripAngle
+        {
+            get => gripAngle;
+            set => gripAngle = value;
+        }
+
         public bool IsBuilt => hips != null && footBack != null && legBackLine != null;
 
         /// <summary>The six ink lines (body, head, arms, legs), e.g. for afterimages to copy.</summary>
@@ -139,6 +147,7 @@ namespace Margin.Rendering
             RootOffset = new Vector2(pose.rootOffsetX, pose.rootOffsetY);
             // Whole-body tilt: the hips are the root of every joint. Positive tips toward facing (clockwise, -z).
             hips.localRotation = Quaternion.Euler(0f, 0f, -pose.rootRotation);
+            gripAngle = pose.grip;
             foreach (PoseJoint joint in FigurePose.AllJoints)
                 Pivot(joint).localRotation = Quaternion.Euler(0f, 0f, Sign(joint) * pose.Get(joint));
         }
@@ -152,6 +161,7 @@ namespace Margin.Rendering
                 rootOffsetX = rootOffset.x,
                 rootOffsetY = rootOffset.y,
                 rootRotation = FigurePose.NormalizeAngle(-hips.localEulerAngles.z),
+                grip = gripAngle,
             };
             foreach (PoseJoint joint in FigurePose.AllJoints)
                 pose.Set(joint, FigurePose.NormalizeAngle(Sign(joint) * Pivot(joint).localEulerAngles.z));

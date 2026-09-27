@@ -16,6 +16,9 @@ namespace Margin.Rendering
         /// <summary>Whole-body tilt around the hips in degrees. Positive = tips toward the facing direction
         /// (90 = lying face down, -90 = lying on the back).</summary>
         public float rootRotation;
+        /// <summary>Wrist: turns the held weapon away from the forearm's line in degrees (+ = toward facing when the
+        /// forearm points down). 0 = the weapon continues the forearm, as in every pose made before grips existed.</summary>
+        public float grip;
         public float spine;
         public float neck;
         public float shoulderFront;
@@ -80,6 +83,7 @@ namespace Margin.Rendering
                 rootOffsetX = a.rootOffsetX + (b.rootOffsetX - a.rootOffsetX) * t,
                 rootOffsetY = a.rootOffsetY + (b.rootOffsetY - a.rootOffsetY) * t,
                 rootRotation = LerpAngle(a.rootRotation, b.rootRotation, t),
+                grip = LerpAngle(a.grip, b.grip, t),
             };
             foreach (PoseJoint joint in AllJoints)
                 result.Set(joint, LerpAngle(a.Get(joint), b.Get(joint), t));
@@ -101,6 +105,7 @@ namespace Margin.Rendering
                 rootOffsetX = Spline(p0.rootOffsetX, p1.rootOffsetX, p2.rootOffsetX, p3.rootOffsetX, t),
                 rootOffsetY = Spline(p0.rootOffsetY, p1.rootOffsetY, p2.rootOffsetY, p3.rootOffsetY, t),
                 rootRotation = SplineAngle(p0.rootRotation, p1.rootRotation, p2.rootRotation, p3.rootRotation, t),
+                grip = SplineAngle(p0.grip, p1.grip, p2.grip, p3.grip, t),
             };
             foreach (PoseJoint joint in AllJoints)
                 result.Set(joint, SplineAngle(p0.Get(joint), p1.Get(joint), p2.Get(joint), p3.Get(joint), t));
@@ -142,6 +147,7 @@ namespace Margin.Rendering
                 rootOffsetX = a.rootOffsetX - b.rootOffsetX,
                 rootOffsetY = a.rootOffsetY - b.rootOffsetY,
                 rootRotation = DeltaAngle(b.rootRotation, a.rootRotation),
+                grip = DeltaAngle(b.grip, a.grip),
             };
             foreach (PoseJoint joint in AllJoints) d.Set(joint, DeltaAngle(b.Get(joint), a.Get(joint)));
             return d;
@@ -155,6 +161,7 @@ namespace Margin.Rendering
                 rootOffsetX = pose.rootOffsetX + delta.rootOffsetX * weight,
                 rootOffsetY = pose.rootOffsetY + delta.rootOffsetY * weight,
                 rootRotation = pose.rootRotation + delta.rootRotation * weight,
+                grip = pose.grip + delta.grip * weight,
             };
             foreach (PoseJoint joint in AllJoints) r.Set(joint, pose.Get(joint) + delta.Get(joint) * weight);
             return r;

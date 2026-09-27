@@ -127,6 +127,18 @@ namespace Margin.EditorTools
                 lancer.proportions = proportions;
                 lancer.weaponLength = 1.4f;
             }
+            if (lancer.weaponLook == null)
+            {
+                var pencil = StarterCombat.LoadOrCreate<WeaponLook>($"{EnemyFolder}/PencilLook.asset", out bool newPencil);
+                if (newPencil)
+                {
+                    pencil.style = WeaponStyle.Pencil;
+                    pencil.twoHanded = false;
+                    pencil.scabbard = false;
+                    EditorUtility.SetDirty(pencil);
+                }
+                lancer.weaponLook = pencil;
+            }
 
             if (lancer.idle == null) lancer.idle = StarterCombat.HoldClip("LancerIdle", poses["LancerIdle"], 6, false);
             if (lancer.walk == null) lancer.walk = WalkClip("LancerWalk", 6, "WalkArmed");

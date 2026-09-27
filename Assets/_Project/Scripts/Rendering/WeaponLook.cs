@@ -28,6 +28,20 @@ namespace Margin.Rendering
         [Min(0f)] public float handleLength = 0.22f;
         [Min(0.005f)] public float handleWidth = 0.045f;
 
+        [Tooltip("Blade color inside the ink outline (the sheets draw a light gray blade).")]
+        public Color bladeFill = new Color32(0xC4, 0xC4, 0xC4, 0xFF);
+        [Tooltip("Ink outline around the blade (each side). 0 = a solid ink blade.")]
+        [Min(0f)] public float outlineWidth = 0.018f;
+        [Tooltip("Held in both hands: the back hand is placed on the handle every frame.")]
+        public bool twoHanded = true;
+
+        [Header("Scabbard (worn at the hip)")]
+        public bool scabbard = true;
+        [Min(0.05f)] public float scabbardLength = 0.75f;
+        [Min(0.01f)] public float scabbardWidth = 0.07f;
+        [Tooltip("Angle from the spine's 'up' toward the back, in degrees. 115 = back and a little down.")]
+        public float scabbardAngle = 115f;
+
         [Header("Pencil")]
         [Tooltip("How far the pencil sticks out behind the hand (eraser end).")]
         [Min(0f)] public float pencilBackLength = 0.3f;

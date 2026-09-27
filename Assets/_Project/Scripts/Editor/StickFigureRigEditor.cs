@@ -115,12 +115,15 @@ namespace Margin.EditorTools
             Vector2 offset = EditorGUILayout.Vector2Field("Hips offset", rig.RootOffset);
             float tilt = EditorGUILayout.FloatField(new GUIContent("Body tilt (°)", "Tilts the whole figure around the hips. " +
                 "Positive tips forward (90 = face down), negative backward (-90 = on its back)."), current.rootRotation);
+            float grip = EditorGUILayout.FloatField(new GUIContent("Sword grip (°)", "Wrist: turns the sword away from " +
+                "the forearm's line. 0 = the sword continues the forearm."), current.grip);
             if (EditorGUI.EndChangeCheck())
             {
                 current.Set(selected, typed);
                 current.rootOffsetX = offset.x;
                 current.rootOffsetY = offset.y;
                 current.rootRotation = tilt;
+                current.grip = grip;
                 ApplyWithUndo(rig, current, "Edit pose");
             }
 

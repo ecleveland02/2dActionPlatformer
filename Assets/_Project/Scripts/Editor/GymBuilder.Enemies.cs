@@ -192,6 +192,7 @@ namespace Margin.EditorTools
                 SetReference(line, "rig", rig);
                 var so = new SerializedObject(line);
                 so.FindProperty("length").floatValue = data.weaponLength;
+                so.FindProperty("look").objectReferenceValue = data.weaponLook;
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
 

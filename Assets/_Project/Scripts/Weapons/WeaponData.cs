@@ -29,6 +29,8 @@ namespace Margin.Weapons
         [Header("Visual")]
         [Tooltip("Length of the blade line drawn from the hand, in units.")]
         [Min(0f)] public float bladeLength = 0.9f;
+        [Tooltip("How the weapon is drawn (katana with guard, handle and scabbard). Visual only.")]
+        public Margin.Rendering.WeaponLook look;
 
         /// <summary>Moves that can start from standing, running or jumping (not mid-combo follow-ups).</summary>
         public IEnumerable<AttackData> Starters()

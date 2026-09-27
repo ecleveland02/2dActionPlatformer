@@ -279,6 +279,14 @@ namespace Margin.EditorTools
             if (katana.airLight == null || overwrite) katana.airLight = attacks["KatanaAirLight1"];
             if (katana.airHeavy == null || overwrite) katana.airHeavy = attacks["KatanaAirSlam"];
             if (katana.special == null || overwrite) katana.special = attacks["KatanaInkWave"];
+            // How the katana is drawn (gray outlined blade, guard, handle, scabbard, two-handed grip).
+            var look = LoadOrCreate<WeaponLook>($"{WeaponFolder}/KatanaLook.asset", out bool newLook);
+            if (newLook)
+            {
+                look.style = WeaponStyle.Katana;
+                EditorUtility.SetDirty(look);
+            }
+            if (katana.look == null) katana.look = look;
             EditorUtility.SetDirty(katana);
 
             CombatSettings settings = LoadOrCreate<CombatSettings>(SettingsPath, out _);

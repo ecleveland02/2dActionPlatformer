@@ -58,7 +58,11 @@ namespace Margin.Player
         private void Awake()
         {
             player = GetComponent<PlayerController>();
-            if (weaponLine != null && weapon != null) weaponLine.Length = weapon.bladeLength;
+            if (weaponLine != null && weapon != null)
+            {
+                weaponLine.Length = weapon.bladeLength;
+                if (weapon.look != null) weaponLine.Look = weapon.look;
+            }
         }
 
         private void OnEnable() => HitboxSources.Register(this);

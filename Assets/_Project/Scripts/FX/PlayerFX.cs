@@ -61,7 +61,7 @@ namespace Margin.FX
 
             if (Smear == null) Smear = SmearRenderer.Create(order + 3);
             if (Afterimages == null)
-                Afterimages = new AfterimagePool(s.afterimageCount, 7, s.afterimageFadeFrames, s.afterimageAlpha, Ghost, material, order - 3);
+                Afterimages = new AfterimagePool(s.afterimageCount, 14, s.afterimageFadeFrames, s.afterimageAlpha, Ghost, material, order - 3);
             if (blade != null) blade.ConfigureTrail(s.trailTime, s.trailWidth, Ink, order + 2);
         }
 
@@ -125,9 +125,10 @@ namespace Margin.FX
             if ((player.FramesInState - 1) % Settings.afterimageInterval != 0) return;
 
             LineRenderer[] lines = rig.Lines;
-            var all = new LineRenderer[lines.Length + 1];
+            LineRenderer[] weapon = blade != null ? blade.Lines : new LineRenderer[0];
+            var all = new LineRenderer[lines.Length + weapon.Length];
             lines.CopyTo(all, 0);
-            all[lines.Length] = blade != null ? blade.Line : null;
+            weapon.CopyTo(all, lines.Length);
             Afterimages.Spawn(all);
         }
     }

@@ -327,6 +327,8 @@ namespace Margin.EditorTools
             if (blade == null) blade = bladeObject.gameObject.AddComponent<WeaponLine>();
             bladeObject.GetComponent<LineRenderer>().sharedMaterial = assets.Ink;
             bool ok = SetReference(blade, "rig", rig);
+            if (assets.Combat.Weapon != null && assets.Combat.Weapon.look != null)
+                ok &= SetReference(blade, "look", assets.Combat.Weapon.look);
 
             var combat = controller.GetComponent<PlayerCombat>();
             if (combat == null) combat = controller.gameObject.AddComponent<PlayerCombat>();
