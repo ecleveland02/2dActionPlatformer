@@ -19,7 +19,7 @@ namespace Margin.Rendering
         [Min(0.005f)] public float bladeWidth = 0.065f;
         [Tooltip("Fraction of the blade length where the point starts to narrow.")]
         [Range(0.1f, 0.95f)] public float taperStart = 0.75f;
-        [Tooltip("How far the blade bows toward its back (units), most at 60% of its length. 0 = straight.")]
+        [Tooltip("How far the blade bows toward its cutting edge (units), most at 60% of its length. 0 = straight.")]
         [Min(0f)] public float curve = 0.045f;
         [Tooltip("During attacks the cutting edge leads each swing (the curve flips to follow the slash); outside attacks it " +
                  "always rests edge-down, whichever way it points. Off = always edge-down.")]

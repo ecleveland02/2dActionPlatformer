@@ -228,7 +228,9 @@ namespace Margin.Rendering
             lastAngle = angle;
             lastFacing = facing;
             hasLastAngle = true;
-            Pt[] blade = WeaponShape.Blade(hand, dir, length * scale, look.curve * scale, side);
+            // A katana's cutting edge is on the outside of its curve, so the blade bows toward the edge: -side
+            // (side names the direction of the blade's back).
+            Pt[] blade = WeaponShape.Blade(hand, dir, length * scale, look.curve * scale, -side);
             if (bladeTaper == null || Mathf.Abs(bladeTaper.keys[1].time - look.taperStart) > 1e-4f)
                 bladeTaper = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(look.taperStart, 1f), new Keyframe(1f, 0.05f));
 

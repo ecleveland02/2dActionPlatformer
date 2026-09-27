@@ -7,8 +7,8 @@ namespace Margin.Rendering
     /// the weapon's direction (the forearm's direction), so the tip is always exactly hand + direction * length:
     /// the point hitboxes, the tip trail and smears were tuned against.
     ///
-    /// "Side" picks which perpendicular is the back of the blade (the side a katana curves toward). WeaponLine
-    /// flips it with the figure's facing so the sword looks the same both ways.
+    /// "Side" picks which perpendicular the blade bows toward. A katana bows toward its cutting edge, so WeaponLine
+    /// passes the edge side: edge down at rest, leading the cut during attacks.
     /// </summary>
     public static class WeaponShape
     {
@@ -27,7 +27,7 @@ namespace Margin.Rendering
 
         /// <summary>
         /// Which way a curved blade's back faces (+1 = WeaponShape's default side, -1 = the other), so the cutting edge
-        /// leads the swing: a blade turning clockwise cuts with its clockwise side, so its back (the bow) goes the other
+        /// leads the swing: a blade turning clockwise cuts with its clockwise side, so its back goes the other
         /// way. While the blade is barely turning it keeps its side, and after <paramref name="settleSeconds"/> of that
         /// it eases back to <paramref name="restSide"/> (the facing default). The side slides through 0 (a straight
         /// blade) over <paramref name="flipSeconds"/>, so a flip never pops. Angles in degrees, counter-clockwise +.
