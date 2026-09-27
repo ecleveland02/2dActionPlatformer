@@ -21,6 +21,14 @@ namespace Margin.Rendering
         [Range(0.1f, 0.95f)] public float taperStart = 0.75f;
         [Tooltip("How far the blade bows toward its back (units), most at 60% of its length. 0 = straight.")]
         [Min(0f)] public float curve = 0.045f;
+        [Tooltip("The cutting edge leads each swing (the curve flips to follow the slash). Off = the edge always faces down when the blade points forward.")]
+        public bool edgeFollowsSwing = true;
+        [Tooltip("The blade must turn at least this fast (degrees per second) to count as a swing.")]
+        [Min(0f)] public float swingTurnSpeed = 240f;
+        [Tooltip("Seconds the curve takes to flip from one side to the other (passes through straight).")]
+        [Min(0f)] public float edgeFlipSeconds = 0.05f;
+        [Tooltip("Seconds of holding still before the edge goes back to its resting side.")]
+        [Min(0f)] public float edgeSettleSeconds = 0.35f;
         [Tooltip("Guard (tsuba): length across the blade and thickness.")]
         [Min(0f)] public float guardLength = 0.13f;
         [Min(0.005f)] public float guardWidth = 0.035f;

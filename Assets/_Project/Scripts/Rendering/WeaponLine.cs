@@ -32,6 +32,9 @@ namespace Margin.Rendering
         private WeaponStyle builtStyle = (WeaponStyle)(-1);
         private bool builtScabbard;
         private AnimationCurve bladeTaper;
+        // Which side the katana's back faces (see WeaponShape.EdgeSide), and the blade angle last frame.
+        private float edgeSide = 1f, edgeStill, lastAngle, lastFacing;
+        private bool hasLastAngle;
 
         public StickFigureRig Rig
         {
@@ -187,8 +190,29 @@ namespace Margin.Rendering
 
         private void DrawKatana(Pt hand, Pt dir, float scale, float facing, Color ink, int order)
         {
-            // The blade's back is "up" when it points forward; mirrored with facing.
-            Pt[] blade = WeaponShape.Blade(hand, dir, length * scale, look.curve * scale, facing);
+            // The blade's back is "up" when it points forward (mirrored with facing), unless it's swinging: then the
+            // cutting edge leads the swing, so the curve flips to the side the blade is moving away from.
+            float side = facing;
+            float angle = Mathf.Atan2(dir.Y, dir.X) * Mathf.Rad2Deg;
+            float dt = Time.deltaTime;
+            if (look.edgeFollowsSwing && Application.isPlaying && dt > 0f)
+            {
+                // Turning around mirrors the blade in one frame: that's not a swing, so don't measure across it.
+                if (facing != lastFacing)
+                {
+                    hasLastAngle = false;
+                    edgeSide = facing;
+                }
+                float turn = hasLastAngle ? Mathf.DeltaAngle(lastAngle, angle) / dt : 0f;
+                edgeSide = WeaponShape.EdgeSide(edgeSide, turn, facing, ref edgeStill, dt, look.swingTurnSpeed,
+                                                look.edgeSettleSeconds, look.edgeFlipSeconds);
+                side = edgeSide;
+            }
+            else if (!look.edgeFollowsSwing) edgeSide = facing;
+            lastAngle = angle;
+            lastFacing = facing;
+            hasLastAngle = true;
+            Pt[] blade = WeaponShape.Blade(hand, dir, length * scale, look.curve * scale, side);
             if (bladeTaper == null || Mathf.Abs(bladeTaper.keys[1].time - look.taperStart) > 1e-4f)
                 bladeTaper = new AnimationCurve(new Keyframe(0f, 1f), new Keyframe(look.taperStart, 1f), new Keyframe(1f, 0.05f));
 

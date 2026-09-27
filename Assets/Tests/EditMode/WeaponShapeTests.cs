@@ -52,3 +52,48 @@ namespace Margin.Tests
         }
     }
 }
+
+namespace Margin.Tests
+{
+    using Margin.Rendering;
+    using NUnit.Framework;
+
+    /// <summary>The katana's cutting edge leads the swing (the curve flips to follow the slash).</summary>
+    public class KatanaEdgeTests
+    {
+        private static float Run(float side, float turn, float rest, ref float still, int frames, float dt = 1f / 60f)
+        {
+            for (int i = 0; i < frames; i++)
+                side = WeaponShape.EdgeSide(side, turn, rest, ref still, dt, 240f, 0.35f, 0.05f);
+            return side;
+        }
+
+        [Test]
+        public void ClockwiseSwing_KeepsTheDefaultSide_CounterClockwiseFlipsIt()
+        {
+            float still = 0f;
+            Assert.AreEqual(1f, Run(1f, -900f, 1f, ref still, 10), 1e-5f, "downward slash facing right: edge leads down");
+            Assert.AreEqual(-1f, Run(1f, 900f, 1f, ref still, 10), 1e-5f, "upswing: the edge flips to lead upward");
+        }
+
+        [Test]
+        public void Flip_PassesThroughStraight_InsteadOfPopping()
+        {
+            float still = 0f;
+            float side = WeaponShape.EdgeSide(1f, 900f, 1f, ref still, 1f / 60f, 240f, 0.35f, 0.05f);
+            Assert.That(side, Is.InRange(-1f, 1f).And.Not.EqualTo(-1f), "one frame in, still mid-flip");
+            Assert.AreEqual(-1f, Run(side, 900f, 1f, ref still, 3), 1e-5f, "done within the 0.05 s flip");
+        }
+
+        [Test]
+        public void HoldingStill_KeepsTheSide_ThenSettlesBack()
+        {
+            float still = 0f;
+            float side = Run(1f, 900f, 1f, ref still, 10);
+            side = Run(side, 0f, 1f, ref still, 15);
+            Assert.AreEqual(-1f, side, 1e-5f, "a short pause keeps the swing's edge");
+            side = Run(side, 0f, 1f, ref still, 30);
+            Assert.AreEqual(1f, side, 1e-5f, "after ~0.35 s it's back to resting");
+        }
+    }
+}

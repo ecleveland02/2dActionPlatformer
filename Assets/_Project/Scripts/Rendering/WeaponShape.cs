@@ -25,6 +25,32 @@ namespace Margin.Rendering
         /// <summary>Unit vector 90 degrees counter-clockwise from dir, times side (+1 or -1).</summary>
         public static Pt Perpendicular(Pt dir, float side) => new Pt(-dir.Y * side, dir.X * side);
 
+        /// <summary>
+        /// Which way a curved blade's back faces (+1 = WeaponShape's default side, -1 = the other), so the cutting edge
+        /// leads the swing: a blade turning clockwise cuts with its clockwise side, so its back (the bow) goes the other
+        /// way. While the blade is barely turning it keeps its side, and after <paramref name="settleSeconds"/> of that
+        /// it eases back to <paramref name="restSide"/> (the facing default). The side slides through 0 (a straight
+        /// blade) over <paramref name="flipSeconds"/>, so a flip never pops. Angles in degrees, counter-clockwise +.
+        /// </summary>
+        public static float EdgeSide(float current, float turnDegreesPerSecond, float restSide, ref float stillSeconds,
+                                     float deltaSeconds, float turnThreshold, float settleSeconds, float flipSeconds)
+        {
+            float target = current;
+            if (Math.Abs(turnDegreesPerSecond) >= turnThreshold)
+            {
+                target = turnDegreesPerSecond > 0f ? -1f : 1f;
+                stillSeconds = 0f;
+            }
+            else
+            {
+                stillSeconds += deltaSeconds;
+                if (stillSeconds >= settleSeconds) target = restSide;
+            }
+            float step = flipSeconds <= 0f ? 2f : 2f * deltaSeconds / flipSeconds;
+            if (Math.Abs(target - current) <= step) return target;
+            return current + Math.Sign(target - current) * step;
+        }
+
         /// <summary>Where the curve bows most, as a fraction of the length (a katana's curve peaks past the middle).</summary>
         public const float CurvePeak = 0.6f;
 
