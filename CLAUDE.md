@@ -80,7 +80,7 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   `HitResolver` (static) applies hits for every damage source (sword, projectiles). Air: `airGravityScale`,
   `hoverOnHit`; targets use `CombatSettings.juggleGravityScale` in hitstun. Ink: pure `InkMeter` owned by
   `PlayerCombat` (gain on hit, spec decay); attacks with `inkCost` can't start without the ink. `InkWaveProjectile`
-  spawns on an attack's first active frame when `projectileSpeed > 0`. Placeholder HUD: `UI/PlayerHUD` (health + ink).
+  spawns on an attack's first active frame when `projectileSpeed > 0`. HUD: see UI (M5).
   Defense: `PlayerHealth` (IHitReceiver; pure `Health`) parries during `ParryState.IsActive` (parryable attacks only),
   otherwise damages and forces `HitstunState`. `IHitReceiver.ReceiveHit` returns false when the
   hit didn't land (parried). Redraw = Down + Special at 100 ink. `SparringAttacker` makes a dummy attack
@@ -112,8 +112,12 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   the builders, **Margin > Add HUD and Pause Menu**, or automatically in scenes with a GameLoop) hosts a code-made
   UIDocument scaled from 1920x1080, with `HudView` (health + ink card top-left with damage chip, low-health pulse,
   hurt shake, combo counter and breaker prompt; boss bar bottom-centre for any `IBossBarSource` in `BossBars`,
-  e.g. an enemy with `EnemyData.bossBarName`) and `PauseMenuView` (Resume, Restart = `PlayerHealth.Respawn`,
-  Controls read from the input asset, Quit). Pausing sets `GameLoop.Paused` and `Time.timeScale = 0` and restores
+  e.g. an enemy with `EnemyData.bossBarName`) and `PauseMenuView` (flat `UIButton`s with pack icons: Resume,
+  Restart = `PlayerHealth.Respawn`, Controls, Quit; Controls page shows `KeyHint` key/mouse pictures per binding,
+  text for gamepad). Look: "clean flat + ink": menu cards/HUD bars hand-drawn, buttons flat rounded (UI Toolkit
+  borders, not sliced sprites). Art packs live in `Art/UI` (UIElements icons, InputIcons keys; white images tinted in
+  code); `StarterUI` fills `UISettings` icon slots and `keyIcons` (only empty slots). Pure `KeyIcons` maps binding
+  paths to icon names. SimplePixelUI/SimpleSpinner (Assets root) are unused. Pausing sets `GameLoop.Paused` and `Time.timeScale = 0` and restores
   both on resume. The hand-drawn look is pure `InkLines` (seeded wobble, overshooting corners, pen pressure)
   drawn by `InkPainter` (Painter2D) inside `InkElement`s, re-seeded every `boilFrames` for a subtle boil.
   Pure logic: `InkLines`, `ChipBar`, `MenuCursor`, `BossBars`. Tuning: `Data/UI/UISettings` (+ `MarginTheme.tss`).

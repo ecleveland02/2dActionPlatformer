@@ -165,6 +165,7 @@ namespace Margin.UI
             submitAction = menu.FindAction("Submit");
             cancelAction = menu.FindAction("Cancel");
             menu.Enable();   // always on: Pause must work while gameplay input is off
+            hud.SetInput(actions);
         }
 
         /// <summary>A text label in the UI font, placed absolutely (width &lt; 0 = fit the text).</summary>

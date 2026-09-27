@@ -1,6 +1,7 @@
 using Margin.Core;
 using Margin.Player;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
 
 namespace Margin.UI
@@ -18,7 +19,9 @@ namespace Margin.UI
         private readonly VisualElement root;
         private readonly InkPanel card;
         private readonly InkBar healthBar, inkBar, bossBar;
-        private readonly Label healthValue, inkValue, redraw, combo, breakPrompt, bossName;
+        private readonly Label healthValue, inkValue, redraw, combo, bossName;
+        private readonly VisualElement breakPrompt;
+        private InputActionAsset promptActions;
         private readonly VisualElement bossRoot;
         private readonly ChipBar healthChip = new ChipBar(), bossChip = new ChipBar();
 
@@ -69,7 +72,14 @@ namespace Margin.UI
             // ---- Combo counter (right of the card) ----
             combo = Text("", s.comboSize, s.accent, s.hudMargin.x + w + 12f, s.hudMargin.y + 10f, 360f);
             root.Add(combo);
-            breakPrompt = Text("PARRY TO BREAK", s.labelSize, s.ink, s.hudMargin.x + w + 14f, s.hudMargin.y + 20f + s.comboSize, 360f);
+            // "[F] / RB  BREAK!" once the input asset is known (SetInput); plain text until then.
+            breakPrompt = new VisualElement { pickingMode = PickingMode.Ignore };
+            breakPrompt.style.position = Position.Absolute;
+            breakPrompt.style.left = s.hudMargin.x + w + 14f;
+            breakPrompt.style.top = s.hudMargin.y + 16f + s.comboSize;
+            breakPrompt.style.flexDirection = FlexDirection.Row;
+            breakPrompt.style.alignItems = Align.Center;
+            breakPrompt.Add(UIButton.FlowLabel(s, "PARRY TO BREAK!", s.labelSize, s.ink));
             root.Add(breakPrompt);
 
             // ---- Boss bar (bottom centre) ----
@@ -92,6 +102,23 @@ namespace Margin.UI
             SetVisible(combo, false);
             SetVisible(breakPrompt, false);
             SetVisible(bossRoot, false);
+        }
+
+        /// <summary>Shows the Parry keys as pictures in the combo breaker prompt (from the controls asset).</summary>
+        public void SetInput(InputActionAsset actions)
+        {
+            if (actions == null || actions == promptActions) return;
+            promptActions = actions;
+            InputAction parry = actions.FindActionMap("Gameplay")?.FindAction("Parry");
+            if (parry == null) return;
+            float icon = s.labelSize * 1.9f;
+            breakPrompt.Clear();
+            breakPrompt.Add(new KeyHint(s, parry, "Keyboard", s.labelSize, icon, s.ink, 1));
+            breakPrompt.Add(UIButton.FlowLabel(s, " / ", s.labelSize, s.faint));
+            breakPrompt.Add(new KeyHint(s, parry, "Gamepad", s.labelSize, icon, s.ink, 1));
+            Label text = UIButton.FlowLabel(s, "BREAK!", s.labelSize, s.accent);
+            text.style.marginLeft = 10f;
+            breakPrompt.Add(text);
         }
 
         /// <summary>Called every rendered frame. frames = gameplay frames that passed (0 while paused).</summary>

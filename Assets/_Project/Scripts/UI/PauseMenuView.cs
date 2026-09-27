@@ -7,9 +7,11 @@ using UnityEngine.UIElements;
 namespace Margin.UI
 {
     /// <summary>
-    /// The pause menu (spec 14): a paper card over the dimmed game with Resume, Restart, Controls and Quit.
-    /// Works with keyboard, gamepad (MarginControls "Menu" map, fed in by MarginUI) and mouse (hover + click).
-    /// "Controls" shows the current bindings read from the input asset, so it stays right if bindings change.
+    /// The pause menu (spec 14): a hand-drawn paper card over the dimmed game with clean flat buttons (Resume,
+    /// Restart, Controls, Quit), each with an icon from Art/UI. Works with keyboard, gamepad (MarginControls "Menu"
+    /// map, fed in by MarginUI) and mouse (hover selects, click activates).
+    /// "Controls" lists every action with the key/mouse pictures of its current bindings (text for gamepad),
+    /// read from the input asset so it follows rebinding.
     /// </summary>
     public sealed class PauseMenuView
     {
@@ -18,18 +20,16 @@ namespace Margin.UI
         private readonly UISettings s;
         private readonly VisualElement layer;
         private readonly InkPanel mainCard, controlsCard;
-        private readonly InkSelectionMark mainMark, controlsMark;
-        private readonly List<VisualElement> mainRows = new List<VisualElement>();
-        private readonly List<string> mainLabels = new List<string>();
-        private readonly List<Action> mainActions = new List<Action>();
-        private readonly VisualElement backRow;
+        private readonly List<UIButton> buttons = new List<UIButton>();
+        private readonly List<Action> actions = new List<Action>();
+        private readonly UIButton backButton;
         private readonly VisualElement bindingList;
         private readonly MenuCursor cursor;
         private Page page;
         private InputActionAsset shownBindings;
+        private UIButton pressedButton;
 
-        private const float MainWidth = 560f;
-        private const float ControlsWidth = 900f;
+        private const float ControlsWidth = 980f;
 
         public bool IsOpen { get; private set; }
 
@@ -40,51 +40,49 @@ namespace Margin.UI
             layer.pickingMode = PickingMode.Position;   // blocks clicks to anything behind the menu
             layer.Add(new InkDim(s));
 
-            // ---- Main page ----
-            float rowHeight = s.menuItemSize + 26f;
-            float firstRow = 40f + s.menuTitleSize + 34f;
-            float mainHeight = firstRow + rowHeight * 4f + 40f;
-            mainCard = Card(MainWidth, mainHeight);
+            // ---- Main page: title + a column of buttons ----
+            float mainWidth = s.buttonWidth + 120f;
+            float mainHeight = 60f + s.menuTitleSize + 36f + 4f * (s.buttonHeight + s.buttonSpacing) + 40f;
+            mainCard = Card(mainWidth, mainHeight);
             layer.Add(mainCard);
-            mainCard.Add(Title("PAUSED", MainWidth));
+            VisualElement column = Column(mainCard);
+            column.Add(Title("PAUSED"));
 
-            mainMark = new InkSelectionMark(s);
-            mainCard.Add(mainMark);
-            AddMainItem("Resume", resume, firstRow, rowHeight);
-            AddMainItem("Restart", restart, firstRow, rowHeight);
-            AddMainItem("Controls", () => ShowPage(Page.Controls), firstRow, rowHeight);
-            AddMainItem("Quit", quit, firstRow, rowHeight);
+            AddButton(column, "Resume", s.iconResume, resume);
+            AddButton(column, "Restart", s.iconRestart, restart);
+            AddButton(column, "Controls", s.iconControls, () => ShowPage(Page.Controls));
+            AddButton(column, "Quit", s.iconQuit, quit);
 
-            // ---- Controls page ----
-            float controlsHeight = 700f;
+            // ---- Controls page: bindings table + Back ----
+            float rowHeight = s.keyIconSize + 10f;
+            float controlsHeight = 60f + s.menuTitleSize + 30f + 11f * rowHeight + s.buttonHeight + 70f;
             controlsCard = Card(ControlsWidth, controlsHeight);
             layer.Add(controlsCard);
-            controlsCard.Add(Title("CONTROLS", ControlsWidth));
+            VisualElement controlsColumn = Column(controlsCard);
+            controlsColumn.Add(Title("CONTROLS"));
             bindingList = new VisualElement { pickingMode = PickingMode.Ignore };
-            HudView.Place(bindingList, 0f, 40f + s.menuTitleSize + 24f, ControlsWidth, controlsHeight - 200f);
-            controlsCard.Add(bindingList);
-            controlsMark = new InkSelectionMark(s);
-            controlsCard.Add(controlsMark);
-            backRow = Row("Back", 60f, controlsHeight - rowHeight - 36f, rowHeight);
-            backRow.RegisterCallback<ClickEvent>(_ => ShowPage(Page.Main));
-            controlsCard.Add(backRow);
+            bindingList.style.width = ControlsWidth - 120f;
+            bindingList.style.marginBottom = 24f;
+            controlsColumn.Add(bindingList);
+            backButton = new UIButton(s, "Back", s.iconBack);
+            backButton.Clicked += () => ShowPage(Page.Main);
+            controlsColumn.Add(backButton);
 
-            cursor = new MenuCursor(mainRows.Count);
+            cursor = new MenuCursor(buttons.Count);
             Close();
         }
 
-        public void Open(InputActionAsset actions)
+        public void Open(InputActionAsset inputActions)
         {
             IsOpen = true;
             HudView.SetVisible(layer, true);
-            if (actions != null && actions != shownBindings)
+            if (inputActions != null && inputActions != shownBindings)
             {
-                shownBindings = actions;
-                FillBindings(actions);
+                shownBindings = inputActions;
+                FillBindings(inputActions);
             }
             ShowPage(Page.Main);
-            cursor.Select(0);
-            UpdateMarks();
+            Select(0);
         }
 
         public void Close()
@@ -94,125 +92,131 @@ namespace Margin.UI
         }
 
         /// <summary>
-        /// Called every rendered frame while open. navigate: stick/keys (y up = previous item); submit/cancel:
+        /// Called every rendered frame while open. navigate: stick/keys (y up = previous button); submit/cancel:
         /// pressed this frame. Returns false when Cancel was pressed on the main page (the caller resumes).
         /// </summary>
         public bool Update(Vector2 navigate, bool submit, bool cancel, float realFrames)
         {
             if (!IsOpen) return true;
 
+            // Release last frame's keyboard/gamepad press squash.
+            if (pressedButton != null)
+            {
+                pressedButton.SetPressed(false);
+                pressedButton = null;
+            }
+
             if (page == Page.Main)
             {
                 int direction = navigate.y > 0.5f ? -1 : navigate.y < -0.5f ? 1 : 0;
-                if (cursor.Hold(direction, realFrames, s.menuRepeatDelay, s.menuRepeatInterval)) UpdateMarks();
-                if (submit) mainActions[cursor.Index]?.Invoke();
+                if (cursor.Hold(direction, realFrames, s.menuRepeatDelay, s.menuRepeatInterval)) Select(cursor.Index);
+                if (submit)
+                {
+                    pressedButton = buttons[cursor.Index];
+                    pressedButton.SetPressed(true);
+                    actions[cursor.Index]?.Invoke();
+                }
                 else if (cancel) return false;
             }
             else if (submit || cancel) ShowPage(Page.Main);
 
             mainCard.Refresh();
             controlsCard.Refresh();
-            mainMark.Refresh();
-            controlsMark.Refresh();
             return true;
         }
 
         /// <summary>Pause pressed while open: back out of Controls first, otherwise close. Returns true if it closed.</summary>
         public bool Back()
         {
-            if (page == Page.Controls)
-            {
-                ShowPage(Page.Main);
-                return false;
-            }
-            return true;
+            if (page != Page.Controls) return true;
+            ShowPage(Page.Main);
+            return false;
         }
 
-        // ---------------- pages ----------------
+        // ---------------- pages and selection ----------------
 
         private void ShowPage(Page next)
         {
             page = next;
             HudView.SetVisible(mainCard, page == Page.Main);
             HudView.SetVisible(controlsCard, page == Page.Controls);
-            UpdateMarks();
+            backButton.SetSelected(page == Page.Controls);   // the only button there
         }
 
-        private void AddMainItem(string text, Action action, float firstRow, float rowHeight)
+        private void Select(int index)
         {
-            int index = mainRows.Count;
-            VisualElement row = Row(text, 60f, firstRow + rowHeight * index, rowHeight);
-            row.RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                cursor.Select(index);
-                UpdateMarks();
-            });
-            row.RegisterCallback<ClickEvent>(_ =>
-            {
-                cursor.Select(index);
-                action?.Invoke();
-            });
-            mainCard.Add(row);
-            mainRows.Add(row);
-            mainLabels.Add(text);
-            mainActions.Add(action);
+            cursor.Select(index);
+            for (int i = 0; i < buttons.Count; i++) buttons[i].SetSelected(i == cursor.Index);
         }
 
-        /// <summary>Moves the hand-drawn arrow + underline to the selected item.</summary>
-        private void UpdateMarks()
+        private void AddButton(VisualElement column, string text, Texture2D icon, Action action)
         {
-            if (page == Page.Main && mainRows.Count > 0)
-            {
-                VisualElement row = mainRows[cursor.Index];
-                PlaceMark(mainMark, row, mainLabels[cursor.Index]);
-            }
-            else PlaceMark(controlsMark, backRow, "Back");
+            int index = buttons.Count;
+            var button = new UIButton(s, text, icon);
+            button.Hovered += () => Select(index);
+            button.Clicked += () => action?.Invoke();
+            column.Add(button);
+            buttons.Add(button);
+            actions.Add(action);
         }
 
-        private void PlaceMark(InkSelectionMark mark, VisualElement row, string text)
-        {
-            // Width from the text length (an estimate: layout sizes aren't known on the first frame).
-            float width = 44f + text.Length * s.menuItemSize * 0.62f;
-            HudView.Place(mark, row.style.left.value.value - 10f, row.style.top.value.value, width, row.style.height.value.value);
-            mark.MarkDirtyRepaint();
-        }
+        // ---------------- controls table ----------------
 
-        private void FillBindings(InputActionAsset actions)
+        private void FillBindings(InputActionAsset inputActions)
         {
             bindingList.Clear();
-            InputActionMap map = actions.FindActionMap("Gameplay");
-            InputActionMap menu = actions.FindActionMap("Menu");
+            InputActionMap gameplay = inputActions.FindActionMap("Gameplay");
+            InputActionMap menu = inputActions.FindActionMap("Menu");
             int size = s.labelSize + 2;
-            float y = 0f, lineHeight = size + 14f;
 
-            void Line(string what, string keyboard, string gamepad, Color color)
-            {
-                bindingList.Add(MarginUI.MakeLabel(s, what, size, color, 60f, y, 230f));
-                bindingList.Add(MarginUI.MakeLabel(s, keyboard, size, color, 300f, y, 300f));
-                bindingList.Add(MarginUI.MakeLabel(s, gamepad, size, color, 610f, y, 260f));
-                y += lineHeight;
-            }
-
-            Line("", "KEYBOARD / MOUSE", "GAMEPAD", s.faint);
-            Line("Move", "WASD / Arrows", "Left Stick / D-Pad", s.ink);
-            Line("Jump", Keys(map, "Jump", "Keyboard"), Keys(map, "Jump", "Gamepad"), s.ink);
-            Line("Light attack", Keys(map, "LightAttack", "Keyboard"), Keys(map, "LightAttack", "Gamepad"), s.ink);
-            Line("Heavy attack", Keys(map, "HeavyAttack", "Keyboard"), Keys(map, "HeavyAttack", "Gamepad"), s.ink);
-            Line("Special", Keys(map, "Special", "Keyboard"), Keys(map, "Special", "Gamepad"), s.ink);
-            Line("Dash", Keys(map, "Dash", "Keyboard"), Keys(map, "Dash", "Gamepad"), s.ink);
-            Line("Parry", Keys(map, "Parry", "Keyboard"), Keys(map, "Parry", "Gamepad"), s.ink);
-            Line("Pause", Keys(menu, "Pause", "Keyboard"), Keys(menu, "Pause", "Gamepad"), s.ink);
-            Line("Redraw (100 ink)", "Down + Special", "Down + Special", s.ink);
-            Line("Combo breaker (50)", "Parry while hit", "Parry while hit", s.ink);
+            Header("", "KEYBOARD / MOUSE", "GAMEPAD", size);
+            Row("Move", gameplay?.FindAction("Move"), size);
+            Row("Jump", gameplay?.FindAction("Jump"), size);
+            Row("Light attack", gameplay?.FindAction("LightAttack"), size);
+            Row("Heavy attack", gameplay?.FindAction("HeavyAttack"), size);
+            Row("Special", gameplay?.FindAction("Special"), size);
+            Row("Dash", gameplay?.FindAction("Dash"), size);
+            Row("Parry", gameplay?.FindAction("Parry"), size);
+            Row("Pause", menu?.FindAction("Pause"), size);
+            Header("Redraw (100 ink)", "Down + Special", "Down + Special", size);
+            Header("Combo breaker (50 ink)", "Parry while hit", "Parry while hit", size);
         }
 
-        /// <summary>The keys bound to an action for one control scheme, e.g. "Left Button | J".</summary>
-        private static string Keys(InputActionMap map, string action, string group)
+        private VisualElement TableRow()
         {
-            InputAction a = map?.FindAction(action);
-            if (a == null) return "-";
-            string text = a.GetBindingDisplayString(InputBinding.MaskByGroup(group));
-            return string.IsNullOrEmpty(text) ? "-" : text;
+            var row = new VisualElement { pickingMode = PickingMode.Ignore };
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.height = s.keyIconSize + 10f;
+            bindingList.Add(row);
+            return row;
+        }
+
+        private VisualElement Cell(VisualElement row, float width)
+        {
+            var cell = new VisualElement { pickingMode = PickingMode.Ignore };
+            cell.style.width = width;
+            cell.style.flexDirection = FlexDirection.Row;
+            cell.style.alignItems = Align.Center;
+            row.Add(cell);
+            return cell;
+        }
+
+        private void Header(string what, string keyboard, string gamepad, int size)
+        {
+            VisualElement row = TableRow();
+            Color color = string.IsNullOrEmpty(what) ? s.faint : s.ink;
+            Cell(row, 300f).Add(UIButton.FlowLabel(s, what, size, s.ink));
+            Cell(row, 300f).Add(UIButton.FlowLabel(s, keyboard, size, color));
+            Cell(row, 260f).Add(UIButton.FlowLabel(s, gamepad, size, color));
+        }
+
+        private void Row(string what, InputAction action, int size)
+        {
+            VisualElement row = TableRow();
+            Cell(row, 300f).Add(UIButton.FlowLabel(s, what, size, s.ink));
+            Cell(row, 300f).Add(new KeyHint(s, action, "Keyboard", size, s.keyIconSize, s.ink));
+            Cell(row, 260f).Add(new KeyHint(s, action, "Gamepad", size, s.keyIconSize, s.ink));
         }
 
         // ---------------- building helpers ----------------
@@ -230,19 +234,22 @@ namespace Margin.UI
             return card;
         }
 
-        private Label Title(string text, float cardWidth)
+        private static VisualElement Column(VisualElement card)
         {
-            Label title = MarginUI.MakeLabel(s, text, s.menuTitleSize, s.ink, 0f, 36f, cardWidth);
-            title.style.unityTextAlign = TextAnchor.UpperCenter;
-            return title;
+            var column = new VisualElement { pickingMode = PickingMode.Ignore };
+            column.style.flexDirection = FlexDirection.Column;
+            column.style.alignItems = Align.Center;
+            column.style.paddingTop = 44f;
+            column.style.flexGrow = 1f;
+            card.Add(column);
+            return column;
         }
 
-        private VisualElement Row(string text, float x, float y, float height)
+        private Label Title(string text)
         {
-            var row = new VisualElement();   // pickable, for mouse hover and click
-            HudView.Place(row, x, y, 440f, height);
-            row.Add(MarginUI.MakeLabel(s, text, s.menuItemSize, s.ink, 44f, (height - s.menuItemSize) * 0.5f - 4f));
-            return row;
+            Label title = UIButton.FlowLabel(s, text, s.menuTitleSize, s.ink);
+            title.style.marginBottom = 30f;
+            return title;
         }
     }
 }

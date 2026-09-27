@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -67,6 +69,52 @@ namespace Margin.UI
         [Tooltip("Holding a direction: frames before it starts repeating, then frames between repeats.")]
         [Min(1)] public int menuRepeatDelay = 24;
         [Min(1)] public int menuRepeatInterval = 7;
+
+        [Header("Buttons")]
+        [Min(80f)] public float buttonWidth = 400f;
+        [Min(24f)] public float buttonHeight = 64f;
+        [Min(0f)] public float buttonRadius = 14f;
+        [Min(0f)] public float buttonBorder = 3f;
+        [Min(8f)] public float buttonIconSize = 30f;
+        [Tooltip("Gap between buttons.")]
+        [Min(0f)] public float buttonSpacing = 14f;
+        [Tooltip("Key and mouse pictures (Controls page, prompts).")]
+        [Min(8f)] public float keyIconSize = 44f;
+
+        [Header("Icons (white pictures, tinted ink or paper)")]
+        public Texture2D iconResume;
+        public Texture2D iconRestart;
+        public Texture2D iconControls;
+        public Texture2D iconQuit;
+        public Texture2D iconBack;
+        [Tooltip("Key and mouse pictures by name (\"f\", \"space\", \"mouse-left\", \"keyboard-wasd\"...). Filled from " +
+                 "Art/UI/InputIcons by the builders; see KeyIcons for how bindings map to names.")]
+        public List<KeyIcon> keyIcons = new List<KeyIcon>();
+
+        [Serializable]
+        public struct KeyIcon
+        {
+            public string name;
+            public Texture2D icon;
+        }
+
+        private Dictionary<string, Texture2D> keyIconLookup;
+
+        /// <summary>The picture for a key name, or null.</summary>
+        public Texture2D FindKeyIcon(string name)
+        {
+            if (string.IsNullOrEmpty(name) || keyIcons == null) return null;
+            if (keyIconLookup == null)
+            {
+                keyIconLookup = new Dictionary<string, Texture2D>();
+                foreach (KeyIcon k in keyIcons)
+                    if (!string.IsNullOrEmpty(k.name) && k.icon != null) keyIconLookup[k.name] = k.icon;
+            }
+            return keyIconLookup.TryGetValue(name, out Texture2D icon) ? icon : null;
+        }
+
+        // Edited in the Inspector (or by the builder): rebuild the lookup next time.
+        private void OnValidate() => keyIconLookup = null;
 
         [Header("Assets")]
         [Tooltip("UI Toolkit theme (Data/UI/MarginTheme.tss). Only needed so Unity doesn't warn; the ink look is drawn in code.")]

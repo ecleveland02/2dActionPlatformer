@@ -100,23 +100,6 @@ namespace Margin.UI
         }
     }
 
-    /// <summary>A quick hand-drawn underline with a tick mark in front: marks the selected menu item.</summary>
-    public sealed class InkSelectionMark : InkElement
-    {
-        public InkSelectionMark(UISettings settings) : base(settings) { }
-
-        protected override void Draw(Painter2D painter, Rect rect, int seed)
-        {
-            UISettings s = Settings;
-            float y = rect.yMax - 4f;
-            InkPainter.Line(painter, new Vector2(rect.x + 30f, y), new Vector2(rect.xMax - 4f, y + 2f), s.ink, s, seed, 1.2f);
-            // A little arrow ">" in the left margin.
-            float cy = rect.y + rect.height * 0.5f;
-            InkPainter.Line(painter, new Vector2(rect.x + 4f, cy - 9f), new Vector2(rect.x + 18f, cy), s.ink, s, seed + 1, 1.2f);
-            InkPainter.Line(painter, new Vector2(rect.x + 18f, cy), new Vector2(rect.x + 4f, cy + 9f), s.ink, s, seed + 2, 1.2f);
-        }
-    }
-
     /// <summary>A full-screen wash of paper color that dims the game behind a menu.</summary>
     public sealed class InkDim : VisualElement
     {

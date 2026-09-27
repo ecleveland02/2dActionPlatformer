@@ -182,3 +182,48 @@ namespace Margin.Tests
         }
     }
 }
+
+namespace Margin.Tests
+{
+    public class KeyIconsTests
+    {
+        [Test]
+        public void Letters_Digits_AndFunctionKeys()
+        {
+            Assert.AreEqual("f", KeyIcons.ForPath("<Keyboard>/f"));
+            Assert.AreEqual("j", KeyIcons.ForPath("<Keyboard>/j"));
+            Assert.AreEqual("7", KeyIcons.ForPath("<Keyboard>/digit7"));
+            Assert.AreEqual("f12", KeyIcons.ForPath("<Keyboard>/f12"));
+            Assert.IsNull(KeyIcons.ForPath("<Keyboard>/f13"));
+        }
+
+        [Test]
+        public void RenamedKeys_UseThePacksFileNames()
+        {
+            Assert.AreEqual("esc", KeyIcons.ForPath("<Keyboard>/escape"));
+            Assert.AreEqual("space", KeyIcons.ForPath("<Keyboard>/space"));
+            Assert.AreEqual("shift", KeyIcons.ForPath("<Keyboard>/leftShift"));
+            Assert.AreEqual("arrow-up", KeyIcons.ForPath("<Keyboard>/upArrow"));
+            Assert.AreEqual("backspace", KeyIcons.ForPath("<Keyboard>/backspace"));
+        }
+
+        [Test]
+        public void MouseButtons_HaveIcons_GamepadDoesNot()
+        {
+            Assert.AreEqual("mouse-left", KeyIcons.ForPath("<Mouse>/leftButton"));
+            Assert.AreEqual("mouse-right", KeyIcons.ForPath("<Mouse>/rightButton"));
+            Assert.IsNull(KeyIcons.ForPath("<Gamepad>/buttonSouth"));
+            Assert.IsNull(KeyIcons.ForPath(""));
+            Assert.IsNull(KeyIcons.ForPath("<Keyboard>/"));
+        }
+
+        [Test]
+        public void Composites_MapToTheClusterPictures()
+        {
+            Assert.AreEqual("keyboard-wasd", KeyIcons.ForComposite(new[] { "<Keyboard>/w", "<Keyboard>/s", "<Keyboard>/a", "<Keyboard>/d" }));
+            Assert.AreEqual("keyboard-arrows", KeyIcons.ForComposite(new[]
+                { "<Keyboard>/upArrow", "<Keyboard>/downArrow", "<Keyboard>/leftArrow", "<Keyboard>/rightArrow" }));
+            Assert.IsNull(KeyIcons.ForComposite(new[] { "<Keyboard>/i", "<Keyboard>/k", "<Keyboard>/j", "<Keyboard>/l" }));
+        }
+    }
+}
