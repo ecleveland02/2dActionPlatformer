@@ -115,3 +115,68 @@ namespace Margin.Tests
         }
     }
 }
+
+namespace Margin.Tests
+{
+    using System;
+    using System.Collections.Generic;
+    using Margin.Level;
+    using NUnit.Framework;
+    using Pt = Margin.Rendering.WeaponShape.Pt;
+
+    /// <summary>The level's procedural line art stays inside the shapes it decorates.</summary>
+    public class LevelArtTests
+    {
+        [Test]
+        public void Hatch_StaysInsideTheBox_AndCoversIt()
+        {
+            List<Pt> hatch = LevelArt.Hatch(10f, 2f, 0.5f);
+            Assert.Greater(hatch.Count, 20);
+            float minX = float.MaxValue, maxX = float.MinValue;
+            foreach (Pt p in hatch)
+            {
+                Assert.That(p.X, Is.InRange(-5f - 1e-4f, 5f + 1e-4f));
+                Assert.That(p.Y, Is.InRange(-1f - 1e-4f, 1f + 1e-4f));
+                minX = Math.Min(minX, p.X);
+                maxX = Math.Max(maxX, p.X);
+            }
+            Assert.Less(minX, -4.5f, "reaches the left end");
+            Assert.Greater(maxX, 4.5f, "reaches the right end");
+        }
+
+        [Test]
+        public void Hatch_TinyBox_IsSafe()
+        {
+            Assert.DoesNotThrow(() => LevelArt.Hatch(0.05f, 0.05f, 0.5f));
+        }
+
+        [Test]
+        public void EveryDoodle_IsDrawable_AndAboutTheRightSize()
+        {
+            foreach (DoodleKind kind in Enum.GetValues(typeof(DoodleKind)))
+            {
+                List<List<Pt>> strokes = LevelArt.Doodle(kind, 2f);
+                Assert.Greater(strokes.Count, 0, kind.ToString());
+                foreach (List<Pt> stroke in strokes)
+                {
+                    Assert.GreaterOrEqual(stroke.Count, 2, kind.ToString());
+                    foreach (Pt p in stroke)
+                    {
+                        Assert.That(p.X, Is.InRange(-1.3f, 1.3f), kind.ToString());
+                        Assert.That(p.Y, Is.InRange(-1.3f, 1.3f), kind.ToString());
+                    }
+                }
+            }
+        }
+
+        [Test]
+        public void Smudge_FitsItsEllipse()
+        {
+            foreach (Pt p in LevelArt.Smudge(3f, 1f, 5))
+            {
+                Assert.That(p.X, Is.InRange(-1.8f, 1.8f));
+                Assert.That(p.Y, Is.InRange(-0.6f, 0.6f));
+            }
+        }
+    }
+}
