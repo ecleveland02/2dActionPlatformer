@@ -34,6 +34,8 @@ namespace Margin.EditorTools
             public CombatSettings Settings;
             public PoseData DummyIdle;
             public PoseData DummyHit;
+            /// <summary>The sparring dummy's attack pattern: jab, jab, unparryable smash.</summary>
+            public List<AttackData> SparringAttacks;
         }
 
         private sealed class Move
@@ -54,6 +56,7 @@ namespace Margin.EditorTools
             public int FadeIn = 1;
             public string Swing = "swing_light", Hit = "hit_light";
             public bool Airborne;
+            public bool Unparryable;
             public float AirGravity = 1f, Hover;
             public int InkCost;
             public float ProjectileSpeed;
@@ -111,6 +114,16 @@ namespace Margin.EditorTools
                 Damage = 14, Hitstop = 10, Hitstun = 40, Ink = 8, Knockback = new Vector2(2f, -22f), CancelStart = 13, CancelEnd = 26,
                 AirGravity = 0.3f, BoxCenter = new Vector2(0.9f, -0.2f), BoxSize = new Vector2(1.6f, 1.6f), Shake = 0.2f, FadeIn = 2,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
+
+            // Sparring dummy attacks (spec 9: at least 12 frames of visible startup). The smash can't be parried
+            // and flashes red while winding up (spec 6.5).
+            new Move { Name = "DummyJab", Button = AttackButton.Light, Startup = 16, Active = 3, Recovery = 20,
+                Damage = 8, Hitstop = 6, Hitstun = 16, Ink = 0, Knockback = new Vector2(5f, 2f), CancelStart = 40, CancelEnd = 40,
+                BoxCenter = new Vector2(0.75f, 0.35f), BoxSize = new Vector2(0.9f, 0.5f), Shake = 0.06f, FadeIn = 0 },
+            new Move { Name = "DummySmash", Button = AttackButton.Heavy, Startup = 24, Active = 4, Recovery = 28,
+                Damage = 18, Hitstop = 8, Hitstun = 24, Ink = 0, Knockback = new Vector2(8f, 4f), CancelStart = 56, CancelEnd = 56,
+                BoxCenter = new Vector2(0.8f, 0.1f), BoxSize = new Vector2(1.2f, 1.2f), Shake = 0.15f, FadeIn = 0,
+                Unparryable = true },
 
             // Special (spec 7): costs 50 ink, throws a crescent of ink. The blade itself has no hitbox.
             new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 16,
@@ -203,12 +216,16 @@ namespace Margin.EditorTools
             CombatSettings settings = LoadOrCreate<CombatSettings>(SettingsPath, out _);
             AssetDatabase.SaveAssets();
 
+            FillPlayerAnimationSet(poses, overwrite);
+            AssetDatabase.SaveAssets();
+
             return new Result
             {
                 Weapon = katana,
                 Settings = settings,
                 DummyIdle = AssetDatabase.LoadAssetAtPath<PoseData>(StarterPoses.PathFor("Idle")),
                 DummyHit = poses["DummyHit"],
+                SparringAttacks = new List<AttackData> { attacks["DummyJab"], attacks["DummyJab"], attacks["DummySmash"] },
             };
         }
 
@@ -217,6 +234,7 @@ namespace Margin.EditorTools
             a.button = m.Button;
             a.direction = AttackDirection.Neutral;
             a.airborne = m.Airborne;
+            a.parryable = !m.Unparryable;
             a.airGravityScale = m.AirGravity; a.hoverOnHit = m.Hover;
             a.inkCost = m.InkCost;
             a.projectileSpeed = m.ProjectileSpeed; a.projectileLifetimeFrames = m.ProjectileLifetime;
@@ -281,6 +299,17 @@ namespace Margin.EditorTools
                 ["KatanaAirSlamWindup"] = Air(-20, 10, 200, 40, 170, 30, 70, -110, 10, -90),
                 ["KatanaAirSlamStrike"] = Air(40, -15, 70, -10, 50, 20, 20, -30, -20, -20),
                 ["KatanaAirSlamRecover"] = Air(30, -10, 45, 10, 40, 30, 25, -40, -20, -30),
+                // Player defensive poses.
+                ["Parry"] = Planted(-8, 5, 100, 40, 60, 40, 30, -40, -25, -20),
+                ["Redraw"] = Planted(10, 10, 60, 30, 10, 30, 80, -120, -30, -90),
+                ["Hurt"] = Planted(-25, 20, -30, 40, 60, 30, -15, -25, 15, -15),
+                // Sparring dummy (no sword): a jab and a two-handed overhead smash.
+                ["DummyJabWindup"] = Planted(-10, 5, -60, 90, -30, 60, 20, -30, -20, -20),
+                ["DummyJabStrike"] = Planted(15, -5, 100, 0, -40, 50, 35, -30, -30, -10),
+                ["DummyJabRecover"] = Planted(8, 0, 60, 30, -30, 50, 25, -25, -20, -10),
+                ["DummySmashWindup"] = Planted(-20, 10, 185, 10, 175, 10, 25, -40, -15, -30),
+                ["DummySmashStrike"] = Planted(35, -15, 90, 0, 85, 0, 50, -60, -30, -10),
+                ["DummySmashRecover"] = Planted(25, -10, 40, 20, 35, 20, 45, -60, -30, -10),
                 ["KatanaInkWaveWindup"] = Planted(-10, 5, -110, 20, 60, 30, 35, -70, -25, -50),
                 ["KatanaInkWaveStrike"] = Planted(25, -10, 115, 0, -70, 20, 55, -40, -50, -5),
                 ["KatanaInkWaveRecover"] = Planted(18, -8, 130, 10, -60, 20, 50, -45, -45, -10),
@@ -298,6 +327,28 @@ namespace Margin.EditorTools
                 result[entry.Key] = pose;
             }
             return result;
+        }
+
+        /// <summary>Hold clips for the player's parry, Redraw and hurt poses, added to the PlayerAnimationSet.</summary>
+        private static void FillPlayerAnimationSet(Dictionary<string, PoseData> poses, bool overwrite)
+        {
+            var set = AssetDatabase.LoadAssetAtPath<Margin.Player.PlayerAnimationSet>("Assets/_Project/Data/PlayerAnimationSet.asset");
+            if (set == null) return;
+            if (set.parry == null || overwrite) set.parry = HoldClip("Parry", poses["Parry"], 0, overwrite);
+            if (set.redraw == null || overwrite) set.redraw = HoldClip("Redraw", poses["Redraw"], 6, overwrite);
+            if (set.hitstun == null || overwrite) set.hitstun = HoldClip("Hurt", poses["Hurt"], 0, overwrite);
+            EditorUtility.SetDirty(set);
+        }
+
+        private static PoseClip HoldClip(string name, PoseData pose, int fadeIn, bool overwrite)
+        {
+            PoseClip clip = LoadOrCreate<PoseClip>($"{ClipFolder}/{name}.asset", out bool isNew);
+            if (!isNew && !overwrite) return clip;
+            clip.loop = false;
+            clip.fadeInFrames = fadeIn;
+            clip.entries = new List<PoseClip.Entry> { new PoseClip.Entry { pose = pose, frames = 1 } };
+            EditorUtility.SetDirty(clip);
+            return clip;
         }
 
         private static FigurePose Planted(float spine, float neck, float sf, float ef, float sb, float eb,

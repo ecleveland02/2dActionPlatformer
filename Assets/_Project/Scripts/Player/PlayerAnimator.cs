@@ -73,6 +73,9 @@ namespace Margin.Player
             switch (player.CurrentState)
             {
                 case AttackState attack: return attack.Attack.poseClip != null ? attack.Attack.poseClip : a.idle;
+                case HitstunState _: return a.hitstun != null ? a.hitstun : a.fall;
+                case ParryState _: return a.parry;
+                case RedrawState _: return a.redraw;
                 case WallJumpState _: return a.wallJump;
                 case JumpState _: return a.jump;
                 case FastFallState _: return a.fastFall;

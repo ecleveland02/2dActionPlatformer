@@ -127,6 +127,7 @@ namespace Margin.EditorTools
             // ---- Player and training dummy ----
             GameObject player = BuildPlayer(playerLayer, assets);
             BuildDummy(new Vector3(4f, 1.5f, 0f), assets);
+            BuildDummy(new Vector3(-7f, 1.5f, 0f), assets, sparring: true);
 
             // ---- Camera ----
             var camObject = new GameObject("Main Camera") { tag = "MainCamera" };
@@ -337,6 +338,8 @@ namespace Margin.EditorTools
             if (fx == null) fx = controller.gameObject.AddComponent<PlayerFX>();
             ok &= SetReference(fx, "settings", assets.Feel);
 
+            if (controller.GetComponent<PlayerHealth>() == null) controller.gameObject.AddComponent<PlayerHealth>();
+
             var hurtbox = controller.GetComponent<Hurtbox>();
             if (hurtbox == null) hurtbox = controller.gameObject.AddComponent<Hurtbox>();
             hurtbox.Configure(Faction.Player, Vector2.zero, new Vector2(0.6f, 1.8f));
@@ -363,9 +366,28 @@ namespace Margin.EditorTools
             if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
         }
 
-        private static GameObject BuildDummy(Vector3 position, GymAssets assets)
+        /// <summary>Menu: Margin > Add Sparring Dummy. A dummy that attacks (jab, jab, unparryable smash) for parry practice.</summary>
+        [MenuItem("Margin/Add Sparring Dummy")]
+        public static void AddSparringDummy()
         {
-            var dummy = new GameObject("Training Dummy");
+            Scene scene = SceneManager.GetActiveScene();
+            PlayerController player = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+                if ((player = root.GetComponentInChildren<PlayerController>(true)) != null) break;
+
+            GymAssets assets = LoadAssets();
+            if (assets == null) return;
+
+            Vector3 at = player != null ? player.transform.position + new Vector3(-6f, 0.5f, 0f) : new Vector3(-6f, 1.5f, 0f);
+            GameObject dummy = BuildDummy(at, assets, sparring: true);
+            Selection.activeGameObject = dummy;
+            EditorSceneManager.MarkSceneDirty(scene);
+            if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
+        }
+
+        private static GameObject BuildDummy(Vector3 position, GymAssets assets, bool sparring = false)
+        {
+            var dummy = new GameObject(sparring ? "Sparring Dummy" : "Training Dummy");
             dummy.transform.position = position;
             var body = dummy.AddComponent<KinematicBody2D>();   // also adds BoxCollider2D + Rigidbody2D
             dummy.GetComponent<BoxCollider2D>().size = new Vector2(0.6f, 1.8f);
@@ -376,10 +398,11 @@ namespace Margin.EditorTools
 
             dummy.AddComponent<Hurtbox>().Configure(Faction.Enemy, Vector2.zero, new Vector2(0.6f, 1.8f));
 
-            // Visual faces left (toward a player standing to its left).
+            // Visual faces the player: a training dummy stands to the player's right (faces left), a sparring dummy
+            // to the left (faces right). A sparring dummy turns toward the player whenever it attacks.
             var visual = new GameObject("Visual").transform;
             visual.SetParent(dummy.transform, false);
-            visual.localScale = new Vector3(-1f, 1f, 1f);
+            visual.localScale = new Vector3(sparring ? 1f : -1f, 1f, 1f);
             var rig = visual.gameObject.AddComponent<StickFigureRig>();
             SetReference(rig, "proportions", assets.Proportions);
             SetReference(rig, "lineMaterial", assets.Ink);
@@ -390,7 +413,7 @@ namespace Margin.EditorTools
             labelObject.transform.SetParent(dummy.transform, false);
             labelObject.transform.localPosition = new Vector3(0f, 1.35f, 0f);
             var label = labelObject.AddComponent<TextMesh>();
-            label.text = "hit me";
+            label.text = sparring ? "sparring: parry my jabs (I / RB)\nred flash = can't parry, dodge!" : "hit me";
             label.anchor = TextAnchor.LowerCenter;
             label.alignment = TextAlignment.Center;
             label.characterSize = 0.05f;
@@ -410,6 +433,18 @@ namespace Margin.EditorTools
             SetReference(trainingDummy, "idlePose", assets.Combat.DummyIdle);
             SetReference(trainingDummy, "hitPose", assets.Combat.DummyHit);
             SetReference(trainingDummy, "label", label);
+
+            if (sparring)
+            {
+                var attacker = dummy.AddComponent<SparringAttacker>();
+                var so = new SerializedObject(attacker);
+                SerializedProperty list = so.FindProperty("attacks");
+                list.arraySize = assets.Combat.SparringAttacks.Count;
+                for (int i = 0; i < list.arraySize; i++)
+                    list.GetArrayElementAtIndex(i).objectReferenceValue = assets.Combat.SparringAttacks[i];
+                so.FindProperty("settings").objectReferenceValue = assets.Combat.Settings;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
             return dummy;
         }
 

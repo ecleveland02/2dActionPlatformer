@@ -103,6 +103,14 @@ namespace Margin.DebugTools
             if (player.InHitstop) text.AppendLine($"<color=#ff9040>Hitstop  {player.Combat.HitstopFrames} frames left</color>");
             if (player.Combat != null)
                 text.AppendLine($"Ink      {player.Combat.Ink.Value}/{player.Combat.Ink.Max}   (no hit for {player.Combat.Ink.FramesSinceHit} f)");
+            if (player.Health != null)
+            {
+                var hp = player.Health.Health;
+                text.AppendLine($"Health   {hp.Current}/{hp.Max}" + (hp.IsInvulnerable ? $"   <color=#60c0ff>hurt i-frames {hp.InvulnerableFramesLeft}</color>" : ""));
+            }
+            if (player.CurrentState is ParryState parry)
+                text.AppendLine(parry.Succeeded ? "<color=#80ff80>PARRY SUCCESS</color>"
+                              : parry.IsActive ? "<color=#80ff80>PARRY ACTIVE</color>" : "parry recovery (whiffed)");
             text.AppendLine($"Dash     cooldown {player.DashCooldown}   air dashes {player.AirDashesLeft}   " +
                             $"{(player.IsInvulnerable ? "<color=#60c0ff>INVULNERABLE</color>" : "")}");
 

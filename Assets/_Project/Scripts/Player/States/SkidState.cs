@@ -17,7 +17,8 @@ namespace Margin.Player
         public override PlayerState CheckTransitions()
         {
             PlayerState next = Player.CheckGroundJump()
-                               ?? Player.CheckAttack()
+                               ?? Player.CheckParry()
+                   ?? Player.CheckAttack()
                                ?? Player.CheckDash()
                                ?? (Player.Grounded ? null : Player.Fall);
             if (next != null) return next;

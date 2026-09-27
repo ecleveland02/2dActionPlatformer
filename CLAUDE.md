@@ -54,7 +54,11 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   `HitResolver` (static) applies hits for every damage source (sword, projectiles). Air: `airGravityScale`,
   `hoverOnHit`; targets use `CombatSettings.juggleGravityScale` in hitstun. Ink: pure `InkMeter` owned by
   `PlayerCombat` (gain on hit, spec decay); attacks with `inkCost` can't start without the ink. `InkWaveProjectile`
-  spawns on an attack's first active frame when `projectileSpeed > 0`. Placeholder HUD: `UI/PlayerHUD` (ink bar).
+  spawns on an attack's first active frame when `projectileSpeed > 0`. Placeholder HUD: `UI/PlayerHUD` (health + ink).
+  Defense: `PlayerHealth` (IHitReceiver; pure `Health`) parries during `ParryState.IsActive` (parryable attacks only),
+  otherwise damages, forces `HitstunState` and grants 45 i-frames. `IHitReceiver.ReceiveHit` returns false when the
+  hit didn't land (parried). Redraw = Down + Special at 100 ink. `SparringAttacker` makes a dummy attack
+  (menu **Margin > Add Sparring Dummy**); attackers implement `IParryable` to be staggered.
 - **Feel (M3 chunk 3):** `Scripts/FX/`. `FeelSettings` asset (Data/FeelSettings) tunes shake, smear, trail,
   splatter, afterimages. `CameraShake` (camera, real-time, uses AttackData.screenShake x screenShakeScale),
   `InkSplatter` (one per scene, listens to `CombatEvents.Hit`), `PlayerFX` (TickOrder 11: smear on swing frames,

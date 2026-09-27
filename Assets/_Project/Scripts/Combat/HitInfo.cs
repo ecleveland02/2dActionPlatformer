@@ -35,7 +35,15 @@ namespace Margin.Combat
     {
         /// <summary>False while invulnerable (dash i-frames, respawn, already dead).</summary>
         bool CanBeHit { get; }
-        void ReceiveHit(in HitInfo hit);
+
+        /// <summary>Handles a hit. Returns false if it didn't land (e.g. it was parried), so no hit effects play.</summary>
+        bool ReceiveHit(in HitInfo hit);
+    }
+
+    /// <summary>An attacker that reacts to being parried (spec 6.5: it staggers).</summary>
+    public interface IParryable
+    {
+        void OnParried(in HitInfo hit, int staggerFrames);
     }
 
     /// <summary>Static combat events (spec 3.2 event bus). Listeners must unsubscribe when destroyed.</summary>
@@ -45,5 +53,10 @@ namespace Margin.Combat
         public static event System.Action<HitInfo, IHitReceiver> Hit;
 
         public static void RaiseHit(in HitInfo hit, IHitReceiver target) => Hit?.Invoke(hit, target);
+
+        /// <summary>Raised when the player parries an attack.</summary>
+        public static event System.Action<HitInfo> Parry;
+
+        public static void RaiseParry(in HitInfo hit) => Parry?.Invoke(hit);
     }
 }

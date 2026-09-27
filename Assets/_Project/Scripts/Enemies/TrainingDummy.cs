@@ -29,7 +29,7 @@ namespace Margin.Enemies
         private KinematicBody2D body;
         private Vector2 velocity;
         private Vector2 home;
-        private int hitstop, hitstun, idleTicks;
+        private int hitstop, hitstun, stagger, idleTicks;
 
         public int TickOrder => 20;
         public bool CanBeHit => true;
@@ -38,6 +38,14 @@ namespace Margin.Enemies
         public int BestCombo { get; private set; }
         public int TotalDamage { get; private set; }
         public int HitstunRemaining => hitstun;
+        public int StaggerRemaining => stagger;
+        /// <summary>In hitstun or staggered (after being parried): can't act.</summary>
+        public bool IsStunned => hitstun > 0 || stagger > 0;
+        public int Facing { get; private set; } = -1;
+        public StickFigureRig Rig => rig;
+        public Vector2 Position => body.Position;
+        /// <summary>Pose shown while not stunned (set by SparringAttacker during attacks). Null = idle pose.</summary>
+        public FigurePose? PoseOverride { get; set; }
         public int HitstopRemaining => hitstop;
         public Vector2 Velocity => velocity;
 
@@ -47,10 +55,26 @@ namespace Margin.Enemies
         {
             body = GetComponent<KinematicBody2D>();
             home = transform.position;
+            if (rig != null) Facing = rig.transform.localScale.x < 0f ? -1 : 1;
         }
 
         private void OnEnable() => GameLoop.Register(this);
         private void OnDisable() => GameLoop.Unregister(this);
+
+        /// <summary>Parried (spec 6.5): open for a punish, shown with the hit pose.</summary>
+        public void Stagger(int frames)
+        {
+            stagger = Mathf.Max(stagger, frames);
+            idleTicks = 0;
+            Debug.Log($"[Dummy] staggered for {frames} frames", this);
+        }
+
+        /// <summary>Turns to face left (-1) or right (+1). The visual is flipped; the hurtbox is symmetric.</summary>
+        public void SetFacing(int direction)
+        {
+            Facing = direction < 0 ? -1 : 1;
+            if (rig != null) rig.transform.localScale = new Vector3(Facing, 1f, 1f);
+        }
 
         public void Configure(MovementData physicsData, StickFigureRig figure, TextMesh text)
         {
@@ -59,7 +83,7 @@ namespace Margin.Enemies
             label = text;
         }
 
-        public void ReceiveHit(in HitInfo hit)
+        public bool ReceiveHit(in HitInfo hit)
         {
             bool comboContinues = hitstun > 0;
             if (!comboContinues)
@@ -83,6 +107,7 @@ namespace Margin.Enemies
             Debug.Log($"[Dummy] f{frame}  {hit.Attack.name}  {hit.Damage} dmg  |  combo {Combo} ({ComboDamage} dmg)" +
                       (comboContinues ? "" : "  (new combo)"), this);
             UpdateLabel();
+            return true;
         }
 
         public void Tick()
@@ -127,12 +152,14 @@ namespace Margin.Enemies
                 hitstun--;
                 if (hitstun == 0) UpdateLabel();
             }
+            if (stagger > 0) stagger--;
 
             ReturnHomeWhenIdle();
             if (rig != null)
             {
-                PoseData pose = hitstun > 0 && hitPose != null ? hitPose : idlePose;
-                if (pose != null) rig.ApplyPose(pose.pose);
+                if (IsStunned && hitPose != null) rig.ApplyPose(hitPose.pose);
+                else if (PoseOverride.HasValue) rig.ApplyPose(PoseOverride.Value);
+                else if (idlePose != null) rig.ApplyPose(idlePose.pose);
             }
         }
 

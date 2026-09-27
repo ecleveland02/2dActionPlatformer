@@ -23,5 +23,8 @@ namespace Margin.Player
         public PoseClip dash;
         public PoseClip wallSlide;
         public PoseClip wallJump;
+        public PoseClip hitstun;
+        public PoseClip parry;
+        public PoseClip redraw;
     }
 }

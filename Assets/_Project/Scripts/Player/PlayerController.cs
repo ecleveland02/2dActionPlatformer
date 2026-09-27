@@ -44,6 +44,9 @@ namespace Margin.Player
         public WallSlideState WallSlide { get; private set; }
         public WallJumpState WallJump { get; private set; }
         public AttackState Attack { get; private set; }
+        public HitstunState Hitstun { get; private set; }
+        public ParryState Parry { get; private set; }
+        public RedrawState Redraw { get; private set; }
 
         // ---- Runtime values the states read and write ----
         /// <summary>Units per second. Public field so states can set .x / .y directly.</summary>
@@ -67,6 +70,19 @@ namespace Margin.Player
         public AbilityUnlocks Abilities => abilities;
         public KinematicBody2D Body { get; private set; }
         private PlayerCombat combat;
+        private PlayerHealth health;
+
+        /// <summary>Optional. Without it the player can't be hurt. Looked up on first use.</summary>
+        public PlayerHealth Health
+        {
+            get
+            {
+                if (health == null) health = GetComponent<PlayerHealth>();
+                return health;
+            }
+        }
+
+        public Transform VisualRoot => visualRoot;
 
         /// <summary>Optional. Without it the player can move but not attack. Looked up on first use, so the
         /// order components were added in doesn't matter.</summary>
@@ -120,6 +136,9 @@ namespace Margin.Player
             WallSlide = new WallSlideState(this);
             WallJump = new WallJumpState(this);
             Attack = new AttackState(this);
+            Hitstun = new HitstunState(this);
+            Parry = new ParryState(this);
+            Redraw = new RedrawState(this);
 
             machine = new PlayerStateMachine();
             machine.ForceState(Fall);
@@ -265,6 +284,34 @@ namespace Margin.Player
                 Velocity.x = MovementMath.AirStep(Velocity.x, InputX, data.runSpeed, data.AirAccelStep, data.AirDecelStep);
 
             if (updateFacing && InputX != 0) Facing = InputX;
+        }
+
+        /// <summary>Knocked back by a hit: interrupts any state (spec 5.4).</summary>
+        public void EnterHitstun(Vector2 knockback, int frames)
+        {
+            Velocity = knockback;
+            Hitstun.Frames = Mathf.Max(1, frames);
+            machine.ForceState(Hitstun);
+        }
+
+        /// <summary>Parry button (spec 6.5). Needs PlayerCombat for its settings.</summary>
+        public PlayerState CheckParry()
+        {
+            if (Combat == null) return null;
+            return Controls.Buffer.Consume(BufferedAction.Parry) ? Parry : null;
+        }
+
+        /// <summary>Down + Special with a full ink meter and missing health: Redraw heal (spec 6.6). Ground only.</summary>
+        public PlayerState CheckRedraw()
+        {
+            if (Combat == null || Health == null || !Grounded || !Controls.DownHeld) return null;
+            if (!Controls.Buffer.IsBuffered(BufferedAction.Special)) return null;
+            int cost = Combat.Settings.redrawInkCost;
+            if (Health.Health.Current >= Health.Health.Max || !Combat.Ink.CanSpend(cost)) return null;
+
+            Controls.Buffer.Consume(BufferedAction.Special);
+            Combat.Ink.TrySpend(cost);
+            return Redraw;
         }
 
         /// <summary>Starts an attack if Light/Heavy/Special is buffered and the weapon has a matching move.</summary>

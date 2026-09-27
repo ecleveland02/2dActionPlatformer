@@ -64,6 +64,9 @@ namespace Margin.Rendering
             set => editingPose = value;
         }
 
+        /// <summary>Overrides the ink colors (e.g. red flash on an unparryable attack's wind-up). Null = normal.</summary>
+        public Color? Tint { get; set; }
+
         public bool IsBuilt => hips != null && footBack != null && legBackLine != null;
 
         /// <summary>The six ink lines (body, head, arms, legs), e.g. for afterimages to copy.</summary>
@@ -219,14 +222,16 @@ namespace Margin.Rendering
         {
             StickFigureProportions p = Proportions;
             float scale = Mathf.Abs(transform.lossyScale.y);
+            Color ink = Tint ?? p.inkColor;
+            Color back = Tint.HasValue ? Color.Lerp(Tint.Value, Color.white, 0.4f) : p.backLimbColor;
 
             // The neck line ends where the head circle begins.
             Vector3 neckTop = neckPivot.position + (headCenter.position - neckPivot.position).normalized * (p.neck * scale);
-            SetLine(spineLine, p.inkColor, p.sortingOrder, hips.position, chest.position, neckTop);
-            SetLine(armFrontLine, p.inkColor, p.sortingOrder + 1, shoulderFront.position, elbowFront.position, handFront.position);
-            SetLine(legFrontLine, p.inkColor, p.sortingOrder + 1, hipFront.position, kneeFront.position, footFront.position);
-            SetLine(armBackLine, p.backLimbColor, p.sortingOrder - 1, shoulderBack.position, elbowBack.position, handBack.position);
-            SetLine(legBackLine, p.backLimbColor, p.sortingOrder - 1, hipBack.position, kneeBack.position, footBack.position);
+            SetLine(spineLine, ink, p.sortingOrder, hips.position, chest.position, neckTop);
+            SetLine(armFrontLine, ink, p.sortingOrder + 1, shoulderFront.position, elbowFront.position, handFront.position);
+            SetLine(legFrontLine, ink, p.sortingOrder + 1, hipFront.position, kneeFront.position, footFront.position);
+            SetLine(armBackLine, back, p.sortingOrder - 1, shoulderBack.position, elbowBack.position, handBack.position);
+            SetLine(legBackLine, back, p.sortingOrder - 1, hipBack.position, kneeBack.position, footBack.position);
 
             int segments = Mathf.Max(3, p.headSegments);
             if (headPoints == null || headPoints.Length != segments) headPoints = new Vector3[segments];
@@ -239,7 +244,7 @@ namespace Margin.Rendering
             }
             headLine.positionCount = segments;
             headLine.SetPositions(headPoints);
-            StyleLine(headLine, p.inkColor, p.sortingOrder, p.lineWidth * scale, null);
+            StyleLine(headLine, ink, p.sortingOrder, p.lineWidth * scale, null);
         }
 
         private void SetLine(LineRenderer line, Color color, int order, Vector3 a, Vector3 b, Vector3 c)

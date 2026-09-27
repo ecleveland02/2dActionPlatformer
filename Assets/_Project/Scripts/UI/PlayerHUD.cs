@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Margin.UI
 {
     /// <summary>
-    /// Placeholder HUD (spec 14): the ink meter, with a notch at 50 (the special's cost).
+    /// Placeholder HUD (spec 14): health, and the ink meter with a notch at 50 (the special's cost).
     /// Health joins it above the ink bar in the next chunk. The hand-drawn HUD comes in Milestone 5.
     /// Drawn with IMGUI so it needs no Canvas setup. Added automatically to gameplay scenes.
     /// </summary>
@@ -48,12 +48,23 @@ namespace Margin.UI
             // Bottom-left for now so it never overlaps the F2 debug overlay (top-left). Moves top-left in Milestone 5.
             float x = 16f, y = Screen.height - 46f, w = 220f, h = 14f;
 
-            Fill(new Rect(x - 6f, y - 22f, w + 12f, h + 30f), Paper);
+            bool hasHealth = player.Health != null;
+            Fill(new Rect(x - 6f, y - (hasHealth ? 62f : 22f), w + 12f, h + (hasHealth ? 70f : 30f)), Paper);
+            if (hasHealth)
+            {
+                var hp = player.Health.Health;
+                float hy = y - 40f;
+                GUI.Label(new Rect(x, hy - 20f, w, 18f), $"HEALTH  {hp.Current}/{hp.Max}", label);
+                Fill(new Rect(x, hy, w, h), Faint);
+                Fill(new Rect(x, hy, w * hp.Fraction, h), Ink);
+            }
+
             GUI.Label(new Rect(x, y - 20f, w, 18f), $"INK  {ink.Value}/{ink.Max}", label);
             Fill(new Rect(x, y, w, h), Faint);
             Fill(new Rect(x, y, w * ink.Fraction, h), Ink);
-            // Notch at 50: enough for the special.
+            // Notch at 50: enough for the special. A full bar (100) allows Redraw (Down + Special).
             Fill(new Rect(x + w * 0.5f - 1f, y - 3f, 2f, h + 6f), Paper);
+            if (ink.Value >= ink.Max) GUI.Label(new Rect(x + w - 70f, y - 20f, 90f, 18f), "REDRAW", label);
         }
 
         private void Fill(Rect rect, Color color)

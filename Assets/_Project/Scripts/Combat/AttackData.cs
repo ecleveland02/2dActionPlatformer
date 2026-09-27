@@ -62,6 +62,8 @@ namespace Margin.Combat
         [Min(0)] public int inkGain = 5;
         [Tooltip("Can hit the same target again in each separate hitbox window.")]
         public bool multiHit;
+        [Tooltip("Can be parried (spec 6.5). Unparryable enemy attacks flash red during their startup.")]
+        public bool parryable = true;
 
         [Header("Cancels (spec 6.3)")]
         [Min(1)] public int cancelWindowStart = 9;

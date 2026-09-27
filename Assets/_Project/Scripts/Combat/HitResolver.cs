@@ -39,7 +39,7 @@ namespace Margin.Combat
                 var hit = new HitInfo(attacker, attack, knockback, new Vector2(px, py), global);
 
                 alreadyHit.Add(target);
-                target.ReceiveHit(hit);
+                if (!target.ReceiveHit(hit)) continue;   // parried: no hit effects, no hitstop
                 CombatEvents.RaiseHit(hit, target);
                 hits++;
             }
