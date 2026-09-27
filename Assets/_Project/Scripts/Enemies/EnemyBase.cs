@@ -19,10 +19,10 @@ namespace Margin.Enemies
     /// (hit hard in the air: lands flat, lies, gets up) and Dead.
     /// Each tick: the state machine sets Velocity, then gravity is applied and the body moves (like the player).
     /// Attack slots: an enemy needs a slot from the shared AttackTokenPool to attack (CombatSettings.maxEnemyAttackers).
-    /// Everything resets when the player respawns.
+    /// Everything resets when the player respawns or re-enters the enemy's room.
     /// </summary>
     [RequireComponent(typeof(KinematicBody2D))]
-    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource, IBossBarSource
+    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource, IBossBarSource, IRoomReset
     {
         [SerializeField] private EnemyData data;
         [Tooltip("Gravity and friction come from here (the player's MovementData is fine).")]
@@ -400,6 +400,9 @@ namespace Margin.Enemies
         // ---------------- reset ----------------
 
         private void OnPlayerRespawned(PlayerController player) => ResetEnemy();
+
+        /// <summary>The player walked back into this enemy's room: it's back, fresh (spec 11.1).</summary>
+        public void ResetForRoom() => ResetEnemy();
 
         /// <summary>Back home with full health, patrolling (on player respawn).</summary>
         public void ResetEnemy()

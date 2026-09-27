@@ -1,5 +1,6 @@
 using Margin.Core;
 using Margin.Input;
+using Margin.Level;
 using Margin.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,6 +13,7 @@ namespace Margin.UI
     /// The game's UI root (spec 14): one UI Toolkit document, built entirely from code, that holds the HUD and the
     /// pause menu (Esc / Start). Pausing stops the GameLoop and game time and turns gameplay input off; resuming
     /// puts everything back exactly as it was (including the F3 debug pause and F5 slow motion).
+    /// Room transitions, pit falls and respawns fade the level to paper (LevelDirector.Fade) under the HUD.
     /// It scales with the screen (reference 1920x1080) and draws its hand-drawn look with InkPainter, so there are
     /// no UXML/USS files to maintain. Added to gameplay scenes by the gym/arena builders, or automatically at play
     /// time in any scene with a GameLoop.
@@ -27,6 +29,8 @@ namespace Margin.UI
         private PanelSettings panel;
         private UIDocument document;
         private HudView hud;
+        private VisualElement fade;
+        private float shownFade = -1f;
         private PauseMenuView pauseMenu;
         private PlayerController player;
         private InputReader reader;
@@ -62,6 +66,12 @@ namespace Margin.UI
 
             VisualElement root = document.rootVisualElement;
             root.pickingMode = PickingMode.Ignore;
+            // Room fades cover the level but not the HUD (added first, so it's drawn underneath).
+            fade = HudView.Layer(root);
+            Color paper = settings.paper;
+            paper.a = 1f;
+            fade.style.backgroundColor = paper;
+            UpdateFade();
             hud = new HudView(root, settings);
             pauseMenu = new PauseMenuView(root, settings, Resume, Restart, Quit);
         }
@@ -91,6 +101,16 @@ namespace Margin.UI
 
             // HUD animation follows the game: nothing drains while paused or frame-stepping.
             hud.Update(player, GameLoop.Paused ? 0f : realFrames);
+            UpdateFade();
+        }
+
+        private void UpdateFade()
+        {
+            float f = LevelDirector.Instance != null ? LevelDirector.Instance.Fade : 0f;
+            if (Mathf.Approximately(f, shownFade)) return;
+            shownFade = f;
+            fade.style.opacity = f;
+            HudView.SetVisible(fade, f > 0f);
         }
 
         // ---------------- pause ----------------

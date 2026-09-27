@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Margin.Core;
 using Margin.Input;
+using Margin.Level;
 using Margin.Player;
 using UnityEngine;
 
@@ -83,6 +84,9 @@ namespace Margin.DebugTools
                         : "running";
             text.AppendLine($"<b>Frame {frame}</b>   {mode}");
             text.AppendLine("F1 boxes  F2 overlay  F3 pause  F4 step  F5 slow");
+            LevelDirector level = LevelDirector.Instance;
+            if (level != null && level.CurrentRoom != null)
+                text.AppendLine($"Room     {level.CurrentRoom.Title}" + (level.InTransition ? "   (transition)" : ""));
 
             if (player == null || player.Data == null || player.CurrentState == null)
             {

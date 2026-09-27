@@ -15,7 +15,7 @@ namespace Margin.Input
     /// The GameLoop ticks this before the player (TickOrder -100), so every tick goes:
     ///     frame counter advances -> InputReader.Tick() flushes presses -> player reads input.
     /// </summary>
-    public sealed class InputReader : MonoBehaviour, IPlayerInput, ITickable
+    public sealed class InputReader : MonoBehaviour, IPlayerInput, IScriptedInput, ITickable
     {
         [Tooltip("The MarginControls input actions asset.")]
         [SerializeField] private InputActionAsset actions;
@@ -36,6 +36,11 @@ namespace Margin.Input
         // Maps each Input System action to the BufferedAction it feeds. Order matches BufferedAction.
         private InputAction[] bufferedActions;
         private bool[] pendingPresses;
+
+        // Room transitions walk the player through doors (IScriptedInput).
+        private bool scripted;
+        private Vector2 scriptedMove;
+        private bool scriptedJump;
 
         public InputBuffer Buffer { get; private set; }
 
@@ -138,6 +143,21 @@ namespace Margin.Input
             attackButton.Reset();
         }
 
+        public bool IsScripted => scripted;
+
+        /// <summary>
+        /// Takes over the controls (room transitions): Move and JumpHeld come from here and presses are dropped
+        /// until ClearScript().
+        /// </summary>
+        public void Script(Vector2 move, bool jumpHeld)
+        {
+            scripted = true;
+            scriptedMove = move;
+            scriptedJump = jumpHeld;
+        }
+
+        public void ClearScript() => scripted = false;
+
         private void OnAttackPressed(InputAction.CallbackContext context) => attackButton.QueuePress();
         private void OnAttackReleased(InputAction.CallbackContext context) => attackButton.QueueRelease();
 
@@ -153,6 +173,16 @@ namespace Margin.Input
         /// </summary>
         public void Tick()
         {
+            if (scripted)
+            {
+                // The player isn't in control: presses made now are dropped, not saved for later.
+                for (int i = 0; i < pendingPresses.Length; i++) pendingPresses[i] = false;
+                attackButton.Reset();
+                Move = scriptedMove;
+                JumpHeld = scriptedJump;
+                return;
+            }
+
             for (int i = 0; i < pendingPresses.Length; i++)
             {
                 if (!pendingPresses[i]) continue;

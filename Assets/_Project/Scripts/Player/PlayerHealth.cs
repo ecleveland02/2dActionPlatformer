@@ -14,7 +14,8 @@ namespace Margin.Player
     ///     (ComboScaling). When hitstun ends, the combo is over and 45 frames of flickering invulnerability start.
     ///     Dash i-frames and the combo breaker also prevent hits.
     /// Reaching 0 health: DefeatedState for CombatSettings.playerDeathFrames, then a respawn at SpawnPoint with
-    /// full health and empty ink, and PlayerEvents.Respawned (enemies reset). Checkpoints will move SpawnPoint.
+    /// full health and empty ink, and PlayerEvents.Respawned (enemies reset). Ink pot checkpoints move SpawnPoint.
+    /// Level hazards (pits, the Highlighter's ink flood) go through TakeHazardDamage.
     /// </summary>
     [RequireComponent(typeof(PlayerController))]
     public sealed class PlayerHealth : MonoBehaviour, IHitReceiver, ITickable
@@ -26,8 +27,11 @@ namespace Margin.Player
 
         public int TickOrder => 12;
 
-        /// <summary>Where the player respawns. The start position until checkpoints exist (Milestone 5).</summary>
+        /// <summary>Where the player respawns: the start position, then the last ink pot touched.</summary>
         public Vector2 SpawnPoint { get; set; }
+
+        /// <summary>Can't be hit at all, without the hurt flicker (room transitions set this while the screen fades).</summary>
+        public bool Protected { get; set; }
 
         public Health Health
         {
@@ -52,7 +56,7 @@ namespace Margin.Player
         private void OnEnable() => GameLoop.Register(this);
         private void OnDisable() => GameLoop.Unregister(this);
 
-        public bool CanBeHit => !player.IsInvulnerable && !Health.IsInvulnerable && !Health.IsDepleted;
+        public bool CanBeHit => !Protected && !player.IsInvulnerable && !Health.IsInvulnerable && !Health.IsDepleted;
 
         public bool ReceiveHit(in HitInfo hit)
         {
@@ -72,16 +76,35 @@ namespace Margin.Player
             // Target side of hitstop: the player freezes too (unless the whole game already froze).
             if (!hit.GlobalHitstop && player.Combat != null)
                 player.Combat.HitstopFrames = Mathf.Max(player.Combat.HitstopFrames, hit.HitstopFrames);
-            if (Health.IsDepleted) Die(hit);
+            if (Health.IsDepleted) Die(hit.Knockback, hit.Attack.name);
             else player.EnterHitstun(hit.Knockback, hit.HitstunFrames);
             return true;
         }
 
-        private void Die(in HitInfo hit)
+        /// <summary>
+        /// Damage from the level itself (a pit): no knockback or hitstun, can't be parried, ignored while
+        /// invulnerable. Starts the usual hurt invulnerability. Returns true if it was fatal (the defeat starts).
+        /// </summary>
+        public bool TakeHazardDamage(int amount, string cause)
+        {
+            if (Health.IsDepleted || Protected) return false;
+            int taken = Health.TakeDamage(amount, 0);
+            if (taken <= 0) return false;
+            Debug.Log($"[Player] {cause}: -{taken} ({Health.Current}/{Health.Max})", this);
+            if (Health.IsDepleted)
+            {
+                Die(Vector2.zero, cause);
+                return true;
+            }
+            Health.StartInvulnerability(Settings.hurtInvulnerableFrames);
+            return false;
+        }
+
+        private void Die(Vector2 knockback, string cause)
         {
             comboTaken.End();
-            player.EnterDefeated(hit.Knockback);
-            Debug.Log($"[Player] DEFEATED by {hit.Attack.name}", this);
+            player.EnterDefeated(knockback);
+            Debug.Log($"[Player] DEFEATED by {cause}", this);
             PlayerEvents.RaiseDied(player);
         }
 
@@ -90,6 +113,7 @@ namespace Margin.Player
         {
             CombatSettings s = Settings;
             player.ResetTo(SpawnPoint);
+            Protected = false;
             Health.Refill();
             Health.StartInvulnerability(s.respawnInvulnerableFrames);
             comboTaken.End();
