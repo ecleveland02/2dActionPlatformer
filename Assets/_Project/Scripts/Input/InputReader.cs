@@ -100,13 +100,15 @@ namespace Margin.Input
                 map.FindAction("Special", throwIfNotFound: true),
                 map.FindAction("Dash", throwIfNotFound: true),
                 map.FindAction("Parry", throwIfNotFound: true),
+                map.FindAction("Grapple", throwIfNotFound: false),   // optional: older controls assets lack it
             };
             pendingPresses = new bool[bufferedActions.Length];
         }
 
         private void OnEnable()
         {
-            foreach (InputAction action in bufferedActions) action.performed += OnButtonPerformed;
+            foreach (InputAction action in bufferedActions)
+                if (action != null) action.performed += OnButtonPerformed;
             if (attackAction != null)
             {
                 attackAction.performed += OnAttackPressed;
@@ -118,7 +120,8 @@ namespace Margin.Input
 
         private void OnDisable()
         {
-            foreach (InputAction action in bufferedActions) action.performed -= OnButtonPerformed;
+            foreach (InputAction action in bufferedActions)
+                if (action != null) action.performed -= OnButtonPerformed;
             if (attackAction != null)
             {
                 attackAction.performed -= OnAttackPressed;

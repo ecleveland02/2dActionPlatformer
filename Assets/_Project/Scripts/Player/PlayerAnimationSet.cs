@@ -24,6 +24,8 @@ namespace Margin.Player
         public PoseClip dash;
         public PoseClip wallSlide;
         public PoseClip wallJump;
+        [Tooltip("Hanging from the Grapple Line (free arm up the line; the body tilts along it). Falls back to the jump apex.")]
+        public PoseClip grapple;
         public PoseClip hitstun;
         public PoseClip parry;
         public PoseClip redraw;

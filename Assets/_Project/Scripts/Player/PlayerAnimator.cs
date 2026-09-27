@@ -84,6 +84,10 @@ namespace Margin.Player
             }
             poseAnimator.SetAdditive(player.CurrentState is IdleState ? animations.idleBreathing : null);
             poseAnimator.Lean = UpdateLean();
+            // Hang along the grapple line; ease back upright after letting go.
+            float tiltGoal = player.CurrentState is GrappleState grapple ? Mathf.Clamp(grapple.RopeAngle, -85f, 85f) : 0f;
+            ropeTilt = Mathf.MoveTowards(ropeTilt, tiltGoal, player.CurrentState is GrappleState ? 25f : 8f);
+            poseAnimator.Tilt = ropeTilt;
             poseAnimator.PlaybackRate = CycleRate(poseAnimator.CurrentClip);
             UpdateAirBlend();
             poseAnimator.KeepFeetOnFloor = player.Grounded;
@@ -149,6 +153,8 @@ namespace Margin.Player
         /// stopping tips it back before it settles. Smoothed, and off in every other state (attacks, air, hurt)
         /// so authored poses stay exact.
         /// </summary>
+        private float ropeTilt;
+
         private float UpdateLean()
         {
             PoseMotionSettings m = poseAnimator.Motion;
@@ -176,6 +182,7 @@ namespace Margin.Player
                 case ComboBreakerState _: return a.comboBreaker != null ? a.comboBreaker : a.parry;
                 case RedrawState _: return a.redraw;
                 case WallJumpState _: return a.wallJump;
+                case GrappleState _: return a.grapple != null ? a.grapple : a.jumpApex != null ? a.jumpApex : a.fall;
                 case JumpState _: return AirBlendOn ? AirBase() : NearApex() ? a.jumpApex : a.jump;
                 case FastFallState _: return a.fastFall;
                 case FallState _: return AirBlendOn ? AirBase() : NearApex() ? a.jumpApex : a.fall;

@@ -10,6 +10,8 @@ namespace Margin.Enemies
     public sealed class EnemyData : ScriptableObject
     {
         [Header("Health")]
+        [Tooltip("The Grapple Line can yank it toward the player (spec 8: light enemies).")]
+        public bool grapplePullable = true;
         [Min(1)] public int maxHealth = 40;
         [Tooltip("Name on the big health bar at the bottom of the screen while fighting it. Empty = no boss bar " +
                  "(regular enemies). Set it on a mini-boss, or on any enemy to try the bar out.")]

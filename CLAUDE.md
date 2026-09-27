@@ -17,7 +17,8 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
 - **Attack buttons:** Light = left click / right trigger (also J, gamepad X). Heavy = right click / left trigger
-  (also K, gamepad Y). Special = U / left bumper. Parry = F / right bumper. Pause = Esc / Start ("Menu" map:
+  (also K, gamepad Y). Special = U / left bumper. Parry = F / right bumper. Grapple = I / middle click / right
+  stick click (R3; every face button, bumper and trigger is taken). Pause = Esc / Start ("Menu" map:
   Pause, Navigate, Submit, Cancel; always enabled, while menus turn the "Gameplay" map off via
   `InputReader.SetGameplayInput`).
   Optional tap/hold mode: `TapHoldButton` (pure) is supported by InputReader if an "Attack" action is added to
@@ -158,6 +159,13 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   reward. The Highlighter (`Bosses/Highlighter/`): Swipe (parry), Dash Stroke (red, jump/dash), Cap Toss (parry it
   back = 45 dmg + stagger); phase 2 flies, floods the floor (`Level/InkFlood`, 1-frame hitstun bounce) with Line Sweep
   (parry) and Drip Rain (red, lanes). Data in `Data/Bosses/Highlighter` (`Editor/StarterBosses.cs`, never overwritten).
+- **Grapple Line (M5, spec 8):** unlocked by the `AbilityPickup` the Highlighter's arena shows when beaten
+  (`AbilityUnlocks.Unlock`, `AbilityEvents.Unlocked`). `PlayerController.CheckGrapple` (air + ground states) hooks the
+  best `GrappleAnchor` ring (pure `GrappleAim` score: in `grappleRange`, up-and-ahead preferred, line of sight) or
+  yanks an `IGrappleTarget` enemy ahead (`EnemyData.grapplePullable`). `GrappleState`: rope constraint (never farther
+  than RopeLength), pump with Left/Right, reel Up/Down, a short yank on attach; Jump lets go with a boost and gives
+  the air dash back. `GrappleRope` (auto-added) draws the line from the back hand and highlights the target ring;
+  `PoseAnimator.Tilt` leans the body along the line. Tuning in MovementData (Grapple Line header).
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

@@ -11,6 +11,7 @@ namespace Margin.Player
 
             return Player.CheckGroundJump()          // coyote time
                    ?? Player.CheckWallJump()
+                   ?? Player.CheckGrapple()
                    ?? Player.CheckParry()
                    ?? Player.CheckAttack()
                    ?? Player.CheckDash()

@@ -55,7 +55,7 @@ namespace Margin.UI
 
             // ---- Controls page: bindings table + Back ----
             float rowHeight = s.keyIconSize + 10f;
-            float controlsHeight = 60f + s.menuTitleSize + 30f + 11f * rowHeight + s.buttonHeight + 70f;
+            float controlsHeight = 60f + s.menuTitleSize + 30f + 12f * rowHeight + s.buttonHeight + 70f;
             controlsCard = Card(ControlsWidth, controlsHeight);
             layer.Add(controlsCard);
             VisualElement controlsColumn = Column(controlsCard);
@@ -177,6 +177,7 @@ namespace Margin.UI
             Row("Special", gameplay?.FindAction("Special"), size);
             Row("Dash", gameplay?.FindAction("Dash"), size);
             Row("Parry", gameplay?.FindAction("Parry"), size);
+            if (gameplay?.FindAction("Grapple") != null) Row("Grapple Line", gameplay.FindAction("Grapple"), size);
             Row("Pause", menu?.FindAction("Pause"), size);
             Header("Redraw (100 ink)", "Down + Special", "Down + Special", size);
             Header("Combo breaker (50 ink)", "Parry while hit", "Parry while hit", size);

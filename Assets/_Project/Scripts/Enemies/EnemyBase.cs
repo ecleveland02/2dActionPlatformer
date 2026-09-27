@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Margin.Abilities;
 using Margin.Combat;
 using Margin.Core;
 using Margin.FX;
@@ -22,7 +23,7 @@ namespace Margin.Enemies
     /// Everything resets when the player respawns or re-enters the enemy's room.
     /// </summary>
     [RequireComponent(typeof(KinematicBody2D))]
-    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource, IBossBarSource, IRoomReset
+    public class EnemyBase : MonoBehaviour, ITickable, IHitReceiver, IParryable, IHitboxSource, IBossBarSource, IRoomReset, IGrappleTarget
     {
         [SerializeField] private EnemyData data;
         [Tooltip("Gravity and friction come from here (the player's MovementData is fine).")]
@@ -122,6 +123,7 @@ namespace Margin.Enemies
             GameLoop.Register(this);
             HitboxSources.Register(this);
             BossBars.Register(this);
+            GrappleTargets.Register(this);
             PlayerEvents.Respawned += OnPlayerRespawned;
         }
 
@@ -132,6 +134,7 @@ namespace Margin.Enemies
             GameLoop.Unregister(this);
             HitboxSources.Unregister(this);
             BossBars.Unregister(this);
+            GrappleTargets.Unregister(this);
             PlayerEvents.Respawned -= OnPlayerRespawned;
         }
 
@@ -400,6 +403,22 @@ namespace Margin.Enemies
         // ---------------- reset ----------------
 
         private void OnPlayerRespawned(PlayerController player) => ResetEnemy();
+
+        // ---------------- Grapple Line (IGrappleTarget) ----------------
+
+        public bool CanBeGrappled => data != null && data.grapplePullable && machine != null && !IsDead && !vanished &&
+                                     CurrentState != Knockdown;
+        public Vector2 GrapplePoint => Position;
+
+        /// <summary>Yanked toward the player by the Grapple Line (spec 8): the attack stops and it's stunned mid-air.</summary>
+        public void OnGrappled(Vector2 pullVelocity, int stunFrames)
+        {
+            runner.Cancel();
+            ReleaseAttackSlot();
+            Velocity = pullVelocity;
+            Hitstun.Frames = Mathf.Max(1, stunFrames);
+            machine.ForceState(Hitstun);
+        }
 
         /// <summary>The player walked back into this enemy's room: it's back, fresh (spec 11.1).</summary>
         public void ResetForRoom() => ResetEnemy();

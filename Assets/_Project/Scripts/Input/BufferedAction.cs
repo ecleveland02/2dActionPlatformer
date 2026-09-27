@@ -13,5 +13,6 @@ namespace Margin.Input
         Special = 3,
         Dash = 4,
         Parry = 5,
+        Grapple = 6,
     }
 }

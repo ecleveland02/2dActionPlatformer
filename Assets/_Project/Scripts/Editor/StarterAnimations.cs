@@ -51,9 +51,31 @@ namespace Margin.EditorTools
             AssetDatabase.SaveAssets();
             ApplyTraced();   // the sprite-sheet poses replace the placeholder keys above
             FillSet();
+            EnsureGrapple();
             AssetDatabase.SaveAssets();
             StarterEnemies.ApplyAnimations();
             Debug.Log("Player animations upgraded: multi-key clips and transitions.");
+        }
+
+        /// <summary>
+        /// The Grapple Line hang (spec 8): the free back arm straight up the line (the whole body tilts along the line
+        /// at runtime), the sword arm trailing, legs loosely tucked. Added once; edit it in Pose Studio.
+        /// </summary>
+        internal static void EnsureGrapple()
+        {
+            var set = AssetDatabase.LoadAssetAtPath<PlayerAnimationSet>(SetPath);
+            if (set == null || set.grapple != null) return;
+            string posePath = PathFor("Grapple");
+            if (AssetDatabase.LoadAssetAtPath<PoseData>(posePath) == null)
+            {
+                // Arm world angle = shoulder - spine: 178 - 8 = 170 degrees from hanging down, i.e. up and a bit forward.
+                WritePose("Grapple", P(0f, 0f, spine: 8f, neck: -8f, sf: -60f, ef: 70f, sb: 178f, eb: 8f,
+                                       hf: 25f, kf: -45f, hb: -12f, kb: -35f, grip: 52.1f));
+                AssetDatabase.SaveAssets();
+            }
+            set.grapple = StarterCombat.HoldClip("Grapple", AssetDatabase.LoadAssetAtPath<PoseData>(posePath), 4, false);
+            EditorUtility.SetDirty(set);
+            AssetDatabase.SaveAssets();
         }
 
         private static void FillSet()

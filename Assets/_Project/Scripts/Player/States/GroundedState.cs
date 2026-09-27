@@ -12,6 +12,7 @@ namespace Margin.Player
         {
             // Jump is checked first so pressing Jump and Dash together favors the jump.
             return Player.CheckGroundJump()
+                   ?? Player.CheckGrapple()
                    ?? Player.CheckParry()
                    ?? Player.CheckRedraw()
                    ?? Player.CheckAttack()

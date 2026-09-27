@@ -49,6 +49,7 @@ namespace Margin.Player
         public RedrawState Redraw { get; private set; }
         public ComboBreakerState ComboBreaker { get; private set; }
         public DefeatedState Defeated { get; private set; }
+        public GrappleState Grapple { get; private set; }
 
         // ---- Runtime values the states read and write ----
         /// <summary>Units per second. Public field so states can set .x / .y directly.</summary>
@@ -60,6 +61,10 @@ namespace Margin.Player
         public int WallDirection { get; set; }
         public bool IsInvulnerable { get; set; }
         public int DashCooldown { get; set; }
+        public int GrappleCooldown { get; set; }
+        /// <summary>The last enemy the Grapple Line yanked, and frames left to draw the line to it.</summary>
+        public Vector2 LastPullPoint { get; private set; }
+        public int PullLineFrames { get; set; }
         public int AirDashesLeft { get; set; }
         /// <summary>Ticks since last grounded. 0 while on the ground, 1 on the first tick starting airborne.</summary>
         public int FramesSinceGrounded { get; private set; }
@@ -147,9 +152,13 @@ namespace Margin.Player
             Redraw = new RedrawState(this);
             ComboBreaker = new ComboBreakerState(this);
             Defeated = new DefeatedState(this);
+            Grapple = new GrappleState(this);
 
             machine = new PlayerStateMachine();
             machine.ForceState(Fall);
+
+            // Draws the Grapple Line and highlights the ring it would hook (harmless before it's unlocked).
+            if (GetComponent<GrappleRope>() == null) gameObject.AddComponent<GrappleRope>();
         }
 
         private void OnEnable() => GameLoop.Register(this);
@@ -188,6 +197,8 @@ namespace Margin.Player
             }
 
             if (DashCooldown > 0) DashCooldown--;
+            if (GrappleCooldown > 0) GrappleCooldown--;
+            if (PullLineFrames > 0) PullLineFrames--;
             if (Combat != null) Combat.Tick();
             hasPendingDy = false;
 
@@ -394,6 +405,87 @@ namespace Margin.Player
             }
 
             return Controls.Buffer.Consume(BufferedAction.Jump) ? Jump : null;
+        }
+
+        /// <summary>
+        /// Grapple button (spec 8, needs the Grapple Line): hooks the best ring in reach and swings (returns the
+        /// GrappleState), or yanks an enemy toward you (returns null: you keep doing what you were doing). With
+        /// nothing in reach the press stays buffered for a few frames, so a ring coming into reach still catches it.
+        /// </summary>
+        public PlayerState CheckGrapple()
+        {
+            if (!abilities.grappleLine || GrappleCooldown > 0) return null;
+            if (!Controls.Buffer.IsBuffered(BufferedAction.Grapple)) return null;
+            if (!FindGrappleTarget(out GrappleAnchor anchor, out IGrappleTarget enemy)) return null;
+
+            Controls.Buffer.Consume(BufferedAction.Grapple);
+            if (enemy != null)
+            {
+                PullEnemy(enemy);
+                return null;
+            }
+            Grapple.Attach(anchor);
+            return Grapple;
+        }
+
+        /// <summary>Where the line leaves the player (about the shoulder).</summary>
+        public Vector2 GrappleOrigin => Body.Position + new Vector2(0f, 0.5f);
+
+        /// <summary>
+        /// The best thing to hook right now: rings up and ahead (GrappleAim scores), or enemies ahead, in reach and
+        /// not behind a wall. Also used to highlight the ring the line would go to.
+        /// </summary>
+        public bool FindGrappleTarget(out GrappleAnchor anchor, out IGrappleTarget enemy)
+        {
+            anchor = null;
+            enemy = null;
+            Vector2 from = GrappleOrigin;
+            float best = float.MaxValue;
+            foreach (GrappleAnchor a in GrappleAnchor.All)
+            {
+                Vector2 d = a.Point - from;
+                float score = GrappleAim.Score(d.x, d.y, Facing, data.grappleRange, -15f, data.grappleAimAngle);
+                if (score < 0f || score >= best || Blocked(from, a.Point)) continue;
+                best = score;
+                anchor = a;
+            }
+            foreach (IGrappleTarget t in GrappleTargets.All)
+            {
+                if (t == null || !t.CanBeGrappled) continue;
+                Vector2 d = t.GrapplePoint - from;
+                // Enemies only straight-ish ahead (the line is aimed where you face).
+                float score = GrappleAim.Score(d.x, d.y, Facing, data.grappleRange, 25f, 155f);
+                if (score < 0f || score >= best || Blocked(from, t.GrapplePoint)) continue;
+                best = score;
+                enemy = t;
+                anchor = null;
+            }
+            return anchor != null || enemy != null;
+        }
+
+        private bool Blocked(Vector2 from, Vector2 to)
+        {
+            LayerMask solid = Body.Data != null ? Body.Data.solidMask : (LayerMask)0;
+            return solid != 0 && UnityEngine.Physics2D.Linecast(from, to, solid).collider != null;
+        }
+
+        /// <summary>Spec 8 combat use: yanks an enemy toward the spot just in front of the player, stunned.</summary>
+        private void PullEnemy(IGrappleTarget enemy)
+        {
+            Vector2 point = enemy.GrapplePoint;
+            Vector2 goal = Body.Position + new Vector2(Facing * 0.9f, 0.2f);
+            Vector2 toward = (goal - point).normalized * data.grapplePullSpeed + new Vector2(0f, 3f);
+            enemy.OnGrappled(toward, data.grapplePullStunFrames);
+            LastPullPoint = point;
+            PullLineFrames = 8;
+            GrappleCooldown = data.grappleCooldownFrames;
+        }
+
+        /// <summary>Called when a swing ends: short cooldown, and the air dash comes back.</summary>
+        public void OnGrappleReleased()
+        {
+            GrappleCooldown = data.grappleCooldownFrames;
+            AirDashesLeft = data.airDashes;
         }
 
         public PlayerState CheckDash()

@@ -61,6 +61,8 @@ namespace Margin.Rendering
         public FigurePose Output { get; private set; }
         /// <summary>Extra forward lean in degrees added to the spine this tick (e.g. leaning into acceleration).</summary>
         public float Lean { get; set; }
+        /// <summary>Extra whole-body tilt in degrees (added to rootRotation, + = toward facing), e.g. along a grapple line.</summary>
+        public float Tilt { get; set; }
         /// <summary>
         /// Owners set this while the character stands on the ground. Blending between two planted keys can
         /// straighten a leg and push its foot under the floor for a frame or two; with this on, the hips are
@@ -162,6 +164,7 @@ namespace Margin.Rendering
                 pose = secondary.Step(pose, m.Weights, m.frequency, m.damping, GameTime.TickDelta);
             }
 
+            pose.rootRotation += Tilt;
             if (KeepFeetOnFloor) pose = LiftFeetToFloor(pose);
 
             Output = pose;

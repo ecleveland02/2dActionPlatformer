@@ -82,6 +82,32 @@ namespace Margin.Player
         [Tooltip("Frames after a wall jump during which left/right input is ignored, so you can't instantly drift back.")]
         [Min(0)] public int wallJumpControlLockFrames = 8;
 
+        [Header("Grapple Line (Boss 1 reward, spec 8)")]
+        [Tooltip("How far the line reaches, from the player to an anchor ring or enemy.")]
+        [Min(1f)] public float grappleRange = 9.5f;
+        [Tooltip("Shortest the line can get (reeling in with Up stops here).")]
+        [Min(0.5f)] public float grappleMinLength = 2.5f;
+        [Tooltip("Aim: targets more than this many degrees off the facing direction (measured from straight up " +
+                 "toward facing) are ignored, so the line goes where you're looking.")]
+        [Range(10f, 180f)] public float grappleAimAngle = 110f;
+        [Tooltip("Gravity while swinging, as a multiple of the normal fall gravity (lower = floatier swings).")]
+        [Range(0.2f, 1.5f)] public float grappleGravityScale = 0.8f;
+        [Tooltip("Pumping: left/right push along the swing (units/s per second).")]
+        [Min(0f)] public float grappleSwingAcceleration = 14f;
+        [Min(1f)] public float grappleMaxSpeed = 24f;
+        [Tooltip("Up/Down reel the line in/out at this speed (units/s).")]
+        [Min(0f)] public float grappleReelSpeed = 4f;
+        [Tooltip("On attaching, the line snaps shorter by this much over a few frames: a yank that lifts you off the ground.")]
+        [Min(0f)] public float grappleYank = 1.2f;
+        [Min(1)] public int grappleYankFrames = 8;
+        [Tooltip("Letting go with Jump adds this much upward speed (units/s).")]
+        [Min(0f)] public float grappleReleaseBoost = 7f;
+        [Tooltip("Frames after letting go before the line can be thrown again.")]
+        [Min(0)] public int grappleCooldownFrames = 12;
+        [Tooltip("Pulling an enemy: its speed toward you (units/s) and how long it's stunned.")]
+        [Min(0f)] public float grapplePullSpeed = 15f;
+        [Min(0)] public int grapplePullStunFrames = 22;
+
         // Derived values. Computed from the fields above so designers only tune the intuitive numbers.
         public float RiseGravity => MovementMath.RiseGravity(jumpHeight, framesToApex);
         public float FallGravity => RiseGravity * fallGravityMultiplier;

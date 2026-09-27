@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Margin.Abilities;
 using Margin.Bosses;
 using Margin.Core;
 using Margin.Enemies;
@@ -74,6 +75,7 @@ namespace Margin.EditorTools
             GymAssets assets = LoadAssets();
             if (assets == null) return;
             inkMaterial = assets.Ink;
+            StarterAnimations.EnsureGrapple();
             StickFigureRigEditor.EnsureFolder(LevelDataFolder);
             var levelSettings = LoadOrCreate<LevelSettings>($"{LevelDataFolder}/LevelSettings.asset");
             var cameraSettings = LoadOrCreate<CameraSettings>($"{LevelDataFolder}/CameraSettings.asset");
@@ -279,7 +281,16 @@ namespace Margin.EditorTools
             StarterBosses.Result bossData = StarterBosses.EnsureCreated();
             InkFlood flood = BuildFlood(r, bossData, kit.Assets);
             HighlighterBoss boss = BuildHighlighter(r, bossData, flood, kit.Assets);
-            r.Room.gameObject.AddComponent<BossArena>().Configure(boss, 5f, entranceSeal, exitSeal, null, new Vector2(2f, 0.95f));
+
+            // The reward: the Grapple Line pen floats in the middle of the arena once the boss is beaten.
+            var reward = new GameObject("Grapple Line Pickup");
+            reward.transform.SetParent(r.Room.transform, false);
+            reward.transform.position = r.P(18f, 2.2f);
+            reward.AddComponent<AbilityPickup>().Configure(Ability.GrappleLine, "GRAPPLE LINE",
+                "I / middle click / R3: hook a ring and swing\nJump lets go   Up/Down reel in and out\nalso yanks enemies to you",
+                kit.Assets.Ink);
+            reward.SetActive(false);
+            r.Room.gameObject.AddComponent<BossArena>().Configure(boss, 5f, entranceSeal, exitSeal, reward, new Vector2(2f, 0.95f));
             r.Paper(83);
             return r;
         }
@@ -337,6 +348,12 @@ namespace Margin.EditorTools
             r.Solid("Floor C", 52f, -3f, 65f, 0f);
 
             r.Label("too far to jump...", 10f, 4f);
+            r.Label("grapple: I / middle click / R3 at a ring", 7f, 6.4f);
+            r.Label("Jump lets go, Left/Right pump the swing", 7f, 5.6f);
+            r.Anchor(18.5f, 8.5f);
+            r.Anchor(25.5f, 8.5f);
+            r.Anchor(46f, 8.5f);
+            r.Grunt(36f, 0f);
             r.Label("END OF THE VERTICAL SLICE", 58f, 6f, 1.2f);
             r.Label("thanks for playing!", 58f, 5f);
             r.Paper(97);
@@ -466,6 +483,17 @@ namespace Margin.EditorTools
             {
                 enemy.transform.SetParent(enemies, true);
                 return enemy;
+            }
+
+            /// <summary>A Grapple Line ring pinned to the page.</summary>
+            public GrappleAnchor Anchor(float x, float y)
+            {
+                var go = new GameObject("Grapple Ring");
+                go.transform.SetParent(geometry, false);
+                go.transform.position = P(x, y);
+                var anchor = go.AddComponent<GrappleAnchor>();
+                SetReference(anchor, "lineMaterial", kit.Assets.Ink);
+                return anchor;
             }
 
             /// <summary>An ink pot checkpoint standing on the floor at x.</summary>
