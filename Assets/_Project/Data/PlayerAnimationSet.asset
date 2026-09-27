@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4969a007a5cd8a647b72cc74ece5b7de, type: 3}
+  m_Name: PlayerAnimationSet
+  m_EditorClassIdentifier: 
+  idle: {fileID: 11400000, guid: 1db4d814ae0897f4b925545addedbc01, type: 2}
+  idleBreathing: {fileID: 11400000, guid: 97e19f898ad733c4e9cb4eacc03e881a, type: 2}
+  run: {fileID: 11400000, guid: afb2faf760168444386a02db3b9a47da, type: 2}
+  sprint: {fileID: 11400000, guid: 3644542055897dd4cadec76df69bca53, type: 2}
+  skid: {fileID: 11400000, guid: 76e426f5b337b374b8ecce77bad42aa3, type: 2}
+  jump: {fileID: 11400000, guid: d3f9189bacd98cd42948cd5b910f159a, type: 2}
+  fall: {fileID: 11400000, guid: b254755b49792364fa029cf0a8e8a5d7, type: 2}
+  fastFall: {fileID: 11400000, guid: b22e6b1381e5ec141807674dca739989, type: 2}
+  land: {fileID: 11400000, guid: 9a0ffab474771694b9257d51fda47092, type: 2}
+  dash: {fileID: 11400000, guid: 6123f0ce337bdae4fbb4b03d2b95947e, type: 2}
+  wallSlide: {fileID: 11400000, guid: c00419d6e6914ab4d881c6eae808ad37, type: 2}
+  wallJump: {fileID: 11400000, guid: f748ded220318e64d9e2c52d98c39113, type: 2}

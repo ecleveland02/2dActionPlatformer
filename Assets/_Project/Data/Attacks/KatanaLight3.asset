@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a751383b6c8e52d4aaa6ecd74f4bccbd, type: 3}
+  m_Name: KatanaLight3
+  m_EditorClassIdentifier: 
+  button: 0
+  direction: 0
+  airborne: 0
+  startupFrames: 6
+  activeFrames: 3
+  recoveryFrames: 12
+  damage: 11
+  hitstopFrames: 5
+  hitstunFrames: 28
+  knockback: {x: 5, y: 1}
+  launches: 0
+  inkGain: 6
+  multiHit: 0
+  cancelWindowStart: 11
+  cancelWindowEnd: 21
+  cancelsInto:
+  - {fileID: 11400000, guid: ccef92c524c6a0d4bab8e03e3f2f7b20, type: 2}
+  - {fileID: 11400000, guid: 2ff129ef2bc9a5444ad8891ac5bf52b6, type: 2}
+  chainsOnWhiff: 1
+  whiffChainDelay: 4
+  cancelsIntoJump: 1
+  cancelsIntoDash: 1
+  lungeSpeed: 7
+  lungeFirstFrame: 3
+  hopVelocity: 0
+  hopFrame: 1
+  airGravityScale: 1
+  hoverOnHit: 0
+  inkCost: 0
+  projectileSpeed: 0
+  projectileLifetimeFrames: 40
+  projectileSize: {x: 0.9, y: 1.3}
+  projectileOffset: {x: 0.8, y: 0.2}
+  hitboxes:
+  - firstFrame: 0
+    lastFrame: 0
+    boxes:
+    - offset: {x: 1.25, y: 0.2}
+      size: {x: 1.6, y: 0.4}
+  poseClip: {fileID: 11400000, guid: 569e87c705eba814b85ae147faee0a04, type: 2}
+  smear: 1
+  screenShake: 0.07
+  swingSound: swing_light
+  hitSound: hit_light

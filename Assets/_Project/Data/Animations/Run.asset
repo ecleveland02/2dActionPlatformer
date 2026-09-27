@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c9509f2e2cb7204c8290b88841e7030, type: 3}
+  m_Name: Run
+  m_EditorClassIdentifier: 
+  entries:
+  - pose: {fileID: 11400000, guid: 1dc2aa3ad2925084ea0646f182880516, type: 2}
+    frames: 5
+    easing: 1
+  - pose: {fileID: 11400000, guid: 01d0cbbb520dbc249b56da7cf5d1f27b, type: 2}
+    frames: 5
+    easing: 1
+  - pose: {fileID: 11400000, guid: cb8392bbf25ff5c44bbae80362f584b6, type: 2}
+    frames: 5
+    easing: 1
+  - pose: {fileID: 11400000, guid: 587e72a395ac93847b4f09a02059fc9b, type: 2}
+    frames: 5
+    easing: 1
+  - pose: {fileID: 11400000, guid: f28331b265a9e824a8b2749057f537ca, type: 2}
+    frames: 5
+    easing: 1
+  - pose: {fileID: 11400000, guid: 27219d566ce6ba646a7b32daaf7c7c73, type: 2}
+    frames: 5
+    easing: 1
+  loop: 1
+  fadeInFrames: 4

@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a751383b6c8e52d4aaa6ecd74f4bccbd, type: 3}
+  m_Name: KatanaLight4
+  m_EditorClassIdentifier: 
+  button: 0
+  direction: 0
+  airborne: 0
+  startupFrames: 7
+  activeFrames: 5
+  recoveryFrames: 18
+  damage: 16
+  hitstopFrames: 7
+  hitstunFrames: 28
+  knockback: {x: 9, y: 3}
+  launches: 0
+  inkGain: 8
+  multiHit: 0
+  cancelWindowStart: 18
+  cancelWindowEnd: 30
+  cancelsInto: []
+  chainsOnWhiff: 1
+  whiffChainDelay: 4
+  cancelsIntoJump: 1
+  cancelsIntoDash: 1
+  lungeSpeed: 3
+  lungeFirstFrame: 1
+  hopVelocity: 0
+  hopFrame: 1
+  airGravityScale: 1
+  hoverOnHit: 0
+  inkCost: 0
+  projectileSpeed: 0
+  projectileLifetimeFrames: 40
+  projectileSize: {x: 0.9, y: 1.3}
+  projectileOffset: {x: 0.8, y: 0.2}
+  hitboxes:
+  - firstFrame: 0
+    lastFrame: 0
+    boxes:
+    - offset: {x: 0.9, y: 0.3}
+      size: {x: 2, y: 1.4}
+  poseClip: {fileID: 11400000, guid: 591a3f1cdc2ecd7499ed46be368072af, type: 2}
+  smear: 1
+  screenShake: 0.12
+  swingSound: swing_heavy
+  hitSound: hit_heavy

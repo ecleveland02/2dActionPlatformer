@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a751383b6c8e52d4aaa6ecd74f4bccbd, type: 3}
+  m_Name: KatanaHeavy
+  m_EditorClassIdentifier: 
+  button: 1
+  direction: 0
+  airborne: 0
+  startupFrames: 10
+  activeFrames: 4
+  recoveryFrames: 18
+  damage: 18
+  hitstopFrames: 8
+  hitstunFrames: 30
+  knockback: {x: 9, y: 4}
+  launches: 0
+  inkGain: 10
+  multiHit: 0
+  cancelWindowStart: 19
+  cancelWindowEnd: 32
+  cancelsInto: []
+  chainsOnWhiff: 1
+  whiffChainDelay: 4
+  cancelsIntoJump: 1
+  cancelsIntoDash: 1
+  lungeSpeed: 4
+  lungeFirstFrame: 1
+  hopVelocity: 0
+  hopFrame: 1
+  airGravityScale: 1
+  hoverOnHit: 0
+  inkCost: 0
+  projectileSpeed: 0
+  projectileLifetimeFrames: 40
+  projectileSize: {x: 0.9, y: 1.3}
+  projectileOffset: {x: 0.8, y: 0.2}
+  hitboxes:
+  - firstFrame: 0
+    lastFrame: 0
+    boxes:
+    - offset: {x: 1.05, y: 0.15}
+      size: {x: 1.5, y: 1.5}
+  poseClip: {fileID: 11400000, guid: 4db25d503fddcfa48b8e65971c9b8597, type: 2}
+  smear: 1
+  screenShake: 0.15
+  swingSound: swing_heavy
+  hitSound: hit_heavy
