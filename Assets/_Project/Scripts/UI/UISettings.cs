@@ -87,6 +87,9 @@ namespace Margin.UI
         public Texture2D iconControls;
         public Texture2D iconQuit;
         public Texture2D iconBack;
+        public Texture2D iconPlay;
+        [Tooltip("Pause menu: back to the title screen.")]
+        public Texture2D iconHome;
         [Tooltip("Key and mouse pictures by name (\"f\", \"space\", \"mouse-left\", \"keyboard-wasd\"...). Filled from " +
                  "Art/UI/InputIcons by the builders; see KeyIcons for how bindings map to names.")]
         public List<KeyIcon> keyIcons = new List<KeyIcon>();
@@ -115,6 +118,12 @@ namespace Margin.UI
 
         // Edited in the Inspector (or by the builder): rebuild the lookup next time.
         private void OnValidate() => keyIconLookup = null;
+
+        [Header("Scenes")]
+        [Tooltip("The title screen scene (Margin > Build Title Screen). The pause menu's Title Screen button loads it.")]
+        public string titleScene = "Title";
+        [Tooltip("The scene Play starts.")]
+        public string firstScene = "World1";
 
         [Header("Assets")]
         [Tooltip("UI Toolkit theme (Data/UI/MarginTheme.tss). Only needed so Unity doesn't warn; the ink look is drawn in code.")]

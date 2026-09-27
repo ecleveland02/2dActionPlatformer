@@ -8,14 +8,28 @@ using Margin.Audio;
 namespace Margin.UI
 {
     /// <summary>
-    /// The pause menu (spec 14): a hand-drawn paper card over the dimmed game with clean flat buttons (Resume,
-    /// Restart, Controls, Quit), each with an icon from Art/UI. Works with keyboard, gamepad (MarginControls "Menu"
-    /// map, fed in by MarginUI) and mouse (hover selects, click activates).
-    /// "Controls" lists every action with the key/mouse pictures of its current bindings (text for gamepad),
-    /// read from the input asset so it follows rebinding.
+    /// A menu (spec 14): a hand-drawn paper card with a title and a column of clean flat buttons, each with an icon
+    /// from Art/UI. Used by the pause menu (over the dimmed game) and the title screen (over a full notebook page).
+    /// Works with keyboard, gamepad (MarginControls "Menu" map, fed in by the owner) and mouse (hover selects,
+    /// click activates). A Controls entry opens a page listing every action with the key/mouse pictures of its
+    /// current bindings (text for gamepad), read from the input asset so it follows rebinding.
     /// </summary>
-    public sealed class PauseMenuView
+    public sealed class MenuView
     {
+        /// <summary>One button: label, icon and what it does. A null action opens the Controls page.</summary>
+        public struct Entry
+        {
+            public string Label;
+            public Texture2D Icon;
+            public Action Action;
+        }
+
+        public static Entry Item(string label, Texture2D icon, Action action) =>
+            new Entry { Label = label, Icon = icon, Action = action };
+
+        /// <summary>The button that opens the Controls page.</summary>
+        public static Entry Controls(UISettings s) => new Entry { Label = "Controls", Icon = s.iconControls, Action = null };
+
         private enum Page { Main, Controls }
 
         private readonly UISettings s;
@@ -25,8 +39,9 @@ namespace Margin.UI
         private readonly List<Action> actions = new List<Action>();
         private readonly UIButton backButton;
         private readonly VisualElement bindingList;
-        private readonly MenuCursor cursor;
-        private Page page;
+        private readonly RuledPaper page;
+        private MenuCursor cursor;
+        private Page shown;
         private InputActionAsset shownBindings;
         private UIButton pressedButton;
 
@@ -34,25 +49,41 @@ namespace Margin.UI
 
         public bool IsOpen { get; private set; }
 
-        public PauseMenuView(VisualElement parent, UISettings settings, Action resume, Action restart, Action quit)
+        /// <param name="fullPage">True: a whole notebook page behind the card (title screen). False: dim the game.</param>
+        /// <param name="titleSize">Title text size; 0 = UISettings.menuTitleSize.</param>
+        public MenuView(VisualElement parent, UISettings settings, string title, IList<Entry> entries, bool fullPage,
+                        string subtitle = null, int titleSize = 0)
         {
             s = settings;
             layer = HudView.Layer(parent);
             layer.pickingMode = PickingMode.Position;   // blocks clicks to anything behind the menu
-            layer.Add(new InkDim(s));
+            if (fullPage)
+            {
+                page = new RuledPaper(s);
+                page.style.position = Position.Absolute;
+                page.style.left = page.style.top = page.style.right = page.style.bottom = 0f;
+                layer.Add(page);
+            }
+            else layer.Add(new InkDim(s));
 
-            // ---- Main page: title + a column of buttons ----
+            // ---- Main page: title (+ subtitle) + a column of buttons ----
+            int size = titleSize > 0 ? titleSize : s.menuTitleSize;
             float mainWidth = s.buttonWidth + 120f;
-            float mainHeight = 60f + s.menuTitleSize + 36f + 4f * (s.buttonHeight + s.buttonSpacing) + 40f;
+            float mainHeight = 60f + size + 36f + (string.IsNullOrEmpty(subtitle) ? 0f : s.labelSize + 24f) +
+                               entries.Count * (s.buttonHeight + s.buttonSpacing) + 40f;
             mainCard = Card(mainWidth, mainHeight);
             layer.Add(mainCard);
             VisualElement column = Column(mainCard);
-            column.Add(Title("PAUSED"));
-
-            AddButton(column, "Resume", s.iconResume, resume);
-            AddButton(column, "Restart", s.iconRestart, restart);
-            AddButton(column, "Controls", s.iconControls, () => ShowPage(Page.Controls));
-            AddButton(column, "Quit", s.iconQuit, quit);
+            Label titleLabel = Title(title, size);
+            column.Add(titleLabel);
+            if (!string.IsNullOrEmpty(subtitle))
+            {
+                titleLabel.style.marginBottom = 6f;
+                Label sub = UIButton.FlowLabel(s, subtitle, s.labelSize + 2, s.faint);
+                sub.style.marginBottom = 30f;
+                column.Add(sub);
+            }
+            foreach (Entry e in entries) AddButton(column, e.Label, e.Icon, e.Action ?? (() => ShowPage(Page.Controls)));
 
             // ---- Controls page: bindings table + Back ----
             float rowHeight = s.keyIconSize + 10f;
@@ -60,7 +91,7 @@ namespace Margin.UI
             controlsCard = Card(ControlsWidth, controlsHeight);
             layer.Add(controlsCard);
             VisualElement controlsColumn = Column(controlsCard);
-            controlsColumn.Add(Title("CONTROLS"));
+            controlsColumn.Add(Title("CONTROLS", s.menuTitleSize));
             bindingList = new VisualElement { pickingMode = PickingMode.Ignore };
             bindingList.style.width = ControlsWidth - 120f;
             bindingList.style.marginBottom = 24f;
@@ -98,7 +129,8 @@ namespace Margin.UI
 
         /// <summary>
         /// Called every rendered frame while open. navigate: stick/keys (y up = previous button); submit/cancel:
-        /// pressed this frame. Returns false when Cancel was pressed on the main page (the caller resumes).
+        /// pressed this frame. Returns false when Cancel was pressed on the main page (the owner decides what that
+        /// means: the pause menu resumes, the title screen ignores it).
         /// </summary>
         public bool Update(Vector2 navigate, bool submit, bool cancel, float realFrames)
         {
@@ -111,7 +143,7 @@ namespace Margin.UI
                 pressedButton = null;
             }
 
-            if (page == Page.Main)
+            if (shown == Page.Main)
             {
                 int direction = navigate.y > 0.5f ? -1 : navigate.y < -0.5f ? 1 : 0;
                 if (cursor.Hold(direction, realFrames, s.menuRepeatDelay, s.menuRepeatInterval))
@@ -136,13 +168,14 @@ namespace Margin.UI
 
             mainCard.Refresh();
             controlsCard.Refresh();
+            if (page != null) page.Refresh();
             return true;
         }
 
         /// <summary>Pause pressed while open: back out of Controls first, otherwise close. Returns true if it closed.</summary>
         public bool Back()
         {
-            if (page != Page.Controls) return true;
+            if (shown != Page.Controls) return true;
             ShowPage(Page.Main);
             return false;
         }
@@ -151,10 +184,10 @@ namespace Margin.UI
 
         private void ShowPage(Page next)
         {
-            page = next;
-            HudView.SetVisible(mainCard, page == Page.Main);
-            HudView.SetVisible(controlsCard, page == Page.Controls);
-            backButton.SetSelected(page == Page.Controls);   // the only button there
+            shown = next;
+            HudView.SetVisible(mainCard, shown == Page.Main);
+            HudView.SetVisible(controlsCard, shown == Page.Controls);
+            backButton.SetSelected(shown == Page.Controls);   // the only button there
         }
 
         private void Select(int index)
@@ -269,9 +302,9 @@ namespace Margin.UI
             return column;
         }
 
-        private Label Title(string text)
+        private Label Title(string text, int size)
         {
-            Label title = UIButton.FlowLabel(s, text, s.menuTitleSize, s.ink);
+            Label title = UIButton.FlowLabel(s, text, size, s.ink);
             title.style.marginBottom = 30f;
             return title;
         }

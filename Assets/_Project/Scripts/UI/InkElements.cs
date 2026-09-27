@@ -100,6 +100,33 @@ namespace Margin.UI
         }
     }
 
+    /// <summary>
+    /// A whole notebook page (title screen): paper, pale blue ruled lines and a red margin, drawn in the same
+    /// hand-inked style as the rest of the UI and gently boiling.
+    /// </summary>
+    public sealed class RuledPaper : InkElement
+    {
+        private static readonly Color Rule = new Color32(0xA9, 0xBB, 0xCC, 0xB0);
+        private static readonly Color Margin = new Color32(0xD9, 0x8C, 0x86, 0xC0);
+
+        public RuledPaper(UISettings settings) : base(settings)
+        {
+            Color paper = settings.paper;
+            paper.a = 1f;
+            style.backgroundColor = paper;
+        }
+
+        protected override void Draw(Painter2D painter, Rect rect, int seed)
+        {
+            const float spacing = 54f;
+            int i = 0;
+            for (float y = rect.y + spacing * 1.5f; y < rect.yMax; y += spacing, i++)
+                InkPainter.Line(painter, new Vector2(rect.x - 10f, y), new Vector2(rect.xMax + 10f, y), Rule, Settings, seed + i, 0.55f);
+            float x = rect.x + rect.width * 0.12f;
+            InkPainter.Line(painter, new Vector2(x, rect.y - 10f), new Vector2(x, rect.yMax + 10f), Margin, Settings, seed + 500, 0.7f);
+        }
+    }
+
     /// <summary>A full-screen wash of paper color that dims the game behind a menu.</summary>
     public sealed class InkDim : VisualElement
     {

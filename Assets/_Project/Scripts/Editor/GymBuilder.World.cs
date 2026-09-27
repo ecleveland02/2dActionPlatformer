@@ -581,10 +581,12 @@ namespace Margin.EditorTools
         }
 
         /// <summary>Puts a scene first in Build Settings (the slice starts in World 1).</summary>
+        /// <summary>Puts a scene at the front of Build Settings, after the title screen if there is one.</summary>
         private static void AddToBuildSettingsFirst(string path)
         {
             var scenes = EditorBuildSettings.scenes.Where(s => s.path != path).ToList();
-            scenes.Insert(0, new EditorBuildSettingsScene(path, true));
+            bool titleFirst = path != TitlePath && scenes.Count > 0 && scenes[0].path == TitlePath;
+            scenes.Insert(titleFirst ? 1 : 0, new EditorBuildSettingsScene(path, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
     }

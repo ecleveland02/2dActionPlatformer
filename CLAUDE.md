@@ -131,9 +131,11 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   the builders, **Margin > Add HUD and Pause Menu**, or automatically in scenes with a GameLoop) hosts a code-made
   UIDocument scaled from 1920x1080, with `HudView` (health + ink card top-left with damage chip, low-health pulse,
   hurt shake, combo counter and breaker prompt; boss bar bottom-centre for any `IBossBarSource` in `BossBars`,
-  e.g. an enemy with `EnemyData.bossBarName`) and `PauseMenuView` (flat `UIButton`s with pack icons: Resume,
-  Restart = `PlayerHealth.Respawn`, Controls, Quit; Controls page shows `KeyHint` key/mouse pictures per binding,
-  text for gamepad). Look: "clean flat + ink": menu cards/HUD bars hand-drawn, buttons flat rounded (UI Toolkit
+  e.g. an enemy with `EnemyData.bossBarName`) and the pause menu, a `MenuView` (flat `UIButton`s with pack icons:
+  Resume, Restart = `PlayerHealth.Respawn`, Controls, Title Screen, Quit; Controls page shows `KeyHint` key/mouse
+  pictures per binding, text for gamepad). `TitleScreen` (Scenes/Title.unity, **Margin > Build Title Screen**, first
+  in Build Settings) is the same `MenuView` on a full `RuledPaper` page: Play (loads `UISettings.firstScene`),
+  Controls, Quit. Scene names live in UISettings (`titleScene`, `firstScene`); `MarginUI.LoadScene` checks Build Settings. Look: "clean flat + ink": menu cards/HUD bars hand-drawn, buttons flat rounded (UI Toolkit
   borders, not sliced sprites). Art packs live in `Art/UI` (UIElements icons, InputIcons keys; white images tinted in
   code); `StarterUI` fills `UISettings` icon slots and `keyIcons` (only empty slots). Pure `KeyIcons` maps binding
   paths to icon names. SimplePixelUI/SimpleSpinner (Assets root) are unused. Pausing sets `GameLoop.Paused` and `Time.timeScale = 0` and restores

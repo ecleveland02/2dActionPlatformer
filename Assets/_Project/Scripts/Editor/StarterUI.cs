@@ -63,6 +63,8 @@ namespace Margin.EditorTools
             Fill(ref settings.iconControls, "gamepad1");
             Fill(ref settings.iconQuit, "right exit");
             Fill(ref settings.iconBack, "left arrow");
+            Fill(ref settings.iconPlay, "forward");
+            Fill(ref settings.iconHome, "home");
 
             // Every key/mouse picture, named by file ("f", "space", "mouse-left"); KeyIcons maps bindings to names.
             var known = new System.Collections.Generic.HashSet<string>();

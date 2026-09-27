@@ -31,7 +31,7 @@ namespace Margin.UI
         private HudView hud;
         private VisualElement fade;
         private float shownFade = -1f;
-        private PauseMenuView pauseMenu;
+        private MenuView pauseMenu;
         private PlayerController player;
         private InputReader reader;
         private InputAction pauseAction, navigateAction, submitAction, cancelAction;
@@ -49,21 +49,7 @@ namespace Margin.UI
         {
             if (settings == null) settings = FindSettings();
 
-            // The document lives on a child that starts inactive, so its PanelSettings is set before it enables.
-            var host = new GameObject("Document");
-            host.SetActive(false);
-            host.transform.SetParent(transform, false);
-            panel = ScriptableObject.CreateInstance<PanelSettings>();
-            panel.hideFlags = HideFlags.DontSave;
-            panel.scaleMode = PanelScaleMode.ScaleWithScreenSize;
-            panel.referenceResolution = new Vector2Int(1920, 1080);
-            panel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
-            panel.match = 0.5f;
-            panel.themeStyleSheet = settings.theme;
-            document = host.AddComponent<UIDocument>();
-            document.panelSettings = panel;
-            host.SetActive(true);
-
+            document = CreateDocument(transform, settings, out panel);
             VisualElement root = document.rootVisualElement;
             root.pickingMode = PickingMode.Ignore;
             // Room fades cover the level but not the HUD (added first, so it's drawn underneath).
@@ -73,7 +59,37 @@ namespace Margin.UI
             fade.style.backgroundColor = paper;
             UpdateFade();
             hud = new HudView(root, settings);
-            pauseMenu = new PauseMenuView(root, settings, Resume, Restart, Quit);
+            pauseMenu = new MenuView(root, settings, "PAUSED", new[]
+            {
+                MenuView.Item("Resume", settings.iconResume, Resume),
+                MenuView.Item("Restart", settings.iconRestart, Restart),
+                MenuView.Controls(settings),
+                MenuView.Item("Title Screen", settings.iconHome, ToTitle),
+                MenuView.Item("Quit", settings.iconQuit, Quit),
+            }, fullPage: false);
+        }
+
+        /// <summary>
+        /// A UI Toolkit document scaled from 1920x1080, built in code. The document lives on a child that starts
+        /// inactive, so its PanelSettings is set before it enables. Destroy the panel when you're done with it.
+        /// </summary>
+        public static UIDocument CreateDocument(Transform owner, UISettings settings, out PanelSettings panel)
+        {
+            var host = new GameObject("Document");
+            host.SetActive(false);
+            host.transform.SetParent(owner, false);
+            panel = ScriptableObject.CreateInstance<PanelSettings>();
+            panel.hideFlags = HideFlags.DontSave;
+            panel.scaleMode = PanelScaleMode.ScaleWithScreenSize;
+            panel.referenceResolution = new Vector2Int(1920, 1080);
+            panel.screenMatchMode = PanelScreenMatchMode.MatchWidthOrHeight;
+            panel.match = 0.5f;
+            panel.themeStyleSheet = settings.theme;
+            var document = host.AddComponent<UIDocument>();
+            document.panelSettings = panel;
+            host.SetActive(true);
+            document.rootVisualElement.pickingMode = PickingMode.Ignore;
+            return document;
         }
 
         private void OnDisable()
@@ -160,9 +176,37 @@ namespace Margin.UI
             if (player != null && player.Health != null) player.Health.Respawn();
         }
 
+        /// <summary>Back to the title screen (UISettings.titleScene), if it's in Build Settings.</summary>
+        private void ToTitle()
+        {
+            Resume();
+            LoadScene(settings.titleScene);
+        }
+
+        /// <summary>Loads a scene by name if Build Settings has it; otherwise explains how to add it.</summary>
+        public static bool LoadScene(string sceneName)
+        {
+            if (string.IsNullOrEmpty(sceneName) || !Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                Debug.LogWarning($"Scene '{sceneName}' isn't in Build Settings. Run Margin > Build Title Screen / Build World 1 " +
+                                 "(they add their scenes), or add it in File > Build Settings.");
+                return false;
+            }
+            Time.timeScale = 1f;
+            GameLoop.Paused = false;
+            SceneManager.LoadScene(sceneName);
+            return true;
+        }
+
         private void Quit()
         {
             Resume();
+            QuitGame();
+        }
+
+        /// <summary>Leaves play mode in the editor, quits the built game.</summary>
+        public static void QuitGame()
+        {
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
@@ -216,7 +260,7 @@ namespace Margin.UI
             return builtinFont;
         }
 
-        private static UISettings FindSettings()
+        internal static UISettings FindSettings()
         {
 #if UNITY_EDITOR
             // Scenes made before the UI existed: use the project's settings asset if there is one.
