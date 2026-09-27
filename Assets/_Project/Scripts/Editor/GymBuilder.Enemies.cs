@@ -18,8 +18,9 @@ namespace Margin.EditorTools
         private const string ArenaPath = "Assets/_Project/Scenes/EnemyArena.unity";
 
         /// <summary>
-        /// Menu: Margin > Build Enemy Arena. A flat 60-unit room with two one-way platforms and three Doodle Grunts
-        /// (two to the right, one to the left), for testing fights. Die and you respawn at x = 0 with the grunts reset.
+        /// Menu: Margin > Build Enemy Arena. A flat 60-unit room with two one-way platforms and three mixed enemies
+        /// (spec M4 acceptance): a Doodle Grunt and a Pencil Lancer to the right, a grunt to the left.
+        /// Die and you respawn at x = 0 with every enemy reset.
         /// </summary>
         [MenuItem("Margin/Build Enemy Arena")]
         public static void BuildEnemyArena()
@@ -44,7 +45,7 @@ namespace Margin.EditorTools
             GymAssets assets = LoadAssets();
             if (assets == null) return;
             inkMaterial = assets.Ink;
-            EnemyData grunt = StarterEnemies.EnsureCreated().Grunt;
+            StarterEnemies.Result enemyData = StarterEnemies.EnsureCreated();
 
             new GameObject("GameLoop").AddComponent<GameLoop>();
 
@@ -56,14 +57,14 @@ namespace Margin.EditorTools
             OneWay(level, "OneWay Right", 3, 7, 2.5f, oneWayLayer);
 
             var labels = new GameObject("Labels").transform;
-            Label(labels, "ENEMY ARENA: 3 DOODLE GRUNTS", 0, 6);
+            Label(labels, "ENEMY ARENA: GRUNTS AND A LANCER (red flash = can't parry)", 0, 6);
             Label(labels, "parry = F / RB    combo breaker = parry in hitstun (50 ink)", 0, 5.2f);
 
             GameObject player = BuildPlayer(playerLayer, assets);
             var enemies = new GameObject("Enemies").transform;
-            BuildGrunt(new Vector3(8f, 1f, 0f), assets, grunt).transform.SetParent(enemies, true);
-            BuildGrunt(new Vector3(12f, 1f, 0f), assets, grunt).transform.SetParent(enemies, true);
-            BuildGrunt(new Vector3(-10f, 1f, 0f), assets, grunt, faceRight: true).transform.SetParent(enemies, true);
+            BuildEnemy("Doodle Grunt", new Vector3(8f, 1f, 0f), assets, enemyData.Grunt).transform.SetParent(enemies, true);
+            BuildEnemy("Pencil Lancer", new Vector3(13f, 1f, 0f), assets, enemyData.Lancer).transform.SetParent(enemies, true);
+            BuildEnemy("Doodle Grunt", new Vector3(-10f, 1f, 0f), assets, enemyData.Grunt, faceRight: true).transform.SetParent(enemies, true);
 
             var camObject = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camObject.AddComponent<Camera>();
@@ -84,7 +85,13 @@ namespace Margin.EditorTools
 
         /// <summary>Menu: Margin > Add Doodle Grunt. Puts a grunt 6 units to the right of the player in the open scene.</summary>
         [MenuItem("Margin/Add Doodle Grunt")]
-        public static void AddDoodleGrunt()
+        public static void AddDoodleGrunt() => AddEnemy("Doodle Grunt", r => r.Grunt);
+
+        /// <summary>Menu: Margin > Add Pencil Lancer. Puts a lancer 6 units to the right of the player in the open scene.</summary>
+        [MenuItem("Margin/Add Pencil Lancer")]
+        public static void AddPencilLancer() => AddEnemy("Pencil Lancer", r => r.Lancer);
+
+        private static void AddEnemy(string name, System.Func<StarterEnemies.Result, EnemyData> pick)
         {
             Scene scene = SceneManager.GetActiveScene();
             PlayerController player = null;
@@ -94,18 +101,18 @@ namespace Margin.EditorTools
             GymAssets assets = LoadAssets();
             if (assets == null) return;
             inkMaterial = assets.Ink;
-            EnemyData grunt = StarterEnemies.EnsureCreated().Grunt;
+            EnemyData data = pick(StarterEnemies.EnsureCreated());
 
             Vector3 at = player != null ? player.transform.position + new Vector3(6f, 0.5f, 0f) : new Vector3(6f, 1.5f, 0f);
-            GameObject go = BuildGrunt(at, assets, grunt);
+            GameObject go = BuildEnemy(name, at, assets, data);
             Selection.activeGameObject = go;
             EditorSceneManager.MarkSceneDirty(scene);
             if (!string.IsNullOrEmpty(scene.path)) EditorSceneManager.SaveScene(scene);
         }
 
-        private static GameObject BuildGrunt(Vector3 position, GymAssets assets, EnemyData data, bool faceRight = false)
+        private static GameObject BuildEnemy(string name, Vector3 position, GymAssets assets, EnemyData data, bool faceRight = false)
         {
-            var go = new GameObject("Doodle Grunt");
+            var go = new GameObject(name);
             go.transform.position = position;
             var body = go.AddComponent<KinematicBody2D>();   // also adds BoxCollider2D + Rigidbody2D
             go.GetComponent<BoxCollider2D>().size = new Vector2(0.6f, 1.8f);
@@ -127,6 +134,19 @@ namespace Margin.EditorTools
                 rig.ApplyPose(data.idle.entries[0].pose.pose);
             var animator = visual.gameObject.AddComponent<PoseAnimator>();
             SetReference(animator, "rig", rig);
+
+            // A held weapon (the Lancer's pencil): an ink line continuing the front forearm, hidden with the visual.
+            if (data.weaponLength > 0f)
+            {
+                var weapon = new GameObject("Weapon");
+                weapon.transform.SetParent(visual, false);
+                var line = weapon.AddComponent<WeaponLine>();
+                weapon.GetComponent<LineRenderer>().sharedMaterial = assets.Ink;
+                SetReference(line, "rig", rig);
+                var so = new SerializedObject(line);
+                so.FindProperty("length").floatValue = data.weaponLength;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             var enemy = go.AddComponent<EnemyBase>();
             SetReference(enemy, "data", data);

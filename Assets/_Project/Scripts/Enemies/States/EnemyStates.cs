@@ -82,7 +82,8 @@ namespace Margin.Enemies
             if (!Enemy.PlayerFightable() || Mathf.Abs(Enemy.ToPlayer.x) > Data.giveUpRange) return Enemy.Patrol;
 
             Vector2 d = Enemy.ToPlayer;
-            bool inRange = Mathf.Abs(d.x) <= Data.attackRange && Mathf.Abs(d.y) <= 1f;
+            float distance = Mathf.Abs(d.x);
+            bool inRange = distance <= Data.attackRange && distance >= Data.minAttackRange && Mathf.Abs(d.y) <= 1f;
             if (inRange && Enemy.Cooldown <= 0 && Data.attacks.Count > 0 && Enemy.TryTakeAttackSlot())
                 return Enemy.Attack;
             return null;
@@ -93,6 +94,14 @@ namespace Margin.Enemies
             Enemy.FacePlayer();
             float dx = Enemy.ToPlayer.x;
             int dir = dx > 0f ? 1 : -1;
+            // Too close for comfort (spear users): back away while still facing the player.
+            if (Mathf.Abs(dx) < Data.retreatDistance)
+            {
+                Enemy.Walk(-dir);
+                Enemy.Play(Mathf.Abs(Enemy.Velocity.x) > 0.1f ? Data.walk : Data.idle);
+                return;
+            }
+
             // Close in to a bit inside attack range, but don't walk into the player or through allies.
             bool close = Mathf.Abs(dx) <= Data.attackRange * 0.8f;
             Enemy.Walk(close || Enemy.BlockedByAlly(dir) ? 0 : dir);

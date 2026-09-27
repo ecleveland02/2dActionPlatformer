@@ -149,6 +149,22 @@ namespace Margin.EditorTools
                 BoxCenter = new Vector2(0.65f, 0.3f), BoxSize = new Vector2(0.7f, 0.7f), Shake = 0.15f, FadeIn = 1,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
 
+            // Pencil Lancer (spec 9: long telegraphed thrust, teaches parry). The thrust lunges and has a 28-frame
+            // wind-up; on hit it chains into a low sweep that pops the player up. Every third opener is a charged
+            // thrust that can't be parried (red flash): dash through it or jump.
+            new Move { Name = "LancerThrust", Button = AttackButton.Heavy, Startup = 28, Active = 4, Recovery = 26,
+                Damage = 14, Hitstop = 7, Hitstun = 24, Ink = 0, Knockback = new Vector2(2f, 0f), CancelStart = 34, CancelEnd = 42,
+                Lunge = 5f, LungeFirst = 27, BoxCenter = new Vector2(1.45f, 0.25f), BoxSize = new Vector2(1.3f, 0.3f),
+                Shake = 0.1f, FadeIn = 2, Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "LancerSweep", Button = AttackButton.Heavy, Startup = 9, Active = 4, Recovery = 24,
+                Damage = 8, Hitstop = 8, Hitstun = 32, Ink = 0, Knockback = new Vector2(3f, 10f), Launches = true,
+                CancelStart = 37, CancelEnd = 37, BoxCenter = new Vector2(1.3f, -0.35f), BoxSize = new Vector2(1.2f, 0.5f),
+                Shake = 0.12f, FadeIn = 1, Swing = "swing_heavy", Hit = "hit_heavy" },
+            new Move { Name = "LancerCharge", Button = AttackButton.Heavy, Startup = 36, Active = 5, Recovery = 30,
+                Damage = 18, Hitstop = 9, Hitstun = 28, Ink = 0, Knockback = new Vector2(7f, 3f), CancelStart = 71, CancelEnd = 71,
+                Lunge = 8f, LungeFirst = 33, BoxCenter = new Vector2(1.5f, 0.17f), BoxSize = new Vector2(1.4f, 0.35f),
+                Shake = 0.18f, FadeIn = 2, Swing = "swing_heavy", Hit = "hit_heavy", Unparryable = true },
+
             // Special (spec 7): costs 50 ink, throws a crescent of ink. The blade itself has no hitbox.
             new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 16,
                 Damage = 20, Hitstop = 6, Hitstun = 30, Ink = 0, InkCost = 50, Knockback = new Vector2(7f, 2f),
@@ -173,6 +189,7 @@ namespace Margin.EditorTools
             ["DummyJab"] = new[] { "DummyJab2" },
             ["DummyJab2"] = new[] { "DummyKick" },
             ["GruntSwing"] = new[] { "GruntShove" },
+            ["LancerThrust"] = new[] { "LancerSweep" },
         };
 
         [MenuItem("Margin/Create Starter Combat Data")]
@@ -368,6 +385,19 @@ namespace Margin.EditorTools
                 ["GruntShoveWindup"] = Planted(-5, 0, 10, 110, 0, 110, 25, -30, -25, -10),
                 ["GruntShoveStrike"] = Planted(25, -5, 95, 0, 90, 5, 45, -20, -35, 0),
                 ["GruntShoveRecover"] = Planted(12, 0, 70, 30, 65, 35, 30, -25, -25, -5),
+                // Pencil Lancer: the pencil continues the front forearm, so a level thrust needs
+                // shoulder + elbow = 90 + spine lean.
+                ["LancerIdle"] = Planted(5, 0, 55, 35, 40, 60, 25, -20, -25, -10),
+                ["LancerAlert"] = Planted(-5, -5, 120, 20, 60, 60, 25, -20, -25, -10),
+                ["LancerThrustWindup"] = Planted(-10, 5, -20, 100, -30, 90, 30, -40, -30, -20),
+                ["LancerThrustStrike"] = Planted(20, -10, 110, 0, 60, 20, 50, -30, -40, 0),
+                ["LancerThrustRecover"] = Planted(12, -5, 90, 10, 45, 40, 40, -30, -30, -5),
+                ["LancerSweepWindup"] = Planted(-5, 0, 160, -40, 100, 20, 30, -35, -25, -15),
+                ["LancerSweepStrike"] = Planted(25, -10, 82, 5, 70, 20, 45, -40, -35, -5),
+                ["LancerSweepRecover"] = Planted(15, -5, 70, 10, 55, 30, 35, -30, -30, -5),
+                ["LancerChargeWindup"] = Planted(-20, 10, -35, 105, -40, 95, 35, -60, -35, -30),
+                ["LancerChargeStrike"] = Planted(25, -12, 115, 0, 60, 15, 55, -25, -45, 0),
+                ["LancerChargeRecover"] = Planted(15, -5, 90, 10, 45, 40, 40, -30, -30, -5),
                 // Collapsed to the knees (used by the player and the grunt).
                 ["Defeated"] = Planted(35, 30, -10, 10, 10, 10, 70, -110, -10, -110),
                 // Combo breaker: arms flung wide, body upright.

@@ -35,6 +35,10 @@ namespace Margin.Enemies
         [Header("Attacking")]
         [Tooltip("Starts an attack when the player is this close (units, horizontal).")]
         [Min(0f)] public float attackRange = 1.3f;
+        [Tooltip("Won't start an attack when the player is closer than this (a spear can't hit point-blank).")]
+        [Min(0f)] public float minAttackRange = 0f;
+        [Tooltip("Backs away when the player is closer than this, to keep spacing. 0 = never backs away.")]
+        [Min(0f)] public float retreatDistance = 0f;
         [Tooltip("Opening attacks, used in order. Each chains into its 'Cancels into' list on hit (enemy combos). " +
                  "Openers need 12+ frames of startup (spec 9); follow-ups only happen after a hit.")]
         public List<AttackData> attacks = new List<AttackData>();
@@ -59,5 +63,7 @@ namespace Margin.Enemies
         public PoseClip alert;
         public PoseClip hurt;
         public PoseClip defeated;
+        [Tooltip("Length of a held weapon line from the front hand (e.g. the Lancer's pencil). 0 = unarmed.")]
+        [Min(0f)] public float weaponLength = 0f;
     }
 }

@@ -79,13 +79,40 @@ namespace Margin.Tests
             return a;
         }
 
-        private EnemyBase Grunt(float x)
+        /// <summary>Pencil Lancer numbers (see StarterCombat / StarterEnemies).</summary>
+        private EnemyData LancerData(bool chargeOnly = false)
+        {
+            AttackData sweep = Attack("LancerSweep", startup: 9, active: 4, recovery: 24, damage: 8, hitstop: 8, hitstun: 32,
+                                      knockback: new Vector2(3f, 10f), center: new Vector2(1.3f, -0.35f), size: new Vector2(1.2f, 0.5f));
+            AttackData thrust = Attack("LancerThrust", startup: 28, active: 4, recovery: 26, damage: 14, hitstop: 7, hitstun: 24,
+                                       knockback: new Vector2(2f, 0f), center: new Vector2(1.45f, 0.25f), size: new Vector2(1.3f, 0.3f));
+            thrust.lungeSpeed = 5f; thrust.lungeFirstFrame = 27;
+            thrust.cancelWindowStart = 34; thrust.cancelWindowEnd = 42;
+            thrust.cancelsInto.Add(sweep);
+            AttackData charge = Attack("LancerCharge", startup: 36, active: 5, recovery: 30, damage: 18, hitstop: 9, hitstun: 28,
+                                       knockback: new Vector2(7f, 3f), center: new Vector2(1.5f, 0.17f), size: new Vector2(1.4f, 0.35f));
+            charge.lungeSpeed = 8f; charge.lungeFirstFrame = 33; charge.parryable = false;
+
+            EnemyData d = Track(ScriptableObject.CreateInstance<EnemyData>());
+            d.maxHealth = 50;
+            d.walkSpeed = 1.8f;
+            d.patrolDistance = 0f;
+            d.attackRange = 2.0f;
+            d.minAttackRange = 0.6f;
+            d.retreatDistance = 1.1f;
+            d.attacks.Add(chargeOnly ? charge : thrust);
+            return d;
+        }
+
+        private EnemyBase Grunt(float x) => Enemy(x, gruntData);
+
+        private EnemyBase Enemy(float x, EnemyData data)
         {
             GameObject go = world.Body(new Vector2(x, 0.05f)).gameObject;
             go.layer = 0;
             go.AddComponent<Hurtbox>().Configure(Faction.Enemy, Vector2.zero, new Vector2(0.6f, 1.8f));
             var enemy = go.AddComponent<EnemyBase>();
-            enemy.Configure(gruntData, movement, settings);
+            enemy.Configure(data, movement, settings);
             enemy.SetTarget(player);
             enemies.Add(enemy);
             enemy.Tick();   // starts its state machine
@@ -203,6 +230,41 @@ namespace Margin.Tests
             Grunt(-1.1f);
             player.IsInvulnerable = true;
             Assert.AreEqual(1, MostAttackingAtOnce(200));
+        }
+
+        [Test]
+        public void Lancer_ThrustChainsIntoSweep_OnHit()
+        {
+            EnemyBase lancer = Enemy(5f, LancerData());
+            int mostHits = 0;
+            for (int i = 0; i < 600; i++)
+            {
+                Step();
+                mostHits = Mathf.Max(mostHits, health.ComboTaken.Hits);
+                if (mostHits == 2 && !(player.CurrentState is HitstunState)) break;
+            }
+            Assert.AreEqual(2, mostHits, "Thrust and sweep land as one combo.");
+            Assert.AreEqual(100 - 14 - 7, health.Health.Current, "14, then 8 at 85% (6.8 -> 7).");
+        }
+
+        [Test]
+        public void Lancer_TooClose_BacksOffBeforeAttacking()
+        {
+            EnemyBase lancer = Enemy(0.3f, LancerData());
+            StepUntil(() => lancer.CurrentState == lancer.Attack);
+            Assert.GreaterOrEqual(Mathf.Abs(lancer.Position.x - player.Body.Position.x), 0.6f,
+                                  "It stepped back to spear range (0.6+) before thrusting.");
+        }
+
+        [Test]
+        public void Lancer_ChargedThrust_CannotBeParried()
+        {
+            EnemyBase lancer = Enemy(3f, LancerData(chargeOnly: true));
+            StepUntil(() => lancer.Runner.IsAttacking && lancer.Runner.Frame == 33);
+            Step(parry: true);   // parry frames 1-6 = charge frames 34-39; it's active 37-41
+            Steps(6);
+            Assert.AreEqual(100 - 18, health.Health.Current, "Hit straight through the parry.");
+            Assert.IsInstanceOf<HitstunState>(player.CurrentState);
         }
 
         [Test]

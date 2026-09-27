@@ -72,8 +72,9 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   player is in hitstun). Attack slots: pure `AttackTokenPool`; capacity = engaged enemies, capped by
   `CombatSettings.maxEnemyAttackers` (0 = no cap, the developer's choice: everyone attacks). Player death:
   `DefeatedState` for `playerDeathFrames` (90), then `PlayerHealth.Respawn` at `SpawnPoint` (full health, 0 ink) and
-  `PlayerEvents.Respawned`, which resets every enemy. Menus: **Margin > Build Enemy Arena**, **Add Doodle Grunt**,
-  **Create Starter Enemy Data**. `TrainingDummy`/`SparringAttacker` stay as practice tools (not EnemyBase).
+  `PlayerEvents.Respawned`, which resets every enemy. Spacing: `EnemyData.minAttackRange` / `retreatDistance`
+  (spear users back off); `weaponLength` adds a `WeaponLine` (the Lancer's pencil). Menus: **Margin > Build Enemy
+  Arena** (grunt, lancer, grunt), **Add Doodle Grunt**, **Add Pencil Lancer**, **Create Starter Enemy Data**. `TrainingDummy`/`SparringAttacker` stay as practice tools (not EnemyBase).
 - **Feel (M3 chunk 3):** `Scripts/FX/`. `FeelSettings` asset (Data/FeelSettings) tunes shake, smear, trail,
   splatter, afterimages. `CameraShake` (camera, real-time, uses AttackData.screenShake x screenShakeScale),
   `InkSplatter` (one per scene, listens to `CombatEvents.Hit`), `PlayerFX` (TickOrder 11: smear on swing frames,
