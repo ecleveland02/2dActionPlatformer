@@ -17,7 +17,9 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
 - **Attack buttons:** Light = left click / right trigger (also J, gamepad X). Heavy = right click / left trigger
-  (also K, gamepad Y). Special = U / left bumper. Parry = F / right bumper.
+  (also K, gamepad Y). Special = U / left bumper. Parry = F / right bumper. Pause = Esc / Start ("Menu" map:
+  Pause, Navigate, Submit, Cancel; always enabled, while menus turn the "Gameplay" map off via
+  `InputReader.SetGameplayInput`).
   Optional tap/hold mode: `TapHoldButton` (pure) is supported by InputReader if an "Attack" action is added to
   MarginControls (tap = light on release, hold = heavy after `attackHoldFrames`); unbound by default because
   separate buttons respond instantly. A finished attack waits while `AttackHoldPending` so late holds still chain.
@@ -106,6 +108,16 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   splatter, afterimages. `CameraShake` (camera, real-time, uses AttackData.screenShake x screenShakeScale),
   `InkSplatter` (one per scene, listens to `CombatEvents.Hit`), `PlayerFX` (TickOrder 11: smear on swing frames,
   blade trail while attacking, dash afterimages; frozen in hitstop). `FeelBootstrap` adds any missing ones at runtime.
+- **UI (M5):** `Scripts/UI/`, UI Toolkit built entirely in code (no UXML/USS). `MarginUI` (one per scene; added by
+  the builders, **Margin > Add HUD and Pause Menu**, or automatically in scenes with a GameLoop) hosts a code-made
+  UIDocument scaled from 1920x1080, with `HudView` (health + ink card top-left with damage chip, low-health pulse,
+  hurt shake, combo counter and breaker prompt; boss bar bottom-centre for any `IBossBarSource` in `BossBars`,
+  e.g. an enemy with `EnemyData.bossBarName`) and `PauseMenuView` (Resume, Restart = `PlayerHealth.Respawn`,
+  Controls read from the input asset, Quit). Pausing sets `GameLoop.Paused` and `Time.timeScale = 0` and restores
+  both on resume. The hand-drawn look is pure `InkLines` (seeded wobble, overshooting corners, pen pressure)
+  drawn by `InkPainter` (Painter2D) inside `InkElement`s, re-seeded every `boilFrames` for a subtle boil.
+  Pure logic: `InkLines`, `ChipBar`, `MenuCursor`, `BossBars`. Tuning: `Data/UI/UISettings` (+ `MarginTheme.tss`).
+  The F2 debug overlay sits top-right because the HUD owns the top-left.
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

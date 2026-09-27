@@ -48,6 +48,9 @@ namespace Margin.Input
         public bool UpHeld => Move.y >= directionThreshold;
         public bool AttackHoldPending => attackButton.Pending;
 
+        /// <summary>The controls asset (menus read its "Menu" map).</summary>
+        public InputActionAsset Actions => actions;
+
         /// <summary>Creates the buffer. Call once before the first tick, passing the game's frame counter.</summary>
         public void Initialize(IFrameSource clock)
         {
@@ -119,6 +122,20 @@ namespace Margin.Input
             attackButton.Reset();
             actions.FindActionMap(GameplayMap).Disable();
             GameLoop.Unregister(this);
+        }
+
+        /// <summary>
+        /// Menus turn gameplay input off while open. Presses queued before that are dropped, so the button that
+        /// picked "Resume" doesn't also swing the sword.
+        /// </summary>
+        public void SetGameplayInput(bool on)
+        {
+            if (actions == null || pendingPresses == null) return;
+            InputActionMap map = actions.FindActionMap(GameplayMap);
+            if (on && isActiveAndEnabled) map.Enable();
+            else map.Disable();
+            for (int i = 0; i < pendingPresses.Length; i++) pendingPresses[i] = false;
+            attackButton.Reset();
         }
 
         private void OnAttackPressed(InputAction.CallbackContext context) => attackButton.QueuePress();
