@@ -85,19 +85,12 @@ namespace Margin.EditorTools
             ["KTurn2"] = P(0, -0.165f, spine: 21.1f, neck: -2, sf: -21, ef: 1, sb: -58.7f, eb: 121, hf: -38, kf: -0.1f, hb: 64.3f, kb: -43.2f, grip: -131.1f),
             ["KTurn3"] = P(0, -0.031f, spine: 31, neck: -19.9f, sf: 2.1f, ef: 117.6f, sb: -70.7f, eb: 95.4f, hf: -68.3f, kf: 0, hb: -16, kb: 0, grip: 1.6f),
             ["KTurn4"] = P(0, -0.036f, spine: 31.8f, neck: -7.4f, sf: 13.7f, ef: 87.9f, sb: -72.1f, eb: 58.7f, hf: -42.1f, kf: -44.1f, hb: 39.9f, kb: -11.6f, grip: -26.9f),
-            ["KJump1"] = P(0, 0, spine: 22.5f, neck: 5.6f, sf: -34.3f, ef: 2.6f, sb: 14.7f, eb: 158.1f, hf: -33.7f, kf: -5.7f, hb: 149.1f, kb: -129, grip: 15.2f),
-            ["KJump2"] = P(0, 0, spine: 24.3f, neck: -25.1f, sf: -40.7f, ef: 23.9f, sb: -3.6f, eb: 115.7f, hf: -27.2f, kf: -5.9f, hb: 128.2f, kb: -150.3f, grip: 15.2f),
-            ["KJump3"] = P(0, 0, spine: 29.9f, neck: -0.1f, sf: -45.6f, ef: 1.1f, sb: -65.8f, eb: 48.9f, hf: 127.7f, kf: -51.6f, hb: 101, kb: -116.2f, grip: -12.5f),
-            ["KJump4"] = P(0, 0, spine: 32.1f, neck: -1.6f, sf: -56.4f, ef: 56, sb: -142.1f, eb: 28.5f, hf: -23.5f, kf: -0.4f, hb: -2, kb: -101.8f, grip: 38.8f),
-            ["KApex"] = P(0, 0, spine: 7.5f, neck: 0.5f, sf: -74.2f, ef: 40.5f, sb: -43.5f, eb: 0, hf: 131.8f, kf: -163.9f, hb: -2.5f, kb: -150.2f, grip: 18.3f),
-            ["KFall1"] = P(0, 0, spine: 30.9f, neck: -12.2f, sf: -60.7f, ef: 131.4f, sb: 104.1f, eb: 0.8f, hf: 83.7f, kf: -75.5f, hb: 64.5f, kb: -105.7f, grip: 88.9f),
-            ["KFall2"] = P(0, 0, spine: 10, neck: 8.4f, sf: -81.6f, ef: 131.4f, sb: 109.5f, eb: 0.5f, hf: 65.9f, kf: -70.6f, hb: 55.6f, kb: -81.5f, grip: 88.9f),
-            ["KFall3"] = P(0, 0, spine: -5.8f, neck: 21.5f, sf: -97.4f, ef: 131.4f, sb: 105, eb: 0.5f, hf: 38.7f, kf: -50.5f, hb: 58, kb: -66, grip: 88.9f),
-            ["KFall4"] = P(0, 0, spine: -17.8f, neck: 28.2f, sf: -109.4f, ef: 131.4f, sb: 90.4f, eb: 0.8f, hf: 0, kf: -13.8f, hb: 71.8f, kb: -58, grip: 88.9f),
-            ["KFall5"] = P(0, 0, spine: -13.5f, neck: 21.6f, sf: -105.1f, ef: 131.4f, sb: 80.7f, eb: 1.1f, hf: -10.1f, kf: 0, hb: 82.7f, kb: -65.9f, grip: 88.9f),
-            ["KFall6"] = P(0, 0, spine: 7.4f, neck: 1, sf: -84.2f, ef: 131.4f, sb: 75.3f, eb: 1.4f, hf: 7.7f, kf: -3.5f, hb: 91.6f, kb: -90.1f, grip: 88.9f),
-            ["KFall7"] = P(0, 0, spine: 23.2f, neck: -12.1f, sf: -68.4f, ef: 131.4f, sb: 79.8f, eb: 1.4f, hf: 34.9f, kf: -23.5f, hb: 89.2f, kb: -105.6f, grip: 88.9f),
-            ["KFall8"] = P(0, 0, spine: 35.2f, neck: -18.8f, sf: -56.4f, ef: 131.4f, sb: 94.4f, eb: 1.1f, hf: 73.6f, kf: -60.2f, hb: 75.4f, kb: -113.5f, grip: 88.9f),
+            ["KJump1"] = P(0, 0, spine: 18, neck: 0, sf: -47, ef: 23.9f, sb: 60, eb: 30, hf: -20, kf: -10, hb: 30, kb: -55, grip: 15.2f),
+            ["KJump2"] = P(0, 0, spine: 12, neck: -3, sf: -53, ef: 23.9f, sb: 110, eb: 40, hf: 45, kf: -85, hb: 70, kb: -100, grip: 15.2f),
+            ["KJump3"] = P(0, 0, spine: 10, neck: -4, sf: -55, ef: 23.9f, sb: 130, eb: 45, hf: 70, kf: -110, hb: 85, kb: -115, grip: 15.2f),
+            ["KApex"] = P(0, 0, spine: 8, neck: -5, sf: -70.3f, ef: 77.7f, sb: 140, eb: 50, hf: 62, kf: -100, hb: 80, kb: -112, grip: 52.1f),
+            ["KFall1"] = P(0, 0, spine: 4, neck: 5, sf: -87.6f, ef: 131.4f, sb: 160, eb: 35, hf: 15, kf: -30, hb: 40, kb: -70, grip: 88.9f),
+            ["KFall2"] = P(0, 0, spine: 6, neck: 4, sf: -85.6f, ef: 131.4f, sb: 150, eb: 46, hf: 21, kf: -38, hb: 34, kb: -62, grip: 88.9f),
             ["KFastFall1"] = P(0, 0, spine: 5.3f, neck: -7.9f, sf: -23.2f, ef: 3.7f, sb: -164.4f, eb: 155.6f, hf: -27.6f, kf: -162.4f, hb: -4.3f, kb: -165.9f, grip: 1.2f),
             ["KFastFall2"] = P(0, 0, spine: 5.1f, neck: -5.8f, sf: -23.4f, ef: 3.7f, sb: -164.4f, eb: 155.6f, hf: -19.9f, kf: -161.1f, hb: 0.2f, kb: -167.1f, grip: 1.2f),
             ["KFastFall3"] = P(0, 0, spine: 4.1f, neck: -4.8f, sf: -24.5f, ef: 3.7f, sb: -164.4f, eb: 155.6f, hf: -17.9f, kf: -160.5f, hb: -1, kb: -167.8f, grip: 1.2f),
@@ -314,11 +307,11 @@ namespace Margin.EditorTools
             // sheet 01, row 6
             ["Turn"] = new ClipSpec(false, 1, ("KTurn1", 2, PoseEasing.Flow), ("KTurn2", 2, PoseEasing.Flow), ("KTurn3", 2, PoseEasing.Flow), ("KTurn4", 1, PoseEasing.Linear)),
             // sheet 02, row 1
-            ["Jump"] = new ClipSpec(false, 1, ("KJump1", 2, PoseEasing.Flow), ("KJump2", 3, PoseEasing.Flow), ("KJump3", 3, PoseEasing.Flow), ("KJump4", 1, PoseEasing.Linear)),
+            ["Jump"] = new ClipSpec(false, 3, ("KJump1", 3, PoseEasing.Flow), ("KJump2", 5, PoseEasing.Flow), ("KJump3", 1, PoseEasing.Linear)),
             // sheet 02, row 2
             ["JumpApex"] = new ClipSpec(false, 5, ("KApex", 1, PoseEasing.Linear)),
             // sheet 02, row 3
-            ["Fall"] = new ClipSpec(true, 5, ("KFall1", 3, PoseEasing.Smooth), ("KFall2", 2, PoseEasing.Smooth), ("KFall3", 3, PoseEasing.Smooth), ("KFall4", 2, PoseEasing.Smooth), ("KFall5", 3, PoseEasing.Smooth), ("KFall6", 2, PoseEasing.Smooth), ("KFall7", 3, PoseEasing.Smooth), ("KFall8", 2, PoseEasing.Smooth)),
+            ["Fall"] = new ClipSpec(true, 5, ("KFall1", 8, PoseEasing.Smooth), ("KFall2", 8, PoseEasing.Smooth)),
             // sheet 02, row 4
             ["FastFall"] = new ClipSpec(true, 3, ("KFastFall1", 2, PoseEasing.Smooth), ("KFastFall2", 1, PoseEasing.Smooth), ("KFastFall3", 2, PoseEasing.Smooth), ("KFastFall4", 1, PoseEasing.Smooth), ("KFastFall5", 2, PoseEasing.Smooth), ("KFastFall6", 1, PoseEasing.Smooth), ("KFastFall7", 2, PoseEasing.Smooth), ("KFastFall8", 1, PoseEasing.Smooth)),
             // sheet 02, row 5
@@ -330,9 +323,9 @@ namespace Margin.EditorTools
             // sheet 03, row 2
             ["Skid"] = new ClipSpec(false, 2, ("KSkid1", 6, PoseEasing.Flow), ("KSkid2", 5, PoseEasing.Flow), ("KSkid3", 6, PoseEasing.Flow), ("KSkid4", 1, PoseEasing.Linear)),
             // sheet 03, row 3
-            ["Land"] = new ClipSpec(false, 1, ("KLand1", 2, PoseEasing.Flow), ("KLand2", 2, PoseEasing.Flow), ("KLand3", 2, PoseEasing.Flow), ("KLand4", 2, PoseEasing.Flow), ("KLand5", 1, PoseEasing.Linear)),
+            ["Land"] = new ClipSpec(false, 2, ("KLand1", 2, PoseEasing.Flow), ("KLand2", 2, PoseEasing.Flow), ("KLand3", 2, PoseEasing.Flow), ("KLand4", 2, PoseEasing.Flow), ("KLand5", 1, PoseEasing.Linear)),
             // sheet 03, row 4
-            ["HardLand"] = new ClipSpec(false, 0, ("KHardLand1", 4, PoseEasing.Flow), ("KHardLand2", 5, PoseEasing.Flow), ("KHardLand3", 5, PoseEasing.Flow), ("KHardLand4", 6, PoseEasing.Flow), ("KHardLand5", 1, PoseEasing.Linear)),
+            ["HardLand"] = new ClipSpec(false, 2, ("KHardLand1", 4, PoseEasing.Flow), ("KHardLand2", 5, PoseEasing.Flow), ("KHardLand3", 5, PoseEasing.Flow), ("KHardLand4", 6, PoseEasing.Flow), ("KHardLand5", 1, PoseEasing.Linear)),
             // sheet 03, row 5
             ["Dash"] = new ClipSpec(false, 0, ("KDash1", 1, PoseEasing.Flow), ("KDash2", 1, PoseEasing.Flow), ("KDash3", 2, PoseEasing.Flow), ("KDash4", 2, PoseEasing.Flow), ("KDash5", 2, PoseEasing.Flow), ("KDash6", 1, PoseEasing.Linear)),
             // sheet 07, row 1
