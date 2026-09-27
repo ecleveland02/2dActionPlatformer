@@ -85,6 +85,25 @@ namespace Margin.Combat
         [Tooltip("Attack frame the hop happens on (1 = immediately).")]
         [Min(1)] public int hopFrame = 1;
 
+        [Header("Air")]
+        [Tooltip("Gravity multiplier from the start of the attack through its active frames, so air attacks hang " +
+                 "in the air (1 = normal gravity). Recovery always uses normal gravity.")]
+        [Range(0f, 1f)] public float airGravityScale = 1f;
+        [Tooltip("On an airborne hit, the attacker's upward speed is raised to at least this (units/s), " +
+                 "keeping them level with a juggled target. 0 = off.")]
+        [Min(0f)] public float hoverOnHit;
+
+        [Header("Ink and projectile")]
+        [Tooltip("Ink spent to use this attack (spec 6.6: specials cost 50). It can't start without enough ink.")]
+        [Min(0)] public int inkCost;
+        [Tooltip("Speed (units/s) of a projectile spawned on the first active frame. 0 = no projectile.")]
+        [Min(0f)] public float projectileSpeed;
+        [Min(1)] public int projectileLifetimeFrames = 40;
+        [Tooltip("Projectile hitbox size (units).")]
+        public Vector2 projectileSize = new Vector2(0.9f, 1.3f);
+        [Tooltip("Where the projectile spawns, relative to a right-facing attacker's center.")]
+        public Vector2 projectileOffset = new Vector2(0.8f, 0.2f);
+
         [Header("Hitboxes")]
         public List<HitboxWindow> hitboxes = new List<HitboxWindow>();
 

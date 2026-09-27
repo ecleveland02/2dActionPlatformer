@@ -101,6 +101,8 @@ namespace Margin.DebugTools
             text.AppendLine($"Sprint   charge {player.SprintCharge}/{d.framesToStartSprint}   {(player.IsSprinting ? "<b>SPRINTING</b>" : "")}");
             if (player.CurrentState is AttackState attack) AppendAttack(attack);
             if (player.InHitstop) text.AppendLine($"<color=#ff9040>Hitstop  {player.Combat.HitstopFrames} frames left</color>");
+            if (player.Combat != null)
+                text.AppendLine($"Ink      {player.Combat.Ink.Value}/{player.Combat.Ink.Max}   (no hit for {player.Combat.Ink.FramesSinceHit} f)");
             text.AppendLine($"Dash     cooldown {player.DashCooldown}   air dashes {player.AirDashesLeft}   " +
                             $"{(player.IsInvulnerable ? "<color=#60c0ff>INVULNERABLE</color>" : "")}");
 

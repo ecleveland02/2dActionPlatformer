@@ -14,6 +14,8 @@ namespace Margin.EditorTools
     ///   L1 Descending cut > L2 Rising cut > L3 Stepping thrust > L4 Sweeping finisher
     ///   Heavy from neutral: Overhead cleave
     ///   L1 > Heavy: Iaido lunge    L2 > Heavy: Rising Moon (launcher)    L3 > Heavy: Falling Blossom (leaping cleave)
+    ///   Air: Air Light 1 > 2 > 3, Heavy in the air: Air Slam (spikes the target). Rising Moon chains into Air Light 1.
+    ///   Special (50 ink): Ink Wave projectile
     ///
     /// Each strike pose was checked with the blade drawn and the hitbox fitted around it. Every move's recover
     /// pose leads into the next move's wind-up so the string flows. Existing assets are kept unless you choose
@@ -51,6 +53,12 @@ namespace Margin.EditorTools
             public float Shake;
             public int FadeIn = 1;
             public string Swing = "swing_light", Hit = "hit_light";
+            public bool Airborne;
+            public float AirGravity = 1f, Hover;
+            public int InkCost;
+            public float ProjectileSpeed;
+            public int ProjectileLifetime = 40;
+            public Vector2 ProjectileSize = new Vector2(0.9f, 1.3f), ProjectileOffset = new Vector2(0.8f, 0.2f);
         }
 
         // Light hitstun is 6 frames longer than the spec example so a held (hold-to-heavy) branch still combos.
@@ -77,14 +85,37 @@ namespace Margin.EditorTools
                 Damage = 16, Hitstop = 8, Hitstun = 30, Ink = 10, Knockback = new Vector2(10f, 2f), CancelStart = 17, CancelEnd = 30,
                 Lunge = 12f, LungeFirst = 9, BoxCenter = new Vector2(1.35f, -0.05f), BoxSize = new Vector2(1.8f, 0.5f), Shake = 0.15f,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
+            // Launcher: you rise with the target (hop 11) and can chain straight into the air string on hit.
             new Move { Name = "KatanaRisingMoon", Button = AttackButton.Heavy, Startup = 8, Active = 4, Recovery = 20,
-                Damage = 14, Hitstop = 8, Hitstun = 40, Ink = 10, Knockback = new Vector2(1.5f, 14f), Launches = true,
-                CancelStart = 17, CancelEnd = 32, Hop = 6f, HopFrame = 9,
+                Damage = 14, Hitstop = 8, Hitstun = 40, Ink = 10, Knockback = new Vector2(1f, 12f), Launches = true,
+                CancelStart = 17, CancelEnd = 32, Hop = 11f, HopFrame = 9,
                 BoxCenter = new Vector2(0.75f, 0.6f), BoxSize = new Vector2(1.3f, 2.0f), Shake = 0.15f,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
             new Move { Name = "KatanaFallingBlossom", Button = AttackButton.Heavy, Startup = 10, Active = 4, Recovery = 20,
                 Damage = 22, Hitstop = 10, Hitstun = 35, Ink = 12, Knockback = new Vector2(6f, 1f), CancelStart = 20, CancelEnd = 34,
                 Hop = 9f, HopFrame = 1, BoxCenter = new Vector2(1.0f, -0.1f), BoxSize = new Vector2(1.6f, 1.8f), Shake = 0.2f,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+
+            // Air string: each hit bumps the target up a little (knockback y 5) and holds you level with it
+            // (low gravity while attacking, hover on hit). Air Slam spikes the target back to the ground.
+            new Move { Name = "KatanaAirLight1", Button = AttackButton.Light, Airborne = true, Startup = 4, Active = 3, Recovery = 10,
+                Damage = 6, Hitstop = 4, Hitstun = 24, Ink = 4, Knockback = new Vector2(1.5f, 5f), CancelStart = 8, CancelEnd = 17,
+                AirGravity = 0.3f, Hover = 2.5f, BoxCenter = new Vector2(1.05f, 0.3f), BoxSize = new Vector2(1.5f, 0.8f), Shake = 0.05f, FadeIn = 2 },
+            new Move { Name = "KatanaAirLight2", Button = AttackButton.Light, Airborne = true, Startup = 4, Active = 3, Recovery = 10,
+                Damage = 6, Hitstop = 4, Hitstun = 24, Ink = 4, Knockback = new Vector2(1.5f, 5f), CancelStart = 8, CancelEnd = 17,
+                AirGravity = 0.3f, Hover = 2.5f, BoxCenter = new Vector2(0.8f, 0.8f), BoxSize = new Vector2(1.3f, 1.8f), Shake = 0.05f },
+            new Move { Name = "KatanaAirLight3", Button = AttackButton.Light, Airborne = true, Startup = 5, Active = 3, Recovery = 12,
+                Damage = 8, Hitstop = 5, Hitstun = 26, Ink = 5, Knockback = new Vector2(2f, 5f), CancelStart = 9, CancelEnd = 20,
+                AirGravity = 0.3f, Hover = 2.5f, BoxCenter = new Vector2(1.25f, 0.45f), BoxSize = new Vector2(1.6f, 0.5f), Shake = 0.07f },
+            new Move { Name = "KatanaAirSlam", Button = AttackButton.Heavy, Airborne = true, Startup = 6, Active = 4, Recovery = 16,
+                Damage = 14, Hitstop = 10, Hitstun = 40, Ink = 8, Knockback = new Vector2(2f, -22f), CancelStart = 13, CancelEnd = 26,
+                AirGravity = 0.3f, BoxCenter = new Vector2(0.9f, -0.2f), BoxSize = new Vector2(1.6f, 1.6f), Shake = 0.2f, FadeIn = 2,
+                Swing = "swing_heavy", Hit = "hit_heavy" },
+
+            // Special (spec 7): costs 50 ink, throws a crescent of ink. The blade itself has no hitbox.
+            new Move { Name = "KatanaInkWave", Button = AttackButton.Special, Startup = 8, Active = 3, Recovery = 16,
+                Damage = 20, Hitstop = 6, Hitstun = 30, Ink = 0, InkCost = 50, Knockback = new Vector2(7f, 2f),
+                CancelStart = 20, CancelEnd = 27, ProjectileSpeed = 14f, ProjectileLifetime = 40, Shake = 0.12f, FadeIn = 2,
                 Swing = "swing_heavy", Hit = "hit_heavy" },
         };
 
@@ -94,6 +125,10 @@ namespace Margin.EditorTools
             ["KatanaLight1"] = new[] { "KatanaLight2", "KatanaIaido" },
             ["KatanaLight2"] = new[] { "KatanaLight3", "KatanaRisingMoon" },
             ["KatanaLight3"] = new[] { "KatanaLight4", "KatanaFallingBlossom" },
+            ["KatanaRisingMoon"] = new[] { "KatanaAirLight1" },
+            ["KatanaAirLight1"] = new[] { "KatanaAirLight2", "KatanaAirSlam" },
+            ["KatanaAirLight2"] = new[] { "KatanaAirLight3", "KatanaAirSlam" },
+            ["KatanaAirLight3"] = new[] { "KatanaAirSlam" },
         };
 
         [MenuItem("Margin/Create Starter Combat Data")]
@@ -135,7 +170,8 @@ namespace Margin.EditorTools
             foreach (KeyValuePair<string, string[]> chain in Chains)
             {
                 bool write = created.Contains(chain.Key) || overwrite ||
-                             (chain.Key == "KatanaLight1" && created.Contains("KatanaLight2"));
+                             (chain.Key == "KatanaLight1" && created.Contains("KatanaLight2")) ||
+                             (chain.Key == "KatanaRisingMoon" && created.Contains("KatanaAirLight1"));
                 if (!write) continue;
 
                 AttackData from = attacks[chain.Key];
@@ -144,12 +180,24 @@ namespace Margin.EditorTools
                 EditorUtility.SetDirty(from);
             }
 
+            // Upgrade a Rising Moon from before air combat existed, unless it was retuned by hand.
+            AttackData moon = attacks["KatanaRisingMoon"];
+            if (created.Contains("KatanaAirLight1") && !created.Contains("KatanaRisingMoon"))
+            {
+                if (Mathf.Approximately(moon.hopVelocity, 6f)) moon.hopVelocity = 11f;
+                if (moon.knockback == new Vector2(1.5f, 14f)) moon.knockback = new Vector2(1f, 12f);
+                EditorUtility.SetDirty(moon);
+            }
+
             WeaponData katana = LoadOrCreate<WeaponData>($"{WeaponFolder}/BrushKatana.asset", out _);
             if (katana.light1 == null || overwrite) katana.light1 = attacks["KatanaLight1"];
             if (katana.light2 == null || overwrite) katana.light2 = attacks["KatanaLight2"];
             if (katana.light3 == null || overwrite) katana.light3 = attacks["KatanaLight3"];
             if (katana.light4 == null || overwrite) katana.light4 = attacks["KatanaLight4"];
             if (katana.heavy == null || overwrite) katana.heavy = attacks["KatanaHeavy"];
+            if (katana.airLight == null || overwrite) katana.airLight = attacks["KatanaAirLight1"];
+            if (katana.airHeavy == null || overwrite) katana.airHeavy = attacks["KatanaAirSlam"];
+            if (katana.special == null || overwrite) katana.special = attacks["KatanaInkWave"];
             EditorUtility.SetDirty(katana);
 
             CombatSettings settings = LoadOrCreate<CombatSettings>(SettingsPath, out _);
@@ -168,7 +216,11 @@ namespace Margin.EditorTools
         {
             a.button = m.Button;
             a.direction = AttackDirection.Neutral;
-            a.airborne = false;
+            a.airborne = m.Airborne;
+            a.airGravityScale = m.AirGravity; a.hoverOnHit = m.Hover;
+            a.inkCost = m.InkCost;
+            a.projectileSpeed = m.ProjectileSpeed; a.projectileLifetimeFrames = m.ProjectileLifetime;
+            a.projectileSize = m.ProjectileSize; a.projectileOffset = m.ProjectileOffset;
             a.startupFrames = m.Startup; a.activeFrames = m.Active; a.recoveryFrames = m.Recovery;
             a.damage = m.Damage; a.hitstopFrames = m.Hitstop; a.hitstunFrames = m.Hitstun; a.inkGain = m.Ink;
             a.knockback = m.Knockback; a.launches = m.Launches;
@@ -178,10 +230,9 @@ namespace Margin.EditorTools
             a.cancelsInto = new List<AttackData>();
             a.lungeSpeed = m.Lunge; a.lungeFirstFrame = m.LungeFirst;
             a.hopVelocity = m.Hop; a.hopFrame = m.HopFrame;
-            a.hitboxes = new List<HitboxWindow>
-            {
-                new HitboxWindow { boxes = new List<HitboxShape> { new HitboxShape { offset = m.BoxCenter, size = m.BoxSize } } },
-            };
+            a.hitboxes = new List<HitboxWindow>();
+            if (m.BoxSize != Vector2.zero)   // projectile-only moves have no blade hitbox
+                a.hitboxes.Add(new HitboxWindow { boxes = new List<HitboxShape> { new HitboxShape { offset = m.BoxCenter, size = m.BoxSize } } });
             a.screenShake = m.Shake; a.swingSound = m.Swing; a.hitSound = m.Hit;
             a.poseClip = AttackClip(m, poses, overwrite);
             EditorUtility.SetDirty(a);
@@ -218,6 +269,21 @@ namespace Margin.EditorTools
                 ["KatanaFallingBlossomStrike"] = Air(40, -15, 95, -5, 60, 20, 45, -60, -30, -20),
                 ["KatanaFallingBlossomRecover"] = Planted(30, -10, 110, 0, 40, 30, 50, -90, 35, -85),
                 ["DummyHit"] = Planted(-20, 15, 40, 30, 60, 30, -10, -20, 10, -10),
+                ["KatanaAirLight1Windup"] = Air(-5, 0, 200, 30, -20, 40, 60, -90, -20, -60),
+                ["KatanaAirLight1Strike"] = Air(10, -5, 105, 0, -40, 30, 40, -70, -30, -50),
+                ["KatanaAirLight1Recover"] = Air(8, -5, 80, 20, -30, 30, 40, -70, -30, -50),
+                ["KatanaAirLight2Windup"] = Air(5, 0, 70, 10, -30, 40, 45, -80, -25, -55),
+                ["KatanaAirLight2Strike"] = Air(-10, 5, 120, 0, -50, 30, 35, -60, -30, -40),
+                ["KatanaAirLight2Recover"] = Air(-5, 0, 170, 10, -40, 30, 35, -60, -30, -40),
+                ["KatanaAirLight3Windup"] = Air(5, 0, -40, 130, -10, 60, 50, -90, -20, -60),
+                ["KatanaAirLight3Strike"] = Air(20, -10, 115, 0, -50, 20, 30, -40, -40, -20),
+                ["KatanaAirLight3Recover"] = Air(15, -5, 95, 10, -40, 30, 35, -50, -35, -30),
+                ["KatanaAirSlamWindup"] = Air(-20, 10, 200, 40, 170, 30, 70, -110, 10, -90),
+                ["KatanaAirSlamStrike"] = Air(40, -15, 70, -10, 50, 20, 20, -30, -20, -20),
+                ["KatanaAirSlamRecover"] = Air(30, -10, 45, 10, 40, 30, 25, -40, -20, -30),
+                ["KatanaInkWaveWindup"] = Planted(-10, 5, -110, 20, 60, 30, 35, -70, -25, -50),
+                ["KatanaInkWaveStrike"] = Planted(25, -10, 115, 0, -70, 20, 55, -40, -50, -5),
+                ["KatanaInkWaveRecover"] = Planted(18, -8, 130, 10, -60, 20, 50, -45, -45, -10),
             };
 
             var result = new Dictionary<string, PoseData>();

@@ -241,6 +241,7 @@ Each weapon is a `WeaponData` ScriptableObject with a full move list: Light1, Li
 | Scribble Gauntlets | Very fast | Short | Highest DPS, rapid jabs | Scribble barrage |
 
 Brush Katana moveset (implemented): a four-hit light string, Light 1 > 2 > 3 > 4 (descending cut, rising cut, stepping thrust, sweeping finisher), and a different heavy branching off each of the first three lights: Light 1 > Iaido lunge, Light 2 > Rising Moon (launcher), Light 3 > Falling Blossom (leaping cleave). Heavy from neutral is an overhead cleave.
+Air combat (implemented): Rising Moon lifts you with the launched target and chains into an air string, Air Light 1 > 2 > 3, finished by Air Heavy "Meteor Stroke", which spikes the target back into the ground (slam impact). Air attacks reduce your gravity while attacking and keep you level with a juggled target; airborne targets in hitstun fall slower (juggle gravity). Special: Ink Wave, a crescent projectile for 50 ink.
 
 Vertical slice: Brush Katana only.
 

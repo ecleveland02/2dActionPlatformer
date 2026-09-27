@@ -32,8 +32,20 @@ namespace Margin.FX
             streaks = CreateSystem("Streaks", ParticleSystemRenderMode.Stretch);
         }
 
-        private void OnEnable() => CombatEvents.Hit += OnHit;
-        private void OnDisable() => CombatEvents.Hit -= OnHit;
+        /// <summary>The scene's splatter emitter, for effects that aren't hits (e.g. slam impacts).</summary>
+        public static InkSplatter Instance { get; private set; }
+
+        private void OnEnable()
+        {
+            Instance = this;
+            CombatEvents.Hit += OnHit;
+        }
+
+        private void OnDisable()
+        {
+            CombatEvents.Hit -= OnHit;
+            if (Instance == this) Instance = null;
+        }
 
         private void OnHit(HitInfo hit, IHitReceiver target)
         {

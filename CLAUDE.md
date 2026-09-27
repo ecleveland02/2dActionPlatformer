@@ -51,6 +51,10 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Hitstop: below `CombatSettings.globalHitstopThreshold` (8) only attacker/target freeze; at/above it `GameLoop.Freeze`.
   Weapons list only *starter* moves (Light1, Heavy, Up, Air...); follow-ups (Light2/3) come from cancel lists.
   Menus: **Margin > Create Starter Combat Data**, **Margin > Add Training Dummy**.
+  `HitResolver` (static) applies hits for every damage source (sword, projectiles). Air: `airGravityScale`,
+  `hoverOnHit`; targets use `CombatSettings.juggleGravityScale` in hitstun. Ink: pure `InkMeter` owned by
+  `PlayerCombat` (gain on hit, spec decay); attacks with `inkCost` can't start without the ink. `InkWaveProjectile`
+  spawns on an attack's first active frame when `projectileSpeed > 0`. Placeholder HUD: `UI/PlayerHUD` (ink bar).
 - **Feel (M3 chunk 3):** `Scripts/FX/`. `FeelSettings` asset (Data/FeelSettings) tunes shake, smear, trail,
   splatter, afterimages. `CameraShake` (camera, real-time, uses AttackData.screenShake x screenShakeScale),
   `InkSplatter` (one per scene, listens to `CombatEvents.Hit`), `PlayerFX` (TickOrder 11: smear on swing frames,

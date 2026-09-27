@@ -160,6 +160,7 @@ namespace Margin.Player
             }
 
             if (DashCooldown > 0) DashCooldown--;
+            if (Combat != null) Combat.Tick();
             hasPendingDy = false;
 
             machine.Tick();
@@ -278,9 +279,9 @@ namespace Margin.Player
         }
 
         /// <summary>Apply one tick of gravity (with fall multiplier and apex hang) capped at maxFallSpeed.</summary>
-        public void ApplyGravity(float maxFallSpeed)
+        public void ApplyGravity(float maxFallSpeed, float gravityScale = 1f)
         {
-            float gravity = data.Gravity(Velocity.y, Controls.JumpHeld);
+            float gravity = data.Gravity(Velocity.y, Controls.JumpHeld) * gravityScale;
             Velocity.y = MovementMath.VerticalStep(Velocity.y, gravity, maxFallSpeed, out pendingDy);
             hasPendingDy = true;
         }

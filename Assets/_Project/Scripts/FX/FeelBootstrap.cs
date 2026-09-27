@@ -35,6 +35,9 @@ namespace Margin.FX
 
             foreach (PlayerController player in SceneQuery.FindAll<PlayerController>())
                 if (player.GetComponent<PlayerFX>() == null) player.gameObject.AddComponent<PlayerFX>();
+
+            if (SceneQuery.FindFirst<Margin.UI.PlayerHUD>() == null)
+                new GameObject("[HUD]").AddComponent<Margin.UI.PlayerHUD>();
         }
     }
 }

@@ -78,9 +78,11 @@ namespace Margin.Player
 
             if (Airborne || !Player.Grounded || Player.Velocity.y > 0f)
             {
-                // Air attacks keep momentum and some air control, but never turn you around.
+                // Air attacks keep momentum and some air control, but never turn you around. Up to the last active
+                // frame gravity can be reduced (airGravityScale) so air strings hang in the air.
                 Player.ApplyHorizontal(onGround: false, updateFacing: false);
-                Player.ApplyGravity(Data.maxFallSpeed);
+                float scale = Frame <= timing.LastActiveFrame ? Attack.airGravityScale : 1f;
+                Player.ApplyGravity(Data.maxFallSpeed, scale);
                 return;
             }
 
@@ -94,6 +96,7 @@ namespace Margin.Player
 
         public override void PostMove()
         {
+            if (Attack.projectileSpeed > 0f && Frame == Attack.Timing.FirstActiveFrame) Player.Combat.SpawnProjectile(Attack);
             if (Attack.Timing.IsActive(Frame) && Player.Combat.ResolveHits(Attack, Frame)) HasHit = true;
         }
     }

@@ -25,6 +25,7 @@ namespace Margin.Player
         private readonly HashSet<IHitReceiver> hitThisAttack = new HashSet<IHitReceiver>();
         private readonly List<AabbBox> activeBoxes = new List<AabbBox>();
         private HitboxWindow lastWindow;
+        private InkMeter ink;
 
         public WeaponData Weapon => weapon;
         public CombatSettings Settings => settings != null ? settings : CombatSettings.Defaults;
@@ -35,6 +36,20 @@ namespace Margin.Player
         public int AttackSerial { get; private set; }
         /// <summary>Remaining frames of the player's own hitstop. While above 0 the player doesn't tick.</summary>
         public int HitstopFrames { get; set; }
+        /// <summary>The ink meter (spec 6.6). Created on first use from CombatSettings.</summary>
+        public InkMeter Ink
+        {
+            get
+            {
+                if (ink == null)
+                {
+                    CombatSettings s = Settings;
+                    ink = new InkMeter(s.inkMax, s.inkDecayDelayFrames, s.inkDecayIntervalFrames);
+                }
+                return ink;
+            }
+        }
+
         /// <summary>World hitboxes out on the current tick, for the F1 debug view.</summary>
         public IReadOnlyList<AabbBox> ActiveHitboxes => activeBoxes;
 
@@ -68,7 +83,7 @@ namespace Margin.Player
             {
                 if (!input.Buffer.IsBuffered(action)) continue;
                 AttackData attack = Select(candidates, button, dir, airborne);
-                if (attack == null) continue;
+                if (attack == null || !Ink.CanSpend(attack.inkCost)) continue;
 
                 input.Buffer.Consume(action);
                 PendingAttack = attack;
@@ -104,6 +119,7 @@ namespace Margin.Player
 
         public void BeginAttack(AttackData attack)
         {
+            Ink.TrySpend(attack.inkCost);
             hitThisAttack.Clear();
             lastWindow = null;
             activeBoxes.Clear();
@@ -112,16 +128,18 @@ namespace Margin.Player
 
         public void EndAttack() => activeBoxes.Clear();
 
+        /// <summary>Called once per player tick (not during hitstop): ink decay.</summary>
+        public void Tick() => Ink.Tick();
+
         /// <summary>
-        /// Tests this frame's hitboxes against every enemy hurtbox. Each target is hit once per attack
-        /// (or once per hitbox window for multi-hit moves). Returns true if anything was hit.
+        /// Tests this frame's hitboxes against every enemy hurtbox (via HitResolver). Each target is hit once per
+        /// attack (or once per hitbox window for multi-hit moves). Returns true if anything was hit.
         /// </summary>
         public bool ResolveHits(AttackData attack, int frame)
         {
             activeBoxes.Clear();
             Vector2 origin = player.Body.Position;
-            bool anyHit = false;
-            int stop = 0;
+            int hits = 0;
 
             foreach (HitboxWindow window in attack.WindowsAt(frame))
             {
@@ -132,43 +150,33 @@ namespace Margin.Player
                 {
                     AabbBox box = HitboxMath.ToWorld(origin.x, origin.y, player.Facing, shape.offset.x, shape.offset.y, shape.size.x, shape.size.y);
                     activeBoxes.Add(box);
-
-                    // Copy: a hit can disable or destroy a hurtbox, which changes the list.
-                    Hurtbox[] targets = new Hurtbox[Hurtbox.Active.Count];
-                    for (int i = 0; i < targets.Length; i++) targets[i] = Hurtbox.Active[i];
-
-                    foreach (Hurtbox hurtbox in targets)
-                    {
-                        if (hurtbox == null || hurtbox.Faction == Faction.Player) continue;
-                        IHitReceiver target = hurtbox.Receiver;
-                        if (target == null || !target.CanBeHit || hitThisAttack.Contains(target)) continue;
-
-                        AabbBox hurt = hurtbox.WorldBox;
-                        if (!HitboxMath.Overlaps(box, hurt)) continue;
-
-                        HitboxMath.OverlapCenter(box, hurt, out float px, out float py);
-                        bool global = attack.hitstopFrames >= Settings.globalHitstopThreshold;
-                        var knockback = new Vector2(attack.knockback.x * player.Facing, attack.knockback.y);
-                        var hit = new HitInfo(this, attack, knockback, new Vector2(px, py), global);
-
-                        hitThisAttack.Add(target);
-                        target.ReceiveHit(hit);
-                        CombatEvents.RaiseHit(hit, target);
-                        anyHit = true;
-                        stop = Mathf.Max(stop, attack.hitstopFrames);
-                    }
+                    hits += HitResolver.Resolve(this, Faction.Player, attack, box, player.Facing, hitThisAttack, Settings);
                 }
             }
 
-            if (anyHit) ApplyHitstop(stop);
-            return anyHit;
+            if (hits == 0) return false;
+
+            Ink.Gain(attack.inkGain);
+            // Air combos: stay level with a juggled target.
+            if (!player.Grounded && attack.hoverOnHit > 0f)
+                player.Velocity.y = Mathf.Max(player.Velocity.y, attack.hoverOnHit);
+            ApplyHitstop(attack.hitstopFrames);
+            return true;
+        }
+
+        /// <summary>Spawns this attack's projectile (e.g. the Ink Wave special) in front of the player.</summary>
+        public void SpawnProjectile(AttackData attack)
+        {
+            Vector2 origin = player.Body.Position;
+            var at = new Vector2(origin.x + attack.projectileOffset.x * player.Facing, origin.y + attack.projectileOffset.y);
+            InkWaveProjectile.Spawn(this, attack, at, player.Facing, Settings);
         }
 
         private void ApplyHitstop(int frames)
         {
-            if (frames <= 0) return;
-            if (frames >= Settings.globalHitstopThreshold) GameLoop.Freeze(frames);
-            else HitstopFrames = Mathf.Max(HitstopFrames, frames);
+            // Heavy hits already froze the whole game in HitResolver; lighter ones freeze just the attacker.
+            if (frames <= 0 || frames >= Settings.globalHitstopThreshold) return;
+            HitstopFrames = Mathf.Max(HitstopFrames, frames);
         }
     }
 }

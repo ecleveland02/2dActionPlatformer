@@ -1,5 +1,6 @@
 using Margin.Combat;
 using Margin.Core;
+using Margin.FX;
 using Margin.Physics;
 using Margin.Player;
 using Margin.Rendering;
@@ -105,10 +106,18 @@ namespace Margin.Enemies
 
             float dy = velocity.y * GameTime.TickDelta;
             if (!grounded || velocity.y > 0f)
-                velocity.y = MovementMath.VerticalStep(velocity.y, physics.FallGravity, physics.maxFallSpeed, out dy);
+            {
+                // Juggle: airborne targets in hitstun fall slower so air combos can keep them up.
+                float gravity = physics.FallGravity * (hitstun > 0 ? Settings.juggleGravityScale : 1f);
+                // A spiked target (slammed downward) may fall faster than normal max fall speed.
+                float maxFall = Mathf.Max(physics.maxFallSpeed, -velocity.y);
+                velocity.y = MovementMath.VerticalStep(velocity.y, gravity, maxFall, out dy);
+            }
 
+            float fallSpeed = -velocity.y;
             body.Move(new Vector2(velocity.x * GameTime.TickDelta, dy));
             CollisionState c = body.Collisions;
+            if (c.JustLanded && fallSpeed >= Settings.slamImpactSpeed) OnSlamImpact(fallSpeed);
             if (c.HitWallLeft || c.HitWallRight) velocity.x = 0f;
             if (c.HitCeiling && velocity.y > 0f) velocity.y = 0f;
             if (c.Grounded && velocity.y < 0f) velocity.y = 0f;
@@ -125,6 +134,15 @@ namespace Margin.Enemies
                 PoseData pose = hitstun > 0 && hitPose != null ? hitPose : idlePose;
                 if (pose != null) rig.ApplyPose(pose.pose);
             }
+        }
+
+        /// <summary>Hit the ground hard after a spike: shake, ink burst from the feet, and a log line.</summary>
+        private void OnSlamImpact(float speed)
+        {
+            CameraShake.Shake(0.2f);
+            Vector2 feet = body.Position + new Vector2(0f, -0.9f);
+            if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(feet, Vector2.up, 20);
+            Debug.Log($"[Dummy] SLAM impact at {speed:0.0} u/s", this);
         }
 
         private void ReturnHomeWhenIdle()
