@@ -69,11 +69,13 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   generated into `Editor/StarterAnimations.TracedData.cs` (`ApplyTraced`, run by **Upgrade Animations**). The data
   is cleaned offline: body tilt folded into spine/hips (exact), loops robust-smoothed, hidden back-arm outliers
   repaired. Run/Sprint are foot-driven (N+-style bounding run with a flight phase): the planted foot slides back at a
-  constant speed for a short stance, hip/knee from 2-bone IK, a key every frame, so the measured stride is exact
+  constant speed for a short stance, then the leg trails straight out behind, folds, the knee drives and the foot
+  reaches; hip/knee from 2-bone IK, a key every frame, so the measured stride is exact
   (run 3.87 u = ~5 steps/s at 10 u/s; sprint 5.08 u). Upper body (lean, sword hold) from the drawings. Air posing
   is N+-style: `AirPoseBlend` (pure) + `PoseAnimator.SetBlend` flow jump -> apex -> fall with vertical speed
-  (`PlayerAnimationSet.airBlendRiseSpeed/FallSpeed`; 0 = old threshold switching). Attack clips are 8 keys (Entry, Windup,
-  WindupDeep, Strike, StrikeEnd, FollowThrough, Recover, Exit; `AttackSpec`) timed from each move's
+  (`PlayerAnimationSet.airBlendRiseSpeed/FallSpeed`; 0 = old threshold switching). Attack clips are 9 keys (Entry, Windup,
+  WindupDeep, SwingMid, Strike, StrikeEnd, FollowThrough, Recover, Exit; `AttackSpec`). SwingMid splits the swing so
+  a ~180 deg swing can't blend the wrong way round (Light2 and Air Slam go over the head, Rising Moon under) timed from each move's
   startup/active/recovery: the wind-up drifts (no frozen holds), a 2-frame EaseIn swing lands Strike on the first
   active frame, Strike->StrikeEnd spans the active frames (blade crosses the existing hitbox on every one), then the
   follow-through overshoots and settles. Easing: loops `Smooth` (Catmull-Rom), one-shots `Flow` (monotone cubic:

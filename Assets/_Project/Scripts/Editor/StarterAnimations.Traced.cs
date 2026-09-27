@@ -53,7 +53,7 @@ namespace Margin.EditorTools
         }
 
         /// <summary>
-        /// Keys: Entry > Windup > WindupDeep (drift) > Strike (first active frame) > StrikeEnd (last active) >
+        /// Keys: Entry > Windup > WindupDeep (drift) > SwingMid > Strike (first active frame) > StrikeEnd (last active) >
         /// FollowThrough (overshoot) > Recover > Exit. Pose i blends to pose i+1 over its frame count.
         /// Mirrored by the offline checker (timing.py attack_spec); keep them in step.
         /// </summary>
@@ -72,7 +72,16 @@ namespace Margin.EditorTools
             {
                 e.Add((m + "Windup", 1, PoseEasing.Linear));
             }
-            e.Add((m + (before >= 1 ? "WindupDeep" : "Windup"), swing, PoseEasing.EaseIn));  // accelerate into the hit
+            // Accelerate into the hit. The swing is split at SwingMid (a quarter of the way along), which also fixes
+            // its direction: a ~180 deg swing blended in one go could go either way round (e.g. under the body
+            // instead of over the head).
+            string start = m + (before >= 1 ? "WindupDeep" : "Windup");
+            if (swing >= 2)
+            {
+                e.Add((start, swing - 1, PoseEasing.EaseIn));
+                e.Add((m + "SwingMid", 1, PoseEasing.Linear));
+            }
+            else e.Add((start, swing, PoseEasing.EaseIn));
             e.Add((m + "Strike", Mathf.Max(1, active), PoseEasing.Linear));  // first active frame = strike pose
             int r0 = Mathf.Max(1, Mathf.RoundToInt(recovery * 0.2f));
             int r1 = Mathf.Max(1, Mathf.RoundToInt(recovery * 0.35f));
