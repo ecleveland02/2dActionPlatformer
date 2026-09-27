@@ -16,9 +16,9 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Coyote time uses the same rule (first airborne tick is frame 1; frame 6 succeeds, frame 7 fails).
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
-- **Attack buttons:** Light = left click / right trigger (also J, gamepad X). Heavy = right click / left trigger
-  (also K, gamepad Y). Special = U / left bumper. Parry = F / right bumper. Grapple = I / middle click / right
-  stick click (R3; every face button, bumper and trigger is taken). Pause = Esc / Start ("Menu" map:
+- **Attack buttons:** Light = left click (also J, gamepad X). Heavy = right click (also K, gamepad Y). Special = U /
+  left bumper. Parry = F / right bumper. Dash = L / Shift / gamepad B or right trigger. Grapple = I / middle click /
+  gamepad left trigger (or R3). The triggers were moved off attacks to dash/grapple at the developer's request. Pause = Esc / Start ("Menu" map:
   Pause, Navigate, Submit, Cancel; always enabled, while menus turn the "Gameplay" map off via
   `InputReader.SetGameplayInput`).
   Optional tap/hold mode: `TapHoldButton` (pure) is supported by InputReader if an "Attack" action is added to

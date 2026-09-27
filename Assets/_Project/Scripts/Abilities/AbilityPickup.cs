@@ -16,7 +16,7 @@ namespace Margin.Abilities
         [SerializeField] private Ability ability = Ability.GrappleLine;
         [SerializeField] private string title = "GRAPPLE LINE";
         [SerializeField, TextArea] private string howTo =
-            "I / middle click / R3: hook a ring and swing\nJump lets go   Up/Down reel   also yanks enemies to you";
+            "I / middle click / LT: hook a ring and swing\nJump lets go   Up/Down reel   also yanks enemies to you";
         [SerializeField] private Material lineMaterial;
         [Tooltip("Frames the note stays up after picking it up.")]
         [SerializeField, Min(0)] private int noteFrames = 420;

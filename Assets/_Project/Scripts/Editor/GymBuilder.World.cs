@@ -287,7 +287,7 @@ namespace Margin.EditorTools
             reward.transform.SetParent(r.Room.transform, false);
             reward.transform.position = r.P(18f, 2.2f);
             reward.AddComponent<AbilityPickup>().Configure(Ability.GrappleLine, "GRAPPLE LINE",
-                "I / middle click / R3: hook a ring and swing\nJump lets go   Up/Down reel in and out\nalso yanks enemies to you",
+                "I / middle click / LT: hook a ring and swing\nJump lets go   Up/Down reel in and out\nalso yanks enemies to you",
                 kit.Assets.Ink);
             reward.SetActive(false);
             r.Room.gameObject.AddComponent<BossArena>().Configure(boss, 5f, entranceSeal, exitSeal, reward, new Vector2(2f, 0.95f));
@@ -348,7 +348,7 @@ namespace Margin.EditorTools
             r.Solid("Floor C", 52f, -3f, 65f, 0f);
 
             r.Label("too far to jump...", 10f, 4f);
-            r.Label("grapple: I / middle click / R3 at a ring", 7f, 6.4f);
+            r.Label("grapple: I / middle click / LT at a ring", 7f, 6.4f);
             r.Label("Jump lets go, Left/Right pump the swing", 7f, 5.6f);
             r.Anchor(18.5f, 8.5f);
             r.Anchor(25.5f, 8.5f);
