@@ -85,6 +85,7 @@ namespace Margin.Player
             poseAnimator.SetAdditive(player.CurrentState is IdleState ? animations.idleBreathing : null);
             poseAnimator.Lean = UpdateLean();
             poseAnimator.PlaybackRate = CycleRate(poseAnimator.CurrentClip);
+            UpdateAirBlend();
             poseAnimator.KeepFeetOnFloor = player.Grounded;
             poseAnimator.Tick();
         }
@@ -175,9 +176,9 @@ namespace Margin.Player
                 case ComboBreakerState _: return a.comboBreaker != null ? a.comboBreaker : a.parry;
                 case RedrawState _: return a.redraw;
                 case WallJumpState _: return a.wallJump;
-                case JumpState _: return NearApex() ? a.jumpApex : a.jump;
+                case JumpState _: return AirBlendOn ? AirBase() : NearApex() ? a.jumpApex : a.jump;
                 case FastFallState _: return a.fastFall;
-                case FallState _: return NearApex() ? a.jumpApex : a.fall;
+                case FallState _: return AirBlendOn ? AirBase() : NearApex() ? a.jumpApex : a.fall;
                 case LandState _: return a.land;
                 case DashState _: return a.dash;
                 case SkidState _: return a.skid;
@@ -188,6 +189,31 @@ namespace Margin.Player
         }
 
         /// <summary>Near the top of a jump (and an apex clip exists).</summary>
+        // ---------------- N+-style air posing ----------------
+
+        private bool AirBlendOn => animations.jumpApex != null && animations.fall != null &&
+                                   animations.airBlendRiseSpeed > 0f && animations.airBlendFallSpeed > 0f;
+
+        private bool InAirBlendState => AirBlendOn && oneShot == null &&
+                                        (player.CurrentState is JumpState || player.CurrentState is FallState);
+
+        /// <summary>Base clip in the air: the jump while rising, the apex pose while falling (blended in AirBlend).</summary>
+        private PoseClip AirBase() =>
+            AirPoseBlend.Weights(player.Velocity.y, animations.airBlendRiseSpeed, animations.airBlendFallSpeed).rising
+                ? animations.jump : animations.jumpApex;
+
+        /// <summary>How much apex (rising) or fall loop (falling) to blend over the base, from vertical speed.</summary>
+        private void UpdateAirBlend()
+        {
+            if (!InAirBlendState)
+            {
+                poseAnimator.SetBlend(null, 0f);
+                return;
+            }
+            var (rising, weight) = AirPoseBlend.Weights(player.Velocity.y, animations.airBlendRiseSpeed, animations.airBlendFallSpeed);
+            poseAnimator.SetBlend(rising ? animations.jumpApex : animations.fall, weight);
+        }
+
         private bool NearApex() => animations.jumpApex != null && Mathf.Abs(player.Velocity.y) <= animations.apexVelocityBand;
 
         private bool IsCycle(PoseClip clip) => clip != null && (clip == animations.run || clip == animations.sprint);

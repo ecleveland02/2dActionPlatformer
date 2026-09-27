@@ -47,8 +47,14 @@ namespace Margin.Player
         public PoseClip parrySuccess;
 
         [Header("Transition thresholds")]
-        [Tooltip("Vertical speed (units/s) around the top of a jump that shows the apex pose.")]
+        [Tooltip("Vertical speed (units/s) around the top of a jump that shows the apex pose. Only used when the " +
+                 "air blend is off (both speeds 0).")]
         [Min(0f)] public float apexVelocityBand = 2.5f;
+        [Tooltip("N+-style air posing: rising faster than this (units/s) is the pure jump pose; slower blends toward " +
+                 "the apex pose. 0 = off (jump/apex/fall switch at thresholds).")]
+        [Min(0f)] public float airBlendRiseSpeed = 12f;
+        [Tooltip("Falling faster than this (units/s) is the pure fall loop; slower blends from the apex pose.")]
+        [Min(0f)] public float airBlendFallSpeed = 10f;
         [Tooltip("Falling farther than this (units, from the top of the airtime) plays the hard landing. " +
                  "A full jump is 3.2, so 4.5 means drops from ledges, not ordinary jumps.")]
         [Min(0f)] public float hardLandingHeight = 4.5f;

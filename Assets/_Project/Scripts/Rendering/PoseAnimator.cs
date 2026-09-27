@@ -36,6 +36,11 @@ namespace Margin.Rendering
         private int additiveTick;
         private float additiveWeight;
 
+        private PoseClip blend;
+        private PoseTimeline blendTimeline;
+        private float blendTime;
+        private float blendWeight;
+
         private readonly SecondaryMotion secondary = new SecondaryMotion();
         private FigurePose previousOutput;
         private float lastTickFixedTime = -1f;
@@ -110,6 +115,20 @@ namespace Margin.Rendering
             additiveTick = 0;
         }
 
+        /// <summary>
+        /// Crossfades toward a second clip by weight (0 = only the main clip, 1 = only this one), e.g. the air pose
+        /// flowing between apex and fall with vertical speed. The blend clip plays on its own clock (loops keep
+        /// cycling). Pass null or weight 0 to remove.
+        /// </summary>
+        public void SetBlend(PoseClip layer, float weight)
+        {
+            blendWeight = Mathf.Clamp01(weight);
+            if (layer == blend) return;
+            blend = layer;
+            blendTimeline = layer != null ? layer.Timeline : null;
+            blendTime = 0f;
+        }
+
         /// <summary>Advances one tick and poses the rig.</summary>
         public void Tick()
         {
@@ -118,6 +137,10 @@ namespace Margin.Rendering
             previousOutput = hasTicked ? Output : timeline.Sample(clipTime);
             FigurePose pose = timeline.Sample(clipTime);
             clipTime += Mathf.Max(0f, PlaybackRate);
+
+            if (blendTimeline != null && blendWeight > 0f)
+                pose = FigurePose.Lerp(pose, blendTimeline.Sample(blendTime), blendWeight);
+            if (blendTimeline != null) blendTime += 1f;
 
             if (additiveTimeline != null && additiveWeight > 0f)
             {

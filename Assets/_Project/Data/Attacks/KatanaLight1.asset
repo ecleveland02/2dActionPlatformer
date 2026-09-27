@@ -17,7 +17,7 @@ MonoBehaviour:
   airborne: 0
   startupFrames: 4
   activeFrames: 3
-  recoveryFrames: 8
+  recoveryFrames: 9
   damage: 8
   hitstopFrames: 4
   hitstunFrames: 24
@@ -27,7 +27,7 @@ MonoBehaviour:
   multiHit: 0
   parryable: 1
   cancelWindowStart: 9
-  cancelWindowEnd: 15
+  cancelWindowEnd: 16
   cancelsInto:
   - {fileID: 11400000, guid: c5ef41fc60710c2488cd075f29283279, type: 2}
   - {fileID: 11400000, guid: 9db431e755b332a47b25c32f6ccfb645, type: 2}

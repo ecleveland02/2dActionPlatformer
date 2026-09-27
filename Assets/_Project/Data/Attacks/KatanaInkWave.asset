@@ -17,7 +17,7 @@ MonoBehaviour:
   airborne: 0
   startupFrames: 8
   activeFrames: 3
-  recoveryFrames: 12
+  recoveryFrames: 14
   damage: 20
   hitstopFrames: 6
   hitstunFrames: 30
@@ -26,8 +26,8 @@ MonoBehaviour:
   inkGain: 0
   multiHit: 0
   parryable: 1
-  cancelWindowStart: 18
-  cancelWindowEnd: 23
+  cancelWindowStart: 19
+  cancelWindowEnd: 25
   cancelsInto: []
   chainsOnWhiff: 1
   whiffChainDelay: 4

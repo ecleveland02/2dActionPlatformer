@@ -67,8 +67,12 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   the sword away from the forearm (wrist). Two-handed grip is runtime IK (`PlaceBackHand`) only while the blade
   points forward/up. Player poses and clips come from the katana sprite sheets, traced offline into rig angles and
   generated into `Editor/StarterAnimations.TracedData.cs` (`ApplyTraced`, run by **Upgrade Animations**). The data
-  is cleaned offline: body tilt folded into spine/hips (exact), Run/Sprint rebuilt as a real alternating gait sized
-  from the drawings, loops robust-smoothed, hidden back-arm outliers repaired. Attack clips are 8 keys (Entry, Windup,
+  is cleaned offline: body tilt folded into spine/hips (exact), loops robust-smoothed, hidden back-arm outliers
+  repaired. Run/Sprint are foot-driven (N+-style bounding run with a flight phase): the planted foot slides back at a
+  constant speed for a short stance, hip/knee from 2-bone IK, a key every frame, so the measured stride is exact
+  (run 3.87 u = ~5 steps/s at 10 u/s; sprint 5.08 u). Upper body (lean, sword hold) from the drawings. Air posing
+  is N+-style: `AirPoseBlend` (pure) + `PoseAnimator.SetBlend` flow jump -> apex -> fall with vertical speed
+  (`PlayerAnimationSet.airBlendRiseSpeed/FallSpeed`; 0 = old threshold switching). Attack clips are 8 keys (Entry, Windup,
   WindupDeep, Strike, StrikeEnd, FollowThrough, Recover, Exit; `AttackSpec`) timed from each move's
   startup/active/recovery: the wind-up drifts (no frozen holds), a 2-frame EaseIn swing lands Strike on the first
   active frame, Strike->StrikeEnd spans the active frames (blade crosses the existing hitbox on every one), then the
