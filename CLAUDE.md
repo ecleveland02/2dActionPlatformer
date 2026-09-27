@@ -56,7 +56,9 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   One-shot transition clips (turn, runStop, hardLand by `LastFallHeight`, parrySuccess, idleFidget) are visual only:
   any state change except into Idle cancels them. Enemy knockdown: a hard hit in the air (|knockback.y| >=
   `knockdownLaunchSpeed`, heavy hit while airborne, or slam) sets `HardAirHit`; landing enters `EnemyKnockdownState`
-  (lie `knockdownFrames`, get up `getUpFrames`, invulnerable by default).
+  (lie `knockdownFrames`, get up `getUpFrames`, invulnerable by default). Enemy clips (idle loops + breathing,
+  turn, alert, hurt, knockdown, get-up, defeat) live in `StarterEnemies.ApplyAnimations` (also run by Upgrade
+  Animations); the bat's body motion (bob/bank, tumble, belly-up, flip back over) is in `FlyingEnemy.UpdateVisual`.
 - **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
   cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
   on hit, "Cancels into" + jump/dash inside the window; on whiff, jump/dash from the window start and follow-up

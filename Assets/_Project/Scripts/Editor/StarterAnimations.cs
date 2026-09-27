@@ -51,6 +51,7 @@ namespace Margin.EditorTools
             AssetDatabase.SaveAssets();
             FillSet();
             AssetDatabase.SaveAssets();
+            StarterEnemies.ApplyAnimations();
             Debug.Log("Player animations upgraded: multi-key clips and transitions.");
         }
 

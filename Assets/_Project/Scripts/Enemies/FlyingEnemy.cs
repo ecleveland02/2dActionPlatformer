@@ -45,17 +45,54 @@ namespace Margin.Enemies
 
         public override void Hold() => SteerTo(Vector2.zero);
 
+        private float tumble;
+
         protected override void UpdateVisual()
         {
             if (visual == null) return;
             visual.transform.localScale = new Vector3(Facing, 1f, 1f);
             visual.Tint = FlashColor();
-            visual.Pose(WingsFor());
+            BatWings wings = WingsFor();
+            visual.Pose(wings);
+
+            // Body motion (visual only; the collider doesn't move):
+            //   on the ground after a knockdown or death: belly up, wings splayed;
+            //   stunned in the air: tumbling end over end;
+            //   flying: bobbing with each wing beat and banking into its movement.
+            float tilt, bob = 0f;
+            if (CurrentState == Knockdown && FramesInState > Settings.knockdownFrames)
+            {
+                // Getting up: flip back over while the wings start beating.
+                float t = (FramesInState - Settings.knockdownFrames) / (float)Settings.getUpFrames;
+                tilt = 180f * (1f - Mathf.Clamp01(t));
+            }
+            else if (wings == BatWings.Splayed)
+            {
+                tilt = 180f;
+                tumble = 0f;
+            }
+            else if (CurrentState == Hitstun || CurrentState == Dead || CurrentState == Knockdown)
+            {
+                tumble += 24f;
+                tilt = tumble;
+            }
+            else
+            {
+                tumble = 0f;
+                float beat = Mathf.Sin(visual.FlapPhase * 2f * Mathf.PI);
+                bob = 0.05f * beat;
+                tilt = Mathf.Clamp(-Velocity.x * 2.5f, -25f, 25f) + 4f * beat;
+            }
+            visual.transform.localRotation = Quaternion.Euler(0f, 0f, tilt);
+            Vector3 p = visual.transform.localPosition;
+            visual.transform.localPosition = new Vector3(p.x, bob, 0f);
         }
 
         private BatWings WingsFor()
         {
-            if (CurrentState == Dead || CurrentState == Hitstun) return BatWings.Folded;
+            if (CurrentState == Knockdown && FramesInState > Settings.knockdownFrames) return BatWings.Flap;
+            if ((CurrentState == Dead || CurrentState == Knockdown) && Grounded) return BatWings.Splayed;
+            if (CurrentState == Dead || CurrentState == Hitstun || CurrentState == Knockdown) return BatWings.Folded;
             if (CurrentState != Attack || Runner.Current == null) return BatWings.Flap;
             var t = Runner.Current.Timing;
             if (Runner.Frame <= t.Startup) return BatWings.Raised;          // wind-up: wings up (the telegraph)

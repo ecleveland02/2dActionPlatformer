@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Margin.Rendering
 {
     /// <summary>How the bat's wings are held.</summary>
-    public enum BatWings { Flap, Raised, Folded }
+    public enum BatWings { Flap, Raised, Folded, Splayed }
 
     /// <summary>
     /// The Scribble Bat's procedural look (spec 4: no sprite sheets): a scribbled ink loop for the body, two
@@ -23,6 +23,9 @@ namespace Margin.Rendering
 
         private LineRenderer body, ears, eye, wingFront, wingBack;
         private int tick;
+
+        /// <summary>Where the wings are in their beat, 0..1 (0 = level on the way up).</summary>
+        public float FlapPhase => (tick % flapFrames) / (float)flapFrames;
 
         /// <summary>Overrides the ink color (e.g. a red flash). Null = normal ink.</summary>
         public Color? Tint { get; set; }
@@ -94,6 +97,7 @@ namespace Margin.Rendering
             {
                 BatWings.Raised => 65f,
                 BatWings.Folded => -55f,
+                BatWings.Splayed => -5f,   // lying on the ground, wings spread flat
                 _ => 35f * Mathf.Sin(tick * 2f * Mathf.PI / flapFrames),
             };
             DrawWing(wingFront, 1f, angle);
