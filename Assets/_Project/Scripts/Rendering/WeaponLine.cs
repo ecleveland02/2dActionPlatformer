@@ -33,7 +33,7 @@ namespace Margin.Rendering
         private bool builtScabbard;
         private AnimationCurve bladeTaper;
         // Which side the katana's back faces (see WeaponShape.EdgeSide), and the blade angle last frame.
-        private float edgeSide = 1f, edgeStill, lastAngle, lastFacing;
+        private float edgeSide = 1f, edgeStill, lastAngle, lastFacing, restSide = 1f;
         private bool hasLastAngle;
 
         public StickFigureRig Rig
@@ -198,7 +198,11 @@ namespace Margin.Rendering
         {
             // The blade's back is "up" when it points forward (mirrored with facing), unless it's swinging: then the
             // cutting edge leads the swing, so the curve flips to the side the blade is moving away from.
-            float side = facing;
+            // Resting: the back of the blade on top and the edge facing down, whichever way it points. For a blade
+            // pointing left that's the opposite side from one pointing right. Near vertical, keep the last side so it
+            // doesn't flicker.
+            if (Mathf.Abs(dir.X) > 0.25f) restSide = Mathf.Sign(dir.X);
+            float side = restSide;
             float angle = Mathf.Atan2(dir.Y, dir.X) * Mathf.Rad2Deg;
             float dt = Time.deltaTime;
             if (look.edgeFollowsSwing && Application.isPlaying && dt > 0f)
@@ -207,7 +211,7 @@ namespace Margin.Rendering
                 if (facing != lastFacing)
                 {
                     hasLastAngle = false;
-                    edgeSide = facing;
+                    edgeSide = restSide;
                 }
                 float turn = hasLastAngle ? Mathf.DeltaAngle(lastAngle, angle) / dt : 0f;
                 // Not attacking: no swing counts, and the edge heads straight back to its natural side.
@@ -216,11 +220,11 @@ namespace Margin.Rendering
                     turn = 0f;
                     edgeStill = look.edgeSettleSeconds;
                 }
-                edgeSide = WeaponShape.EdgeSide(edgeSide, turn, facing, ref edgeStill, dt, look.swingTurnSpeed,
+                edgeSide = WeaponShape.EdgeSide(edgeSide, turn, restSide, ref edgeStill, dt, look.swingTurnSpeed,
                                                 look.edgeSettleSeconds, look.edgeFlipSeconds);
                 side = edgeSide;
             }
-            else if (!look.edgeFollowsSwing) edgeSide = facing;
+            else if (!look.edgeFollowsSwing) edgeSide = restSide;
             lastAngle = angle;
             lastFacing = facing;
             hasLastAngle = true;

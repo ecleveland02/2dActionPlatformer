@@ -66,7 +66,7 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   drawn by `WeaponLine`: Katana = gray fill over an ink outline, guard, handle, scabbard at the hip; Pencil for the
   lancer. The tip stays at hand + dir x length, so hitboxes/trail/smears ignore the look. During attacks only
   (`WeaponLine.Attacking`, set by PlayerCombat Begin/EndAttack) the katana's curve flips so the edge leads the swing
-  (pure `WeaponShape.EdgeSide`); otherwise it rests on its natural side. `FigurePose.grip` turns
+  (pure `WeaponShape.EdgeSide`); otherwise it rests edge-down (back of the blade on top, from the blade's own direction). `FigurePose.grip` turns
   the sword away from the forearm (wrist). Two-handed grip is runtime IK (`PlaceBackHand`) only while the blade
   points forward/up. Player poses and clips come from the katana sprite sheets, traced offline into rig angles and
   generated into `Editor/StarterAnimations.TracedData.cs` (`ApplyTraced`, run by **Upgrade Animations**). The data

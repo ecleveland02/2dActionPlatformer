@@ -22,7 +22,7 @@ namespace Margin.Rendering
         [Tooltip("How far the blade bows toward its back (units), most at 60% of its length. 0 = straight.")]
         [Min(0f)] public float curve = 0.045f;
         [Tooltip("During attacks the cutting edge leads each swing (the curve flips to follow the slash); outside attacks it " +
-                 "always rests on its natural side. Off = the edge always faces down when the blade points forward.")]
+                 "always rests edge-down, whichever way it points. Off = always edge-down.")]
         public bool edgeFollowsSwing = true;
         [Tooltip("The blade must turn at least this fast (degrees per second) to count as a swing.")]
         [Min(0f)] public float swingTurnSpeed = 240f;
