@@ -30,9 +30,11 @@ namespace Margin.EditorTools
         }
 
         /// <summary>
-        /// Attack clips from six traced keys, laid out on the move's own frame data (so a retuned move still lines
-        /// up): entry, held wind-up, a 2-frame accelerating swing that lands the strike on the first active frame,
-        /// strike blending to follow-through across the active frames, recovery, exit.
+        /// Attack clips from the traced keys, laid out on the move's own frame data (so a retuned move still lines
+        /// up), in a stick-fight style: a quick wind-up that keeps drifting back (a moving hold, never frozen), a
+        /// 2-frame accelerating swing that lands the strike on the first active frame, strike blending to its end
+        /// across the active frames (unchanged, so the blade still crosses the hitbox), then a follow-through that
+        /// overshoots past the end pose and settles into the recovery.
         /// </summary>
         private static void ApplyTracedAttacks()
         {
@@ -50,27 +52,34 @@ namespace Margin.EditorTools
             }
         }
 
+        /// <summary>
+        /// Keys: Entry > Windup > WindupDeep (drift) > Strike (first active frame) > StrikeEnd (last active) >
+        /// FollowThrough (overshoot) > Recover > Exit. Pose i blends to pose i+1 over its frame count.
+        /// Mirrored by the offline checker (timing.py attack_spec); keep them in step.
+        /// </summary>
         internal static ClipSpec AttackSpec(string m, int startup, int active, int recovery)
         {
             var e = new List<(string, int, PoseEasing)>();
             int swing = Mathf.Min(2, startup);
             int before = startup - swing;
-            if (before >= 3)
+            if (before >= 2)
             {
-                int entry = Mathf.Min(2, before - 1);
-                e.Add((m + "Entry", entry, PoseEasing.EaseOut));
-                e.Add((m + "Windup", before - entry, PoseEasing.Snap));   // hold the wind-up: anticipation
+                int entry = Mathf.Max(1, before / 2);
+                e.Add((m + "Entry", entry, PoseEasing.EaseOut));          // snap into the wind-up
+                e.Add((m + "Windup", before - entry, PoseEasing.Linear)); // keep drawing back (anticipation)
             }
-            else if (before >= 1)
+            else if (before == 1)
             {
-                e.Add((m + "Windup", before, PoseEasing.Snap));
+                e.Add((m + "Windup", 1, PoseEasing.Linear));
             }
-            e.Add((m + "Windup", swing, PoseEasing.EaseIn));             // accelerate into the strike
+            e.Add((m + (before >= 1 ? "WindupDeep" : "Windup"), swing, PoseEasing.EaseIn));  // accelerate into the hit
             e.Add((m + "Strike", Mathf.Max(1, active), PoseEasing.Linear));  // first active frame = strike pose
-            int r1 = Mathf.Max(1, Mathf.RoundToInt(recovery * 0.4f));
-            int r2 = Mathf.Max(1, recovery - r1);
-            e.Add((m + "StrikeEnd", r1, PoseEasing.EaseOut));
-            e.Add((m + "Recover", r2, PoseEasing.EaseInOut));
+            int r0 = Mathf.Max(1, Mathf.RoundToInt(recovery * 0.2f));
+            int r1 = Mathf.Max(1, Mathf.RoundToInt(recovery * 0.35f));
+            int r2 = Mathf.Max(1, recovery - r0 - r1);
+            e.Add((m + "StrikeEnd", r0, PoseEasing.EaseOut));        // momentum carries past the end pose...
+            e.Add((m + "FollowThrough", r1, PoseEasing.Smooth));     // ...then flows back...
+            e.Add((m + "Recover", r2, PoseEasing.EaseInOut));        // ...into the recovery
             e.Add((m + "Exit", 1, PoseEasing.Linear));
             return new ClipSpec(false, 1, e.ToArray());
         }

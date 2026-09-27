@@ -128,6 +128,45 @@ namespace Margin.Rendering
             return 0.5f * (2f * v1 + (v2 - v0) * t + (2f * v0 - 5f * v1 + 4f * v2 - v3) * t2 + (3f * v1 - v0 - 3f * v2 + v3) * t3);
         }
 
+        /// <summary>
+        /// Monotone cubic from p1 to p2 (t 0..1), using p0 and p3 to shape the tangents (Fritsch-Butland): the
+        /// motion keeps its speed through keys like CatmullRom, but every value stays between p1 and p2 and slows
+        /// to a stop only where it reverses direction.
+        /// </summary>
+        public static FigurePose Monotone(FigurePose p0, FigurePose p1, FigurePose p2, FigurePose p3, float t)
+        {
+            if (t <= 0f) return p1;
+            if (t >= 1f) return p2;
+
+            var result = new FigurePose
+            {
+                rootOffsetX = MonotoneValue(p1.rootOffsetX - p0.rootOffsetX, p1.rootOffsetX, p2.rootOffsetX - p1.rootOffsetX, p3.rootOffsetX - p2.rootOffsetX, t),
+                rootOffsetY = MonotoneValue(p1.rootOffsetY - p0.rootOffsetY, p1.rootOffsetY, p2.rootOffsetY - p1.rootOffsetY, p3.rootOffsetY - p2.rootOffsetY, t),
+                rootRotation = MonotoneAngle(p0.rootRotation, p1.rootRotation, p2.rootRotation, p3.rootRotation, t),
+                grip = MonotoneAngle(p0.grip, p1.grip, p2.grip, p3.grip, t),
+            };
+            foreach (PoseJoint joint in AllJoints)
+                result.Set(joint, MonotoneAngle(p0.Get(joint), p1.Get(joint), p2.Get(joint), p3.Get(joint), t));
+            return result;
+        }
+
+        private static float MonotoneAngle(float p0, float p1, float p2, float p3, float t) =>
+            NormalizeAngle(MonotoneValue(DeltaAngle(p0, p1), p1, DeltaAngle(p1, p2), DeltaAngle(p2, p3), t));
+
+        /// <summary>
+        /// Cubic Hermite from v1 over the step d1, with the steps before (d0) and after (d2) setting the tangents.
+        /// A tangent is 0 where the motion reverses (d0, d1 of opposite sign), so it can't overshoot.
+        /// </summary>
+        public static float MonotoneValue(float d0, float v1, float d1, float d2, float t)
+        {
+            float m1 = Tangent(d0, d1), m2 = Tangent(d1, d2);
+            float t2 = t * t, t3 = t2 * t;
+            return v1 + m1 * t + (3f * d1 - 2f * m1 - m2) * t2 + (m1 + m2 - 2f * d1) * t3;
+        }
+
+        // Harmonic-mean slope of two steps (Fritsch-Butland): 0 if they disagree in sign.
+        private static float Tangent(float a, float b) => a * b <= 0f ? 0f : 2f * a * b / (a + b);
+
         /// <summary>Swaps front and back limbs (e.g. turns run pose 1 into its opposite-leg twin).</summary>
         public FigurePose Mirrored()
         {

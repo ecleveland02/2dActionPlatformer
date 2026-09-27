@@ -69,6 +69,8 @@ namespace Margin.Rendering
                     float u = (time - start) / frames[i];
                     if (easings[i] == PoseEasing.Smooth)
                         return FigurePose.CatmullRom(poses[Neighbour(i, -1)], poses[i], poses[next], poses[Neighbour(next, +1)], u);
+                    if (easings[i] == PoseEasing.Flow)
+                        return FigurePose.Monotone(poses[Neighbour(i, -1)], poses[i], poses[next], poses[Neighbour(next, +1)], u);
                     return FigurePose.Lerp(poses[i], poses[next], PoseEasingMath.Apply(easings[i], u));
                 }
                 start += frames[i];

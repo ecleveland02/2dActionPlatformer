@@ -66,9 +66,14 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   lancer. The tip stays at hand + dir x length, so hitboxes/trail/smears ignore the look. `FigurePose.grip` turns
   the sword away from the forearm (wrist). Two-handed grip is runtime IK (`PlaceBackHand`) only while the blade
   points forward/up. Player poses and clips come from the katana sprite sheets, traced offline into rig angles and
-  generated into `Editor/StarterAnimations.TracedData.cs` (`ApplyTraced`, run by **Upgrade Animations**). Attack
-  clips are 6 keys (Entry, Windup, Strike, StrikeEnd, Recover, Exit) timed from each move's startup/active/recovery,
-  and strike poses were nudged so the blade crosses the existing hitbox on every active frame.
+  generated into `Editor/StarterAnimations.TracedData.cs` (`ApplyTraced`, run by **Upgrade Animations**). The data
+  is cleaned offline: body tilt folded into spine/hips (exact), Run/Sprint rebuilt as a real alternating gait sized
+  from the drawings, loops robust-smoothed, hidden back-arm outliers repaired. Attack clips are 8 keys (Entry, Windup,
+  WindupDeep, Strike, StrikeEnd, FollowThrough, Recover, Exit; `AttackSpec`) timed from each move's
+  startup/active/recovery: the wind-up drifts (no frozen holds), a 2-frame EaseIn swing lands Strike on the first
+  active frame, Strike->StrikeEnd spans the active frames (blade crosses the existing hitbox on every one), then the
+  follow-through overshoots and settles. Easing: loops `Smooth` (Catmull-Rom), one-shots `Flow` (monotone cubic:
+  flows through keys, never overshoots them) - avoid EaseInOut chains, they stop dead at every key.
 - **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
   cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
   on hit, "Cancels into" + jump/dash inside the window; on whiff, jump/dash from the window start and follow-up

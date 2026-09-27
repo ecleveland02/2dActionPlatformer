@@ -17,6 +17,12 @@ namespace Margin.Rendering
         /// motion flows through keyframes without sudden changes of direction. Best for cycles (run, walk).
         /// </summary>
         Smooth,
+        /// <summary>
+        /// Curved path through this pose and its neighbours like Smooth, but never overshoots: each joint stays
+        /// between the two keys it's blending (monotone cubic). Motion flows through keys instead of stopping at
+        /// each one, without elbows bending backwards or feet dipping past a key. Best for one-shot moves.
+        /// </summary>
+        Flow,
     }
 
     public static class PoseEasingMath
