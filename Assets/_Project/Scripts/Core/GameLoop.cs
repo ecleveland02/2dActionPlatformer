@@ -22,6 +22,28 @@ namespace Margin.Core
         private static GameLoop instance;
         private readonly FrameCounter counter = new FrameCounter();
 
+        // Debug frame-stepping (F3/F4). While paused, ticks only run when a step is requested.
+        private static bool paused;
+        private static int pendingSteps;
+
+        /// <summary>When true, gameplay stops ticking (the frame counter freezes too) until Step() is called.</summary>
+        public static bool Paused
+        {
+            get => paused;
+            set
+            {
+                paused = value;
+                if (!paused) pendingSteps = 0;
+            }
+        }
+
+        /// <summary>Pauses (if needed) and runs exactly one gameplay tick on the next FixedUpdate.</summary>
+        public static void Step()
+        {
+            paused = true;
+            pendingSteps++;
+        }
+
         /// <summary>The gameplay clock. Null if no GameLoop is in the scene.</summary>
         public static IFrameSource Clock => instance != null ? instance.counter : null;
 
@@ -46,6 +68,8 @@ namespace Margin.Core
                 return;
             }
             instance = this;
+            paused = false;       // statics survive between Play sessions when domain reload is off
+            pendingSteps = 0;
 
             // The whole game counts time in 60 Hz ticks, so enforce it here even if Project Settings disagree.
             if (Mathf.Abs(Time.fixedDeltaTime - GameTime.TickDelta) > 0.0001f)
@@ -63,6 +87,12 @@ namespace Margin.Core
 
         private void FixedUpdate()
         {
+            if (paused)
+            {
+                if (pendingSteps == 0) return;
+                pendingSteps--;
+            }
+
             counter.Advance();
 
             if (orderDirty)

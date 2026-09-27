@@ -7,15 +7,20 @@ namespace Margin.Player
 
         public PlayerState Current { get; private set; }
 
+        /// <summary>Raised on every state change with (previous, next). Previous is null for the first state.</summary>
+        public event System.Action<PlayerState, PlayerState> Changed;
+
         /// <summary>Ticks spent in the current state, counting the current tick (1 on the first Tick()).</summary>
         public int FramesInState { get; private set; }
 
         public void ForceState(PlayerState state)
         {
-            Current?.Exit();
+            PlayerState previous = Current;
+            previous?.Exit();
             Current = state;
             FramesInState = 0;
             state.Enter();
+            Changed?.Invoke(previous, state);
         }
 
         /// <summary>Switches state unless the current state refuses. Re-entering the same state is allowed.</summary>

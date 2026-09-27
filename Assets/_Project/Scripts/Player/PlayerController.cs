@@ -66,6 +66,14 @@ namespace Margin.Player
         public AbilityUnlocks Abilities => abilities;
         public KinematicBody2D Body { get; private set; }
         public PlayerState CurrentState => machine.Current;
+        /// <summary>Raised on every state change with (previous, next). Used by the debug overlay.</summary>
+        public event System.Action<PlayerState, PlayerState> StateChanged
+        {
+            add => machine.Changed += value;
+            remove => machine.Changed -= value;
+        }
+        /// <summary>True until a jump uses up the coyote window (reset on landing).</summary>
+        public bool CoyoteAvailable => coyoteAvailable;
         public int FramesInState => machine.FramesInState;
         public int TickOrder => 0;
 

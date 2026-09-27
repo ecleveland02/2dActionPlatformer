@@ -26,6 +26,9 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Input in tests:** `PlayerController` reads `IPlayerInput`; PlayMode tests inject a scripted fake and call `Tick()`.
 - **Editor code:** `Assets/_Project/Scripts/Editor/` (own `Margin.Editor` assembly, namespace `Margin.EditorTools`).
   Menu **Margin > Build Movement Gym** regenerates `Scenes/Gym.unity`.
+- **Debug tools:** `Scripts/Debug/DebugController` auto-spawns in the Editor/dev builds in any scene with a `GameLoop`.
+  F1 collision boxes, F2 frame data overlay (on by default), F3 pause, F4 step one tick, F5 0.25x slow motion.
+  Pause/step are `GameLoop.Paused` / `GameLoop.Step()`, so the frame counter and input buffer freeze with the game.
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress.
 
 ## 0. How to Use This Document (Instructions for Claude Code)
