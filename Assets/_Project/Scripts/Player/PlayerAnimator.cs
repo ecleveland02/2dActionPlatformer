@@ -85,6 +85,7 @@ namespace Margin.Player
             poseAnimator.SetAdditive(player.CurrentState is IdleState ? animations.idleBreathing : null);
             poseAnimator.Lean = UpdateLean();
             poseAnimator.PlaybackRate = CycleRate(poseAnimator.CurrentClip);
+            poseAnimator.KeepFeetOnFloor = player.Grounded;
             poseAnimator.Tick();
         }
 

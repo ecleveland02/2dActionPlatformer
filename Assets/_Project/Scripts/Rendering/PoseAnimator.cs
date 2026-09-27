@@ -56,6 +56,12 @@ namespace Margin.Rendering
         public FigurePose Output { get; private set; }
         /// <summary>Extra forward lean in degrees added to the spine this tick (e.g. leaning into acceleration).</summary>
         public float Lean { get; set; }
+        /// <summary>
+        /// Owners set this while the character stands on the ground. Blending between two planted keys can
+        /// straighten a leg and push its foot under the floor for a frame or two; with this on, the hips are
+        /// lifted just enough to keep both feet on (or above) the floor. It never pushes the body down.
+        /// </summary>
+        public bool KeepFeetOnFloor { get; set; }
         public PoseMotionSettings Motion
         {
             get => motion != null ? motion : PoseMotionSettings.Defaults;
@@ -133,10 +139,20 @@ namespace Margin.Rendering
                 pose = secondary.Step(pose, m.Weights, m.frequency, m.damping, GameTime.TickDelta);
             }
 
+            if (KeepFeetOnFloor) pose = LiftFeetToFloor(pose);
+
             Output = pose;
             rig.ApplyPose(pose);
             lastTickFixedTime = Time.fixedTime;
             hasTicked = true;
+        }
+
+        private FigurePose LiftFeetToFloor(FigurePose pose)
+        {
+            rig.ApplyPose(pose);
+            float below = rig.FloorLocalY - rig.LowestFootLocalY;
+            if (below > 0.005f) pose.rootOffsetY += below;
+            return pose;
         }
 
         /// <summary>Settles the follow-through springs instantly (after a teleport or respawn).</summary>

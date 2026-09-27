@@ -88,6 +88,11 @@ namespace Margin.Rendering
         public Vector3 HeadCenterPosition => headCenter.position;
         public Vector3 HandPosition(bool front) => (front ? handFront : handBack).position;
         public Vector3 FootPosition(bool front) => (front ? footFront : footBack).position;
+        /// <summary>Where the feet stand in the neutral pose, in the rig's local space (the floor line).</summary>
+        public float FloorLocalY => -Proportions.feetBelowOrigin;
+        /// <summary>The lower foot's height in the rig's local space (for keeping feet out of the floor).</summary>
+        public float LowestFootLocalY => Mathf.Min(transform.InverseTransformPoint(footFront.position).y,
+                                                   transform.InverseTransformPoint(footBack.position).y);
 
         private void OnEnable()
         {
