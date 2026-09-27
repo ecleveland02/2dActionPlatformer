@@ -33,7 +33,11 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   Poses are `FigurePose` (pure C# struct; named to avoid clashing with `UnityEngine.Pose`) stored in `PoseData` assets.
   10 joints: Spine, Neck, Shoulder/Elbow/Hip/Knee x Front/Back. "Front" = near limb (ink), "Back" = far limb (grey).
   **Angle rule:** degrees relative to the parent bone, positive = swing toward facing; knees bend negative, elbows positive.
-  Menus: **Margin > Open Pose Studio** (posing scene), **Margin > Create Starter Poses** (writes `Data/Poses`).
+  Menus: **Margin > Open Pose Studio** (posing scene), **Margin > Create Starter Animations** (writes `Data/Poses`,
+  `Data/Animations` clips and `Data/PlayerAnimationSet`; never overwrites without asking).
+  Animation: `PoseClip` (entries: pose, frames, easing; loop; fadeInFrames) played by `PoseAnimator` on the rig.
+  `PlayerAnimator` (TickOrder 10, after the player) maps states to clips via `PlayerAnimationSet`, so animation
+  pauses/frame-steps with the game. **Margin > Wire Player References** upgrades a capsule player to the stick figure.
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

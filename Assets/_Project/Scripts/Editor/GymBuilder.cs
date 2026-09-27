@@ -5,6 +5,7 @@ using Margin.Input;
 using Margin.Level;
 using Margin.Physics;
 using Margin.Player;
+using Margin.Rendering;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -143,6 +144,7 @@ namespace Margin.EditorTools
         /// <summary>
         /// Menu: Margin > Wire Player References. Fills in every data/asset slot on the player(s) in the open
         /// scene from Assets/_Project/Data, without rebuilding the scene. Existing references are replaced.
+        /// Also upgrades the old capsule placeholder to the animated stick figure.
         /// </summary>
         [MenuItem("Margin/Wire Player References")]
         public static void WirePlayerReferences()
@@ -180,6 +182,8 @@ namespace Margin.EditorTools
             public KinematicBodyData BodyData;
             public Object Controls;
             public Material Ink;
+            public StickFigureProportions Proportions;
+            public PlayerAnimationSet Animations;
         }
 
         /// <summary>Loads the data assets, creating any that are missing (existing tuning is never overwritten).</summary>
@@ -192,6 +196,8 @@ namespace Margin.EditorTools
                 BodyData = LoadOrCreate<KinematicBodyData>($"{DataFolder}/KinematicBodyData.asset"),
                 Controls = AssetDatabase.LoadMainAssetAtPath(ControlsPath),
                 Ink = LoadOrCreateInkMaterial(),
+                Proportions = LoadOrCreate<StickFigureProportions>($"{DataFolder}/StickFigureProportions.asset"),
+                Animations = StarterPoses.EnsureCreated(),   // poses, clips and the set; only adds what's missing
             };
 
             if (assets.Controls == null)
@@ -223,12 +229,57 @@ namespace Margin.EditorTools
                 ok &= SetReference(controller, "inputReader", reader);
             }
             ok &= SetReference(controller, "data", assets.Movement);
-            if (visual != null) ok &= SetReference(controller, "visualRoot", visual);
+            ok &= WireStickFigure(controller, visual, assets);
 
             string summary = $"{controller.name}: MovementData={assets.Movement.name}, KinematicBodyData={assets.BodyData.name}, " +
-                             $"Controls={assets.Controls.name}, BufferSettings={assets.BufferSettings.name}";
+                             $"Controls={assets.Controls.name}, BufferSettings={assets.BufferSettings.name}, " +
+                             $"Animations={assets.Animations.name}";
             if (ok) Debug.Log("References wired. " + summary, controller);
             else Debug.LogError("Some references did not stick (see errors above). " + summary, controller);
+        }
+
+        /// <summary>
+        /// Makes sure the player's visual is the animated stick figure: StickFigureRig + PoseAnimator on the
+        /// Visual child, PlayerAnimator on the player. Removes the old capsule placeholder if it is still there.
+        /// <paramref name="visual"/> may be null: the controller's current visual root (or a child named Visual) is used.
+        /// </summary>
+        private static bool WireStickFigure(PlayerController controller, Transform visual, GymAssets assets)
+        {
+            if (visual == null)
+            {
+                visual = new SerializedObject(controller).FindProperty("visualRoot").objectReferenceValue as Transform;
+                if (visual == null) visual = controller.transform.Find("Visual");
+                if (visual == null)
+                {
+                    visual = new GameObject("Visual").transform;
+                    visual.SetParent(controller.transform, false);
+                }
+            }
+
+            // Old placeholder: a capsule LineRenderer on Visual plus an "Eye" child.
+            var capsule = visual.GetComponent<LineRenderer>();
+            if (capsule != null) Object.DestroyImmediate(capsule);
+            Transform eye = visual.Find("Eye");
+            if (eye != null) Object.DestroyImmediate(eye.gameObject);
+            visual.localRotation = Quaternion.identity;
+
+            var rig = visual.GetComponent<StickFigureRig>();
+            if (rig == null) rig = visual.gameObject.AddComponent<StickFigureRig>();
+            bool ok = SetReference(rig, "proportions", assets.Proportions);
+            ok &= SetReference(rig, "lineMaterial", assets.Ink);
+            if (!rig.IsBuilt) rig.Build();
+
+            var poseAnimator = visual.GetComponent<PoseAnimator>();
+            if (poseAnimator == null) poseAnimator = visual.gameObject.AddComponent<PoseAnimator>();
+            ok &= SetReference(poseAnimator, "rig", rig);
+
+            var playerAnimator = controller.GetComponent<PlayerAnimator>();
+            if (playerAnimator == null) playerAnimator = controller.gameObject.AddComponent<PlayerAnimator>();
+            ok &= SetReference(playerAnimator, "animations", assets.Animations);
+            ok &= SetReference(playerAnimator, "poseAnimator", poseAnimator);
+
+            ok &= SetReference(controller, "visualRoot", visual);
+            return ok;
         }
 
         private static GameObject BuildPlayer(int layer, GymAssets assets)
@@ -245,14 +296,9 @@ namespace Margin.EditorTools
 
             var reader = player.AddComponent<InputReader>();
 
-            // Placeholder visual: an ink capsule plus a short "eye" line that shows facing.
+            // Visual root: WirePlayer puts the animated stick figure on it.
             var visual = new GameObject("Visual").transform;
             visual.SetParent(player.transform, false);
-            var capsule = AddLine(visual.gameObject, CapsulePoints(0.3f, 0.6f), true, Ink);
-            capsule.useWorldSpace = false;
-            var eye = new GameObject("Eye");
-            eye.transform.SetParent(visual, false);
-            AddLine(eye, new[] { new Vector3(0.08f, 0.6f), new Vector3(0.22f, 0.6f) }, false, Ink).useWorldSpace = false;
 
             var controller = player.AddComponent<PlayerController>();
             WirePlayer(controller, reader, body, visual, assets);
@@ -335,23 +381,6 @@ namespace Margin.EditorTools
             return line;
         }
 
-        private static Vector3[] CapsulePoints(float radius, float halfSpan)
-        {
-            const int segments = 12;
-            var points = new List<Vector3>();
-            // Top half-circle (right to left), then bottom half-circle (left to right).
-            for (int i = 0; i <= segments; i++)
-            {
-                float a = Mathf.PI * i / segments;
-                points.Add(new Vector3(Mathf.Cos(a) * radius, halfSpan + Mathf.Sin(a) * radius));
-            }
-            for (int i = 0; i <= segments; i++)
-            {
-                float a = Mathf.PI + Mathf.PI * i / segments;
-                points.Add(new Vector3(Mathf.Cos(a) * radius, -halfSpan + Mathf.Sin(a) * radius));
-            }
-            return points.ToArray();
-        }
 
         // ---------------- asset helpers ----------------
 

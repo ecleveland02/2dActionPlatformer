@@ -92,6 +92,26 @@ namespace Margin.Rendering
             return m;
         }
 
+        /// <summary>The difference a - b per joint (shortest angles). Used for additive layers such as breathing.</summary>
+        public static FigurePose Subtract(FigurePose a, FigurePose b)
+        {
+            var d = new FigurePose { rootOffsetX = a.rootOffsetX - b.rootOffsetX, rootOffsetY = a.rootOffsetY - b.rootOffsetY };
+            foreach (PoseJoint joint in AllJoints) d.Set(joint, DeltaAngle(b.Get(joint), a.Get(joint)));
+            return d;
+        }
+
+        /// <summary>Adds a difference (from Subtract) on top of a pose, scaled by weight.</summary>
+        public static FigurePose Add(FigurePose pose, FigurePose delta, float weight)
+        {
+            var r = new FigurePose
+            {
+                rootOffsetX = pose.rootOffsetX + delta.rootOffsetX * weight,
+                rootOffsetY = pose.rootOffsetY + delta.rootOffsetY * weight,
+            };
+            foreach (PoseJoint joint in AllJoints) r.Set(joint, pose.Get(joint) + delta.Get(joint) * weight);
+            return r;
+        }
+
         public static readonly PoseJoint[] AllJoints = (PoseJoint[])Enum.GetValues(typeof(PoseJoint));
 
         /// <summary>Signed difference b - a wrapped into [-180, 180).</summary>

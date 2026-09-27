@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Margin.Player;
 using Margin.Rendering;
 using UnityEditor;
 using UnityEngine;
@@ -6,29 +7,50 @@ using UnityEngine;
 namespace Margin.EditorTools
 {
     /// <summary>
-    /// Menu: Margin > Create Starter Poses. Writes a complete placeholder pose set to Data/Poses so the stick
-    /// figure can animate right away. They are deliberately simple; refine them in the Pose Studio.
-    /// Existing pose files are only overwritten if you confirm.
+    /// Menu: Margin > Create Starter Animations. Writes a complete placeholder set so the stick figure animates
+    /// right away: poses (Data/Poses), clips (Data/Animations) and the PlayerAnimationSet (Data).
+    /// They are deliberately simple; refine the poses in the Pose Studio and the timing in each clip.
+    /// Existing files are only overwritten if you confirm.
     ///
     /// Angles: degrees relative to the parent bone, positive = toward facing. Knees bend negative, elbows positive.
     /// </summary>
     public static class StarterPoses
     {
         private const string Folder = "Assets/_Project/Data/Poses";
+        private const string ClipFolder = "Assets/_Project/Data/Animations";
+        private const string SetPath = "Assets/_Project/Data/PlayerAnimationSet.asset";
 
-        [MenuItem("Margin/Create Starter Poses")]
-        public static void Create()
+        [MenuItem("Margin/Create Starter Animations")]
+        public static void CreateFromMenu()
+        {
+            int existing = 0;
+            foreach (string name in BuildTable().Keys)
+                if (AssetDatabase.LoadAssetAtPath<PoseData>(PathFor(name)) != null) existing++;
+
+            bool overwrite = existing > 0 && EditorUtility.DisplayDialog("Create Starter Animations",
+                $"{existing} starter poses already exist in {Folder}. Overwrite the starter poses and clips with the " +
+                "original versions? (Choose 'Keep' to only add what's missing and keep your edits.)", "Overwrite", "Keep");
+
+            PlayerAnimationSet set = CreateAll(overwrite);
+            EditorGUIUtility.PingObject(set);
+        }
+
+        /// <summary>Creates any missing poses, clips and the animation set without asking. Returns the set.</summary>
+        internal static PlayerAnimationSet EnsureCreated() => CreateAll(overwrite: false);
+
+        private static PlayerAnimationSet CreateAll(bool overwrite)
+        {
+            CreatePoses(overwrite);
+            Dictionary<string, PoseClip> clips = CreateClips(overwrite);
+            PlayerAnimationSet set = CreateSet(clips);
+            AssetDatabase.SaveAssets();
+            return set;
+        }
+
+        private static void CreatePoses(bool overwrite)
         {
             Dictionary<string, FigurePose> poses = BuildTable();
             StickFigureRigEditor.EnsureFolder(Folder);
-
-            int existing = 0;
-            foreach (string name in poses.Keys)
-                if (AssetDatabase.LoadAssetAtPath<PoseData>(PathFor(name)) != null) existing++;
-
-            bool overwrite = existing > 0 && EditorUtility.DisplayDialog("Create Starter Poses",
-                $"{existing} of these poses already exist in {Folder}. Overwrite them with the starter versions? " +
-                "(Choose 'Keep' to only add the missing ones.)", "Overwrite", "Keep");
 
             int created = 0, updated = 0;
             foreach (KeyValuePair<string, FigurePose> entry in poses)
@@ -50,8 +72,117 @@ namespace Margin.EditorTools
                 }
             }
 
-            AssetDatabase.SaveAssets();
             Debug.Log($"Starter poses: {created} created, {updated} overwritten, in {Folder}.");
+        }
+
+        // ---------------- clips ----------------
+
+        private struct ClipSpec
+        {
+            public (string pose, int frames, PoseEasing easing)[] Entries;
+            public bool Loop;
+            public int FadeIn;
+        }
+
+        private static ClipSpec Hold(string pose, int fadeIn) => new ClipSpec
+        {
+            Entries = new[] { (pose, 1, PoseEasing.Linear) }, Loop = false, FadeIn = fadeIn,
+        };
+
+        private static ClipSpec Cycle(string prefix, int framesPerPose, int fadeIn)
+        {
+            var entries = new (string, int, PoseEasing)[6];
+            for (int i = 0; i < 6; i++) entries[i] = ($"{prefix}{i + 1}", framesPerPose, PoseEasing.Linear);
+            return new ClipSpec { Entries = entries, Loop = true, FadeIn = fadeIn };
+        }
+
+        /// <summary>
+        /// Starter timing. Run: 6 poses x 5 frames = a full stride every 0.5 s. Sprint: x 4 frames.
+        /// Single-pose clips rely on the crossfade (FadeIn frames) for motion; Dash snaps instantly for crispness.
+        /// </summary>
+        private static Dictionary<string, ClipSpec> ClipTable() => new Dictionary<string, ClipSpec>
+        {
+            ["Idle"] = new ClipSpec { Entries = new[] { ("Idle", 1, PoseEasing.Linear) }, Loop = true, FadeIn = 6 },
+            ["IdleBreathing"] = new ClipSpec
+            {
+                Entries = new[] { ("Idle", 45, PoseEasing.EaseInOut), ("IdleBreath", 45, PoseEasing.EaseInOut) },
+                Loop = true, FadeIn = 0,
+            },
+            ["Run"] = Cycle("Run", 5, fadeIn: 4),
+            ["Sprint"] = Cycle("Sprint", 4, fadeIn: 6),
+            ["Skid"] = Hold("Skid", 3),
+            ["Jump"] = Hold("Jump", 3),
+            ["Fall"] = Hold("Fall", 8),
+            ["FastFall"] = Hold("FastFall", 3),
+            ["Land"] = Hold("Land", 2),
+            ["Dash"] = Hold("Dash", 0),
+            ["WallSlide"] = Hold("WallSlide", 4),
+            ["WallJump"] = Hold("WallJump", 2),
+        };
+
+        private static Dictionary<string, PoseClip> CreateClips(bool overwrite)
+        {
+            StickFigureRigEditor.EnsureFolder(ClipFolder);
+            var result = new Dictionary<string, PoseClip>();
+            int created = 0, updated = 0;
+
+            foreach (KeyValuePair<string, ClipSpec> spec in ClipTable())
+            {
+                string path = $"{ClipFolder}/{spec.Key}.asset";
+                var clip = AssetDatabase.LoadAssetAtPath<PoseClip>(path);
+                bool isNew = clip == null;
+                if (isNew) clip = ScriptableObject.CreateInstance<PoseClip>();
+
+                if (isNew || overwrite)
+                {
+                    clip.entries.Clear();
+                    foreach ((string pose, int frames, PoseEasing easing) in spec.Value.Entries)
+                    {
+                        clip.entries.Add(new PoseClip.Entry
+                        {
+                            pose = AssetDatabase.LoadAssetAtPath<PoseData>(PathFor(pose)),
+                            frames = frames,
+                            easing = easing,
+                        });
+                    }
+                    clip.loop = spec.Value.Loop;
+                    clip.fadeInFrames = spec.Value.FadeIn;
+
+                    if (isNew) { AssetDatabase.CreateAsset(clip, path); created++; }
+                    else { EditorUtility.SetDirty(clip); updated++; }
+                }
+                result[spec.Key] = clip;
+            }
+
+            Debug.Log($"Starter clips: {created} created, {updated} overwritten, in {ClipFolder}.");
+            return result;
+        }
+
+        private static PlayerAnimationSet CreateSet(Dictionary<string, PoseClip> clips)
+        {
+            var set = AssetDatabase.LoadAssetAtPath<PlayerAnimationSet>(SetPath);
+            if (set == null)
+            {
+                set = ScriptableObject.CreateInstance<PlayerAnimationSet>();
+                AssetDatabase.CreateAsset(set, SetPath);
+            }
+
+            // Only fill empty slots, so a set you customized keeps your choices.
+            PoseClip Fill(PoseClip current, string name) => current != null ? current : clips[name];
+            set.idle = Fill(set.idle, "Idle");
+            set.idleBreathing = Fill(set.idleBreathing, "IdleBreathing");
+            set.run = Fill(set.run, "Run");
+            set.sprint = Fill(set.sprint, "Sprint");
+            set.skid = Fill(set.skid, "Skid");
+            set.jump = Fill(set.jump, "Jump");
+            set.fall = Fill(set.fall, "Fall");
+            set.fastFall = Fill(set.fastFall, "FastFall");
+            set.land = Fill(set.land, "Land");
+            set.dash = Fill(set.dash, "Dash");
+            set.wallSlide = Fill(set.wallSlide, "WallSlide");
+            set.wallJump = Fill(set.wallJump, "WallJump");
+            EditorUtility.SetDirty(set);
+            return set;
         }
 
         private static string PathFor(string name) => $"{Folder}/{name}.asset";

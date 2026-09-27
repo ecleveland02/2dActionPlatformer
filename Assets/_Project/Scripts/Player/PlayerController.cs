@@ -23,7 +23,7 @@ namespace Margin.Player
         [SerializeField] private MovementData data;
         [SerializeField] private InputReader inputReader;
         [SerializeField] private AbilityUnlocks abilities = new AbilityUnlocks();
-        [Tooltip("Placeholder visual. Flipped left/right to show facing.")]
+        [Tooltip("The visual (stick figure) root. Flipped left/right to show facing.")]
         [SerializeField] private Transform visualRoot;
 
         private PlayerStateMachine machine;
@@ -148,7 +148,7 @@ namespace Margin.Player
 
             ResolveCollisions();
 
-            UpdatePlaceholderVisual();
+            UpdateFacingVisual();
         }
 
         /// <summary>
@@ -177,14 +177,12 @@ namespace Margin.Player
             return true;
         }
 
-        /// <summary>Flips the placeholder to show facing, and leans it back while skidding. Replaced by the rig in Milestone 2.</summary>
-        private void UpdatePlaceholderVisual()
+        /// <summary>Flips the visual (stick figure) to face the movement direction. Poses come from PlayerAnimator.</summary>
+        private void UpdateFacingVisual()
         {
             if (visualRoot == null) return;
             visualRoot.localScale = new Vector3(Facing, 1f, 1f);
-            // Positive Z rotation tips the top to the left, so lean against the direction of the slide.
-            float lean = CurrentState == Skid ? Mathf.Sign(Velocity.x) * data.skidLeanDegrees : 0f;
-            visualRoot.localRotation = Quaternion.Euler(0f, 0f, lean);
+            visualRoot.localRotation = Quaternion.identity;
         }
 
         private void ResolveCollisions()

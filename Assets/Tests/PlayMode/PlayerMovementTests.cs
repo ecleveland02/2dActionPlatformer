@@ -14,17 +14,6 @@ namespace Margin.Tests
     /// </summary>
     public class PlayerMovementTests
     {
-        /// <summary>Scripted input. Set Move/JumpHeld/DownHeld, and pass presses to Step().</summary>
-        private sealed class FakeInput : IPlayerInput
-        {
-            public readonly FrameCounter Clock = new FrameCounter();
-            public FakeInput() { Buffer = new InputBuffer(Clock); }
-            public Vector2 Move { get; set; }
-            public bool JumpHeld { get; set; }
-            public bool DownHeld { get; set; }
-            public InputBuffer Buffer { get; }
-        }
-
         private TestWorld world;
         private FakeInput input;
         private MovementData data;
