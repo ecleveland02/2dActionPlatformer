@@ -54,6 +54,12 @@ namespace Margin.Rendering
             set => look = value;
         }
 
+        /// <summary>
+        /// Set by the owner while an attack is running. Only then does the katana's edge follow the swing; the rest of
+        /// the time (walking, running, jumping) the curve stays on its natural side, however the arm moves.
+        /// </summary>
+        public bool Attacking { get; set; }
+
         /// <summary>World position of the weapon tip.</summary>
         public Vector3 TipPosition { get; private set; }
 
@@ -204,6 +210,12 @@ namespace Margin.Rendering
                     edgeSide = facing;
                 }
                 float turn = hasLastAngle ? Mathf.DeltaAngle(lastAngle, angle) / dt : 0f;
+                // Not attacking: no swing counts, and the edge heads straight back to its natural side.
+                if (!Attacking)
+                {
+                    turn = 0f;
+                    edgeStill = look.edgeSettleSeconds;
+                }
                 edgeSide = WeaponShape.EdgeSide(edgeSide, turn, facing, ref edgeStill, dt, look.swingTurnSpeed,
                                                 look.edgeSettleSeconds, look.edgeFlipSeconds);
                 side = edgeSide;

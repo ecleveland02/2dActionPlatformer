@@ -133,9 +133,14 @@ namespace Margin.Player
             lastWindow = null;
             activeBoxes.Clear();
             AttackSerial++;
+            if (weaponLine != null) weaponLine.Attacking = true;   // the blade's edge may now follow the swing
         }
 
-        public void EndAttack() => activeBoxes.Clear();
+        public void EndAttack()
+        {
+            activeBoxes.Clear();
+            if (weaponLine != null) weaponLine.Attacking = false;
+        }
 
         /// <summary>Called once per player tick (not during hitstop): ink decay.</summary>
         public void Tick() => Ink.Tick();
