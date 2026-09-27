@@ -38,9 +38,9 @@ namespace Margin.EditorTools
         /// <summary>Creates any missing poses, clips and the animation set without asking. Returns the set.</summary>
         internal static PlayerAnimationSet EnsureCreated()
         {
-            // Projects made before the 8-key cycles have a 6-entry Run clip: upgrade the generated cycles once.
-            var run = AssetDatabase.LoadAssetAtPath<PoseClip>($"{ClipFolder}/Run.asset");
-            if (run != null && run.entries.Count == 6) UpgradeCycles();
+            // Projects made before the 8-key cycles have no Walk poses: generate the cycles once.
+            // (The traced run from the sprite sheets also has 6 keys, so the Run clip can't be the marker.)
+            if (AssetDatabase.LoadAssetAtPath<PoseData>(PathFor("Walk1")) == null) UpgradeCycles();
             return CreateAll(overwrite: false);
         }
 
@@ -438,11 +438,11 @@ namespace Margin.EditorTools
         }
 
         internal static FigurePose P(float x, float y, float spine, float neck, float sf, float ef, float sb, float eb,
-                              float hf, float kf, float hb, float kb, float tilt = 0f)
+                              float hf, float kf, float hb, float kb, float tilt = 0f, float grip = 0f)
         {
             return new FigurePose
             {
-                rootOffsetX = x, rootOffsetY = y, rootRotation = tilt,
+                rootOffsetX = x, rootOffsetY = y, rootRotation = tilt, grip = grip,
                 spine = spine, neck = neck,
                 shoulderFront = sf, elbowFront = ef, shoulderBack = sb, elbowBack = eb,
                 hipFront = hf, kneeFront = kf, hipBack = hb, kneeBack = kb,

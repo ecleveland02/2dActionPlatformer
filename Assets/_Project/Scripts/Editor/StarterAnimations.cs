@@ -18,7 +18,7 @@ namespace Margin.EditorTools
     /// Menu: Margin > Upgrade Animations rewrites these poses and clips (after asking). Attack clips and your own
     /// clips are not touched. Projects without the new clips get them automatically from the builders.
     /// </summary>
-    public static class StarterAnimations
+    public static partial class StarterAnimations
     {
         private const string ClipFolder = "Assets/_Project/Data/Animations";
         private const string SetPath = "Assets/_Project/Data/PlayerAnimationSet.asset";
@@ -49,6 +49,7 @@ namespace Margin.EditorTools
             AssetDatabase.SaveAssets();
             foreach (KeyValuePair<string, ClipSpec> clip in Clips()) WriteClip(clip.Key, clip.Value);
             AssetDatabase.SaveAssets();
+            ApplyTraced();   // the sprite-sheet poses replace the placeholder keys above
             FillSet();
             AssetDatabase.SaveAssets();
             StarterEnemies.ApplyAnimations();

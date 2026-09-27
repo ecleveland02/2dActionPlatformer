@@ -156,7 +156,14 @@ namespace Margin.Rendering
             if (trail != null) trail.transform.position = TipPosition;
 
             if (look != null && look.twoHanded && Application.isPlaying)
-                PlaceBackHand(hand - dir * (look.handleLength * 0.6f * scale));
+            {
+                // Both hands on the handle while the blade is in front or raised; a sword trailing behind
+                // (runs, jumps, dashes) is held in one hand. Blended so the back hand never pops.
+                float forward = dir.x * facing;
+                float weight = Mathf.Max(Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(-0.55f, -0.15f, forward)),
+                                         Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.35f, 0.7f, dir.y)));
+                if (weight > 0.001f) PlaceBackHand(hand - dir * (look.handleLength * 0.6f * scale), weight);
+            }
 
             Color ink = rig.Tint ?? (rig.Proportions != null ? rig.Proportions.inkColor : Color.black);
             int order = rig.Proportions != null ? rig.Proportions.sortingOrder + 2 : 12;
@@ -241,7 +248,7 @@ namespace Margin.Rendering
         /// Bends the back arm so its hand reaches <paramref name="target"/> (on the handle). Solved in the rig's
         /// own right-facing space, then written as joint angles like a pose (arm angle = spine angle + shoulder).
         /// </summary>
-        private void PlaceBackHand(Vector3 target)
+        private void PlaceBackHand(Vector3 target, float weight)
         {
             Transform root = rig.transform;
             Vector3 hips = root.InverseTransformPoint(rig.HipsTransform.position);
@@ -271,8 +278,14 @@ namespace Margin.Rendering
             }
 
             float shoulder = FigurePose.DeltaAngle(spineAngle, upper);
-            rig.Pivot(PoseJoint.ShoulderBack).localRotation = Quaternion.Euler(0f, 0f, StickFigureRig.Sign(PoseJoint.ShoulderBack) * shoulder);
-            rig.Pivot(PoseJoint.ElbowBack).localRotation = Quaternion.Euler(0f, 0f, StickFigureRig.Sign(PoseJoint.ElbowBack) * elbowAngle);
+            // Blend from the pose's own back arm toward the grip.
+            Transform s = rig.Pivot(PoseJoint.ShoulderBack), e = rig.Pivot(PoseJoint.ElbowBack);
+            float poseShoulder = StickFigureRig.Sign(PoseJoint.ShoulderBack) * s.localEulerAngles.z;
+            float poseElbow = StickFigureRig.Sign(PoseJoint.ElbowBack) * e.localEulerAngles.z;
+            shoulder = FigurePose.LerpAngle(poseShoulder, shoulder, weight);
+            elbowAngle = FigurePose.LerpAngle(poseElbow, elbowAngle, weight);
+            s.localRotation = Quaternion.Euler(0f, 0f, StickFigureRig.Sign(PoseJoint.ShoulderBack) * shoulder);
+            e.localRotation = Quaternion.Euler(0f, 0f, StickFigureRig.Sign(PoseJoint.ElbowBack) * elbowAngle);
         }
 
         // ---------------- line helpers ----------------
