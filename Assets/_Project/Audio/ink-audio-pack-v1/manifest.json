@@ -1,0 +1,413 @@
+{
+  "format": "PCM signed 24-bit WAV",
+  "sample_rate": 48000,
+  "created": "2026-09-27",
+  "method": "Original procedural synthesis; not recorded acoustic foley",
+  "assets": [
+    {
+      "name": "step_1",
+      "path": "sfx/step_1.wav",
+      "tier": 1,
+      "seconds": 0.055,
+      "samples": 2640,
+      "channels": 1,
+      "peak_dbfs": -10.0,
+      "description": "Short dry graphite-like paper scratch"
+    },
+    {
+      "name": "step_2",
+      "path": "sfx/step_2.wav",
+      "tier": 1,
+      "seconds": 0.066,
+      "samples": 3168,
+      "channels": 1,
+      "peak_dbfs": -10.0,
+      "description": "Short dry graphite-like paper scratch"
+    },
+    {
+      "name": "step_3",
+      "path": "sfx/step_3.wav",
+      "tier": 1,
+      "seconds": 0.076,
+      "samples": 3648,
+      "channels": 1,
+      "peak_dbfs": -10.0,
+      "description": "Short dry graphite-like paper scratch"
+    },
+    {
+      "name": "jump",
+      "path": "sfx/jump.wav",
+      "tier": 1,
+      "seconds": 0.1,
+      "samples": 4800,
+      "channels": 1,
+      "peak_dbfs": -6.0,
+      "description": "Fast upward paper flick"
+    },
+    {
+      "name": "land",
+      "path": "sfx/land.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Soft paper-covered landing thump"
+    },
+    {
+      "name": "dash",
+      "path": "sfx/dash.wav",
+      "tier": 1,
+      "seconds": 0.25,
+      "samples": 12000,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Fast broad paper rush"
+    },
+    {
+      "name": "swing_light_1",
+      "path": "sfx/swing_light_1.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -6.0,
+      "description": "Tight blade and paper air cut"
+    },
+    {
+      "name": "swing_light_2",
+      "path": "sfx/swing_light_2.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -6.0,
+      "description": "Tight blade and paper air cut"
+    },
+    {
+      "name": "swing_light_3",
+      "path": "sfx/swing_light_3.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -6.0,
+      "description": "Tight blade and paper air cut"
+    },
+    {
+      "name": "swing_heavy_1",
+      "path": "sfx/swing_heavy_1.wav",
+      "tier": 1,
+      "seconds": 0.25,
+      "samples": 12000,
+      "channels": 1,
+      "peak_dbfs": -4.5,
+      "description": "Lower heavier air cut with paper tail"
+    },
+    {
+      "name": "swing_heavy_2",
+      "path": "sfx/swing_heavy_2.wav",
+      "tier": 1,
+      "seconds": 0.25,
+      "samples": 12000,
+      "channels": 1,
+      "peak_dbfs": -4.5,
+      "description": "Lower heavier air cut with paper tail"
+    },
+    {
+      "name": "hit_light_1",
+      "path": "sfx/hit_light_1.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -4.0,
+      "description": "Small wet ink impact with droplets"
+    },
+    {
+      "name": "hit_light_2",
+      "path": "sfx/hit_light_2.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -4.0,
+      "description": "Small wet ink impact with droplets"
+    },
+    {
+      "name": "hit_light_3",
+      "path": "sfx/hit_light_3.wav",
+      "tier": 1,
+      "seconds": 0.15,
+      "samples": 7200,
+      "channels": 1,
+      "peak_dbfs": -4.0,
+      "description": "Small wet ink impact with droplets"
+    },
+    {
+      "name": "hit_heavy_1",
+      "path": "sfx/hit_heavy_1.wav",
+      "tier": 1,
+      "seconds": 0.3,
+      "samples": 14400,
+      "channels": 1,
+      "peak_dbfs": -3.5,
+      "description": "Deep ink impact with larger liquid spray"
+    },
+    {
+      "name": "hit_heavy_2",
+      "path": "sfx/hit_heavy_2.wav",
+      "tier": 1,
+      "seconds": 0.3,
+      "samples": 14400,
+      "channels": 1,
+      "peak_dbfs": -3.5,
+      "description": "Deep ink impact with larger liquid spray"
+    },
+    {
+      "name": "parry",
+      "path": "sfx/parry.wav",
+      "tier": 1,
+      "seconds": 0.3,
+      "samples": 14400,
+      "channels": 1,
+      "peak_dbfs": -2.5,
+      "description": "Immediate dry snap, bright inharmonic ting, short rewarding shimmer"
+    },
+    {
+      "name": "player_hurt",
+      "path": "sfx/player_hurt.wav",
+      "tier": 1,
+      "seconds": 0.2,
+      "samples": 9600,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Dull body thud without voice"
+    },
+    {
+      "name": "boss_swipe_tell",
+      "path": "sfx/boss_swipe_tell.wav",
+      "tier": 2,
+      "seconds": 0.34,
+      "samples": 16320,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Bright shing: metallic parryable warning"
+    },
+    {
+      "name": "boss_dash_tell",
+      "path": "sfx/boss_dash_tell.wav",
+      "tier": 2,
+      "seconds": 0.52,
+      "samples": 24960,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Rough rising marker squeal: unparryable warning, no metal chime"
+    },
+    {
+      "name": "boss_cap_tell",
+      "path": "sfx/boss_cap_tell.wav",
+      "tier": 2,
+      "seconds": 0.18,
+      "samples": 8640,
+      "channels": 1,
+      "peak_dbfs": -4.5,
+      "description": "Hollow rounded cork pop"
+    },
+    {
+      "name": "boss_sweep_tell",
+      "path": "sfx/boss_sweep_tell.wav",
+      "tier": 2,
+      "seconds": 0.72,
+      "samples": 34560,
+      "channels": 1,
+      "peak_dbfs": -7.0,
+      "description": "Long frictional marker squeak along sweep guide"
+    },
+    {
+      "name": "boss_drip_tell",
+      "path": "sfx/boss_drip_tell.wav",
+      "tier": 2,
+      "seconds": 0.68,
+      "samples": 32640,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Three dark irregular liquid plops: unparryable, no bright metallic onset"
+    },
+    {
+      "name": "boss_phase",
+      "path": "sfx/boss_phase.wav",
+      "tier": 2,
+      "seconds": 1.5,
+      "samples": 72000,
+      "channels": 1,
+      "peak_dbfs": -4.0,
+      "description": "Swelling low ink flood with bubbling surface"
+    },
+    {
+      "name": "boss_defeat",
+      "path": "sfx/boss_defeat.wav",
+      "tier": 2,
+      "seconds": 1.5,
+      "samples": 72000,
+      "channels": 1,
+      "peak_dbfs": -3.0,
+      "description": "Large collapsing ink splat and draining tail"
+    },
+    {
+      "name": "cap_reflect",
+      "path": "sfx/cap_reflect.wav",
+      "tier": 2,
+      "seconds": 0.4,
+      "samples": 19200,
+      "channels": 1,
+      "peak_dbfs": -3.5,
+      "description": "Lower resonant clang distinct from main parry"
+    },
+    {
+      "name": "grapple_throw",
+      "path": "sfx/grapple_throw.wav",
+      "tier": 3,
+      "seconds": 0.18,
+      "samples": 8640,
+      "channels": 1,
+      "peak_dbfs": -6.0,
+      "description": "Thin fast pen zip"
+    },
+    {
+      "name": "grapple_hook",
+      "path": "sfx/grapple_hook.wav",
+      "tier": 3,
+      "seconds": 0.075,
+      "samples": 3600,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Dry catch snap with tiny hard contact"
+    },
+    {
+      "name": "enemy_defeat",
+      "path": "sfx/enemy_defeat.wav",
+      "tier": 3,
+      "seconds": 0.34,
+      "samples": 16320,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Airy ink poof and small splat"
+    },
+    {
+      "name": "player_death",
+      "path": "sfx/player_death.wav",
+      "tier": 3,
+      "seconds": 1.0,
+      "samples": 48000,
+      "channels": 1,
+      "peak_dbfs": -5.0,
+      "description": "Soft collapse, descending ink tone, paper tail"
+    },
+    {
+      "name": "page_turn",
+      "path": "sfx/page_turn.wav",
+      "tier": 3,
+      "seconds": 0.62,
+      "samples": 29760,
+      "channels": 1,
+      "peak_dbfs": -8.0,
+      "description": "Broad turning-page rustle"
+    },
+    {
+      "name": "checkpoint",
+      "path": "sfx/checkpoint.wav",
+      "tier": 3,
+      "seconds": 0.9,
+      "samples": 43200,
+      "channels": 1,
+      "peak_dbfs": -9.0,
+      "description": "Soft two-tone confirmation chime"
+    },
+    {
+      "name": "ability_get",
+      "path": "sfx/ability_get.wav",
+      "tier": 3,
+      "seconds": 1.25,
+      "samples": 60000,
+      "channels": 1,
+      "peak_dbfs": -7.0,
+      "description": "Short warm ascending four-note fanfare"
+    },
+    {
+      "name": "ui_move",
+      "path": "sfx/ui_move.wav",
+      "tier": 3,
+      "seconds": 0.035,
+      "samples": 1680,
+      "channels": 1,
+      "peak_dbfs": -13.0,
+      "description": "Tiny soft tactile UI click"
+    },
+    {
+      "name": "ui_select",
+      "path": "sfx/ui_select.wav",
+      "tier": 3,
+      "seconds": 0.07,
+      "samples": 3360,
+      "channels": 1,
+      "peak_dbfs": -13.0,
+      "description": "Tiny soft tactile UI click"
+    },
+    {
+      "name": "ui_back",
+      "path": "sfx/ui_back.wav",
+      "tier": 3,
+      "seconds": 0.06,
+      "samples": 2880,
+      "channels": 1,
+      "peak_dbfs": -13.0,
+      "description": "Tiny soft tactile UI click"
+    },
+    {
+      "name": "music_world1",
+      "path": "music/music_world1.wav",
+      "tier": 3,
+      "seconds": 120.0,
+      "samples": 5760000,
+      "channels": 2,
+      "bpm": 80,
+      "bars": 40,
+      "meter": "4/4",
+      "loop_start_sample": 0,
+      "loop_end_sample_exclusive": 5760000,
+      "peak_dbfs": -5.0,
+      "description": "Original calm felt-key and soft-pad loop; 120 seconds"
+    },
+    {
+      "name": "music_boss",
+      "path": "music/music_boss.wav",
+      "tier": 3,
+      "seconds": 90.0,
+      "samples": 4320000,
+      "channels": 2,
+      "bpm": 128,
+      "bars": 48,
+      "meter": "4/4",
+      "loop_start_sample": 0,
+      "loop_end_sample_exclusive": 4320000,
+      "peak_dbfs": -4.11,
+      "description": "Original driving minor-key base loop; phase-one mix"
+    },
+    {
+      "name": "music_boss_layer",
+      "path": "music/music_boss_layer.wav",
+      "tier": 3,
+      "seconds": 90.0,
+      "samples": 4320000,
+      "channels": 2,
+      "bpm": 128,
+      "bars": 48,
+      "meter": "4/4",
+      "loop_start_sample": 0,
+      "loop_end_sample_exclusive": 4320000,
+      "peak_dbfs": -9.55,
+      "description": "Synchronized phase-two additive percussion and ostinato stem"
+    }
+  ]
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "name": "step_1",
+    "start_seconds": 0.0
+  },
+  {
+    "name": "step_2",
+    "start_seconds": 0.375
+  },
+  {
+    "name": "step_3",
+    "start_seconds": 0.761
+  },
+  {
+    "name": "jump",
+    "start_seconds": 1.157
+  },
+  {
+    "name": "land",
+    "start_seconds": 1.577
+  },
+  {
+    "name": "dash",
+    "start_seconds": 2.047
+  },
+  {
+    "name": "swing_light_1",
+    "start_seconds": 2.617
+  },
+  {
+    "name": "swing_light_2",
+    "start_seconds": 3.087
+  },
+  {
+    "name": "swing_light_3",
+    "start_seconds": 3.557
+  },
+  {
+    "name": "swing_heavy_1",
+    "start_seconds": 4.027
+  },
+  {
+    "name": "swing_heavy_2",
+    "start_seconds": 4.597
+  },
+  {
+    "name": "hit_light_1",
+    "start_seconds": 5.167
+  },
+  {
+    "name": "hit_light_2",
+    "start_seconds": 5.637
+  },
+  {
+    "name": "hit_light_3",
+    "start_seconds": 6.107
+  },
+  {
+    "name": "hit_heavy_1",
+    "start_seconds": 6.577
+  },
+  {
+    "name": "hit_heavy_2",
+    "start_seconds": 7.197
+  },
+  {
+    "name": "parry",
+    "start_seconds": 7.817
+  },
+  {
+    "name": "player_hurt",
+    "start_seconds": 8.437
+  },
+  {
+    "name": "boss_swipe_tell",
+    "start_seconds": 8.957
+  },
+  {
+    "name": "boss_dash_tell",
+    "start_seconds": 9.617
+  },
+  {
+    "name": "boss_cap_tell",
+    "start_seconds": 10.457
+  },
+  {
+    "name": "boss_sweep_tell",
+    "start_seconds": 10.957
+  },
+  {
+    "name": "boss_drip_tell",
+    "start_seconds": 11.997
+  },
+  {
+    "name": "boss_phase",
+    "start_seconds": 12.997
+  },
+  {
+    "name": "boss_defeat",
+    "start_seconds": 14.817
+  },
+  {
+    "name": "cap_reflect",
+    "start_seconds": 16.637
+  },
+  {
+    "name": "grapple_throw",
+    "start_seconds": 17.357
+  },
+  {
+    "name": "grapple_hook",
+    "start_seconds": 17.857
+  },
+  {
+    "name": "enemy_defeat",
+    "start_seconds": 18.252
+  },
+  {
+    "name": "player_death",
+    "start_seconds": 18.912
+  },
+  {
+    "name": "page_turn",
+    "start_seconds": 20.232
+  },
+  {
+    "name": "checkpoint",
+    "start_seconds": 21.172
+  },
+  {
+    "name": "ability_get",
+    "start_seconds": 22.392
+  },
+  {
+    "name": "ui_move",
+    "start_seconds": 23.962
+  },
+  {
+    "name": "ui_select",
+    "start_seconds": 24.317
+  },
+  {
+    "name": "ui_back",
+    "start_seconds": 24.707
+  }
+]

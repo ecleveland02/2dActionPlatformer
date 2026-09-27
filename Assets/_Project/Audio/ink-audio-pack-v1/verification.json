@@ -1,0 +1,208 @@
+{
+  "asset_count": 39,
+  "assets": [
+    {
+      "name": "step_1",
+      "peak_dbfs": -10.0,
+      "rms_dbfs": -25.24
+    },
+    {
+      "name": "step_2",
+      "peak_dbfs": -10.0,
+      "rms_dbfs": -27.69
+    },
+    {
+      "name": "step_3",
+      "peak_dbfs": -10.0,
+      "rms_dbfs": -26.03
+    },
+    {
+      "name": "jump",
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -20.42
+    },
+    {
+      "name": "land",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -20.21
+    },
+    {
+      "name": "dash",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -19.69
+    },
+    {
+      "name": "swing_light_1",
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -20.72
+    },
+    {
+      "name": "swing_light_2",
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -21.15
+    },
+    {
+      "name": "swing_light_3",
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -21.08
+    },
+    {
+      "name": "swing_heavy_1",
+      "peak_dbfs": -4.5,
+      "rms_dbfs": -19.14
+    },
+    {
+      "name": "swing_heavy_2",
+      "peak_dbfs": -4.5,
+      "rms_dbfs": -18.37
+    },
+    {
+      "name": "hit_light_1",
+      "peak_dbfs": -4.0,
+      "rms_dbfs": -21.62
+    },
+    {
+      "name": "hit_light_2",
+      "peak_dbfs": -4.0,
+      "rms_dbfs": -20.71
+    },
+    {
+      "name": "hit_light_3",
+      "peak_dbfs": -4.0,
+      "rms_dbfs": -21.54
+    },
+    {
+      "name": "hit_heavy_1",
+      "peak_dbfs": -3.5,
+      "rms_dbfs": -20.46
+    },
+    {
+      "name": "hit_heavy_2",
+      "peak_dbfs": -3.5,
+      "rms_dbfs": -22.2
+    },
+    {
+      "name": "parry",
+      "peak_dbfs": -2.5,
+      "rms_dbfs": -19.51
+    },
+    {
+      "name": "player_hurt",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -20.86
+    },
+    {
+      "name": "boss_swipe_tell",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -17.28
+    },
+    {
+      "name": "boss_dash_tell",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -9.9
+    },
+    {
+      "name": "boss_cap_tell",
+      "peak_dbfs": -4.5,
+      "rms_dbfs": -24.41
+    },
+    {
+      "name": "boss_sweep_tell",
+      "peak_dbfs": -7.0,
+      "rms_dbfs": -14.68
+    },
+    {
+      "name": "boss_drip_tell",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -23.78
+    },
+    {
+      "name": "boss_phase",
+      "peak_dbfs": -4.0,
+      "rms_dbfs": -16.37
+    },
+    {
+      "name": "boss_defeat",
+      "peak_dbfs": -3.0,
+      "rms_dbfs": -27.37
+    },
+    {
+      "name": "cap_reflect",
+      "peak_dbfs": -3.5,
+      "rms_dbfs": -18.66
+    },
+    {
+      "name": "grapple_throw",
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -21.21
+    },
+    {
+      "name": "grapple_hook",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -18.71
+    },
+    {
+      "name": "enemy_defeat",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -21.73
+    },
+    {
+      "name": "player_death",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -25.48
+    },
+    {
+      "name": "page_turn",
+      "peak_dbfs": -8.0,
+      "rms_dbfs": -23.85
+    },
+    {
+      "name": "checkpoint",
+      "peak_dbfs": -9.0,
+      "rms_dbfs": -21.21
+    },
+    {
+      "name": "ability_get",
+      "peak_dbfs": -7.0,
+      "rms_dbfs": -19.09
+    },
+    {
+      "name": "ui_move",
+      "peak_dbfs": -13.0,
+      "rms_dbfs": -25.23
+    },
+    {
+      "name": "ui_select",
+      "peak_dbfs": -13.0,
+      "rms_dbfs": -27.92
+    },
+    {
+      "name": "ui_back",
+      "peak_dbfs": -13.0,
+      "rms_dbfs": -27.3
+    },
+    {
+      "name": "music_world1",
+      "peak_dbfs": -5.0,
+      "rms_dbfs": -18.78,
+      "loop_seam_step": 0.0046582,
+      "local_max_sample_step": 0.0071462
+    },
+    {
+      "name": "music_boss",
+      "peak_dbfs": -4.11,
+      "rms_dbfs": -17.72,
+      "loop_seam_step": 0.0017347,
+      "local_max_sample_step": 0.0733907
+    },
+    {
+      "name": "music_boss_layer",
+      "peak_dbfs": -9.55,
+      "rms_dbfs": -27.1,
+      "loop_seam_step": 0.0014108,
+      "local_max_sample_step": 0.0263355
+    }
+  ],
+  "boss_stems_identical_format_and_length": true,
+  "combined_boss_peak_dbfs": -3.0
+}
