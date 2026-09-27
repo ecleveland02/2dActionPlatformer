@@ -17,7 +17,8 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Input timing:** Input System callbacks fire in `Update`, gameplay runs in `FixedUpdate`. `InputReader` queues presses
   and flushes them into the `InputBuffer` at the start of each fixed tick so no press is lost between ticks.
 - **Attack buttons:** Light = left click (also J, gamepad X). Heavy = right click (also K, gamepad Y). Special = U /
-  left bumper. Parry = F / right bumper. Dash = L / Shift / gamepad B or right trigger. Grapple = I / middle click /
+  left bumper. Parry = F / right bumper. Dash = L / Shift / gamepad right trigger. Heal (Redraw, 100 ink) =
+  Z / gamepad B (Down + Special also works). Grapple = I / middle click /
   gamepad left trigger (or R3). The triggers were moved off attacks to dash/grapple at the developer's request. Pause = Esc / Start ("Menu" map:
   Pause, Navigate, Submit, Cancel; always enabled, while menus turn the "Gameplay" map off via
   `InputReader.SetGameplayInput`).
@@ -101,7 +102,7 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   spawns on an attack's first active frame when `projectileSpeed > 0`. HUD: see UI (M5).
   Defense: `PlayerHealth` (IHitReceiver; pure `Health`) parries during `ParryState.IsActive` (parryable attacks only),
   otherwise damages and forces `HitstunState`. `IHitReceiver.ReceiveHit` returns false when the
-  hit didn't land (parried). Redraw = Down + Special at 100 ink. `SparringAttacker` makes a dummy attack
+  hit didn't land (parried). Redraw = Heal button (Z / B) or Down + Special at 100 ink. `SparringAttacker` makes a dummy attack
   (menu **Margin > Add Sparring Dummy**); attackers implement `IParryable` to be staggered.
 - **Enemy combos:** hits during player hitstun land (no per-hit i-frames); the 45 i-frames start the tick hitstun
   ends. Damage per combo hit scales via pure `ComboScaling` (-15% per hit, floor 50%, in CombatSettings). Enemies

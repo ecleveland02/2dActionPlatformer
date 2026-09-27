@@ -14,5 +14,6 @@ namespace Margin.Input
         Dash = 4,
         Parry = 5,
         Grapple = 6,
+        Heal = 7,
     }
 }

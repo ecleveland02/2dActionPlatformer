@@ -346,15 +346,20 @@ namespace Margin.Player
             return ComboBreaker;
         }
 
-        /// <summary>Down + Special with a full ink meter and missing health: Redraw heal (spec 6.6). Ground only.</summary>
+        /// <summary>
+        /// Redraw heal (spec 6.6): the Heal button (Z / gamepad B), or Down + Special, with a full ink meter and missing
+        /// health. Ground only.
+        /// </summary>
         public PlayerState CheckRedraw()
         {
-            if (Combat == null || Health == null || !Grounded || !Controls.DownHeld) return null;
-            if (!Controls.Buffer.IsBuffered(BufferedAction.Special)) return null;
+            if (Combat == null || Health == null || !Grounded) return null;
+            bool healButton = Controls.Buffer.IsBuffered(BufferedAction.Heal);
+            bool downSpecial = Controls.DownHeld && Controls.Buffer.IsBuffered(BufferedAction.Special);
+            if (!healButton && !downSpecial) return null;
             int cost = Combat.Settings.redrawInkCost;
             if (Health.Health.Current >= Health.Health.Max || !Combat.Ink.CanSpend(cost)) return null;
 
-            Controls.Buffer.Consume(BufferedAction.Special);
+            Controls.Buffer.Consume(healButton ? BufferedAction.Heal : BufferedAction.Special);
             Combat.Ink.TrySpend(cost);
             return Redraw;
         }

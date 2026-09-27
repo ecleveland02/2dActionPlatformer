@@ -16,6 +16,7 @@ namespace Margin.Input
         [Min(1)] public int dashFrames = 6;
         [Min(1)] public int parryFrames = 6;
         [Min(1)] public int grappleFrames = 6;
+        [Min(1)] public int healFrames = 6;
 
         [Header("Attack button (left click / right trigger)")]
         [Tooltip("Frames the Attack button must be held to count as a heavy attack. Released sooner = light attack " +
@@ -31,6 +32,7 @@ namespace Margin.Input
             buffer.SetWindow(BufferedAction.Dash, dashFrames);
             buffer.SetWindow(BufferedAction.Parry, parryFrames);
             buffer.SetWindow(BufferedAction.Grapple, grappleFrames);
+            buffer.SetWindow(BufferedAction.Heal, healFrames);
         }
     }
 }

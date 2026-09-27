@@ -101,6 +101,7 @@ namespace Margin.Input
                 map.FindAction("Dash", throwIfNotFound: true),
                 map.FindAction("Parry", throwIfNotFound: true),
                 map.FindAction("Grapple", throwIfNotFound: false),   // optional: older controls assets lack it
+                map.FindAction("Heal", throwIfNotFound: false),
             };
             pendingPresses = new bool[bufferedActions.Length];
         }

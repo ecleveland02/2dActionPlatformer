@@ -201,7 +201,8 @@ namespace Margin.UI
             Row("Parry", gameplay?.FindAction("Parry"), size);
             if (gameplay?.FindAction("Grapple") != null) Row("Grapple Line", gameplay.FindAction("Grapple"), size);
             Row("Pause", menu?.FindAction("Pause"), size);
-            Header("Redraw (100 ink)", "Down + Special", "Down + Special", size);
+            if (gameplay?.FindAction("Heal") != null) Row("Heal (100 ink)", gameplay.FindAction("Heal"), size);
+            else Header("Redraw (100 ink)", "Down + Special", "Down + Special", size);
             Header("Combo breaker (50 ink)", "Parry while hit", "Parry while hit", size);
         }
 

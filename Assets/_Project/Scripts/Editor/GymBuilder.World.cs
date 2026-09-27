@@ -203,7 +203,7 @@ namespace Margin.EditorTools
 
             r.Label("ink pots heal you, and you come back to the last one", 9f, 5.8f);
             r.Label("parry: F / RB just before a hit lands", 25f, 6.6f);
-            r.Label("red flash = can't be parried: dash away (L / SHIFT / B)", 25f, 5.8f);
+            r.Label("red flash = can't be parried: dash away (L / SHIFT / RT)", 25f, 5.8f);
             r.Lancer(30f, 0f);
             r.Paper(41);
             return r;
@@ -219,7 +219,7 @@ namespace Margin.EditorTools
             r.Solid("Floor D", 34f, -3f, 39.5f, 0f);
             r.Solid("Floor E", 45f, -3f, 57f, 0f);
 
-            r.Label("dash: L / SHIFT / B  (works in the air too)", 7f, 5f);
+            r.Label("dash: L / SHIFT / RT  (works in the air too)", 7f, 5f);
             r.Label("pits cost health", 12f, 3.2f);
             r.Bat(22f, 4.5f);
             r.Bat(42f, 5f);
@@ -239,7 +239,7 @@ namespace Margin.EditorTools
             r.Line("Line Top", 19f, 29f, 5.6f);
 
             r.Label("special: U / LB spends ink", 8f, 8.2f);
-            r.Label("full ink? DOWN + U redraws health", 8f, 7.4f);
+            r.Label("full ink? Z / B heals (Redraw)", 8f, 7.4f);
             r.Grunt(16f, 0f);
             r.Grunt(31f, 0f);
             r.Lancer(40f, 0f);
