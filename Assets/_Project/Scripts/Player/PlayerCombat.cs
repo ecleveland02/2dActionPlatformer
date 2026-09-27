@@ -14,7 +14,7 @@ namespace Margin.Player
     /// PlayerController and AttackState call into this; it has no Update of its own.
     /// </summary>
     [RequireComponent(typeof(PlayerController))]
-    public sealed class PlayerCombat : MonoBehaviour
+    public sealed class PlayerCombat : MonoBehaviour, IHitboxSource
     {
         [SerializeField] private WeaponData weapon;
         [SerializeField] private CombatSettings settings;
@@ -53,12 +53,16 @@ namespace Margin.Player
 
         /// <summary>World hitboxes out on the current tick, for the F1 debug view.</summary>
         public IReadOnlyList<AabbBox> ActiveHitboxes => activeBoxes;
+        public Faction Faction => Faction.Player;
 
         private void Awake()
         {
             player = GetComponent<PlayerController>();
             if (weaponLine != null && weapon != null) weaponLine.Length = weapon.bladeLength;
         }
+
+        private void OnEnable() => HitboxSources.Register(this);
+        private void OnDisable() => HitboxSources.Unregister(this);
 
         public void Configure(WeaponData weaponData, CombatSettings combatSettings)
         {

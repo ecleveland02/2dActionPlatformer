@@ -235,6 +235,22 @@ namespace Margin.Tests
         }
 
         [Test]
+        public void EnemyHitboxes_OutOnlyOnActiveFrames_AndVisibleToF1()
+        {
+            Assert.Contains(attacker, (System.Collections.ICollection)new List<IHitboxSource>(HitboxSources.Active));
+            player.ResetTo(new Vector2(-6f, 0.05f));   // out of reach, so the jab whiffs and runs its full frames
+            Steps(5);
+            attacker.StartAttack(jab);
+            Steps(16);
+            Assert.AreEqual(0, attacker.ActiveHitboxes.Count, "Startup: no hitbox.");
+            Step();
+            Assert.AreEqual(1, attacker.ActiveHitboxes.Count, "Frame 17: the jab is active.");
+            Assert.Less(attacker.ActiveHitboxes[0].CenterX, 1.2f, "Faces the player (to the left).");
+            Steps(3);
+            Assert.AreEqual(0, attacker.ActiveHitboxes.Count, "Frame 20: recovery.");
+        }
+
+        [Test]
         public void WhiffedParry_Lasts6ActivePlus20RecoveryFrames()
         {
             Step(parry: true);

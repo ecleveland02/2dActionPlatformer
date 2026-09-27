@@ -32,7 +32,7 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
 - **Editor code:** `Assets/_Project/Scripts/Editor/` (own `Margin.Editor` assembly, namespace `Margin.EditorTools`).
   Menu **Margin > Build Movement Gym** regenerates `Scenes/Gym.unity`.
 - **Debug tools:** `Scripts/Debug/DebugController` auto-spawns in the Editor/dev builds in any scene with a `GameLoop`.
-  F1 collision boxes, F2 frame data overlay (on by default), F3 pause, F4 step one tick, F5 0.25x slow motion.
+  F1 collision boxes (hitboxes from every `IHitboxSource` in `HitboxSources`: player orange, enemy magenta), F2 frame data overlay (on by default), F3 pause, F4 step one tick, F5 0.25x slow motion.
   Pause/step are `GameLoop.Paused` / `GameLoop.Step()`, so the frame counter and input buffer freeze with the game.
 - **Stick figure (M2):** `Scripts/Rendering/`. `StickFigureRig` builds joints + LineRenderers and runs in edit mode.
   Poses are `FigurePose` (pure C# struct; named to avoid clashing with `UnityEngine.Pose`) stored in `PoseData` assets.

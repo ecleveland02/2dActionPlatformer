@@ -16,7 +16,7 @@ namespace Margin.Enemies
     /// chains, so only a string's first attack needs the long telegraph; follow-ups may be faster.
     /// </summary>
     [RequireComponent(typeof(TrainingDummy))]
-    public sealed class SparringAttacker : MonoBehaviour, ITickable, IParryable
+    public sealed class SparringAttacker : MonoBehaviour, ITickable, IParryable, IHitboxSource
     {
         [SerializeField] private List<AttackData> attacks = new List<AttackData>();
         [SerializeField] private CombatSettings settings;
@@ -31,18 +31,31 @@ namespace Margin.Enemies
         private TrainingDummy dummy;
         private PlayerController target;
         private readonly HashSet<IHitReceiver> hitThisAttack = new HashSet<IHitReceiver>();
+        private readonly List<AabbBox> activeBoxes = new List<AabbBox>();
         private int next, cooldown, hitstop;
         private bool landedHit;
 
         public int TickOrder => 21;
         public AttackData Current { get; private set; }
         public int Frame { get; private set; }
+        /// <summary>World hitboxes out on the current tick, for the F1 debug view.</summary>
+        public IReadOnlyList<AabbBox> ActiveHitboxes => activeBoxes;
+        public Faction Faction => Faction.Enemy;
 
         private CombatSettings Settings => settings != null ? settings : CombatSettings.Defaults;
 
         private void Awake() => dummy = GetComponent<TrainingDummy>();
-        private void OnEnable() => GameLoop.Register(this);
-        private void OnDisable() => GameLoop.Unregister(this);
+        private void OnEnable()
+        {
+            GameLoop.Register(this);
+            HitboxSources.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            GameLoop.Unregister(this);
+            HitboxSources.Unregister(this);
+        }
 
         public void Configure(List<AttackData> moveList, CombatSettings combatSettings, int pause, float attackRange)
         {
@@ -95,6 +108,7 @@ namespace Margin.Enemies
             }
 
             Frame++;
+            activeBoxes.Clear();   // refilled below if this is an active frame (kept during hitstop so F1 shows it)
             AttackTiming timing = Current.Timing;
 
             // Pose from the attack's clip; unparryable attacks flash red while winding up (spec 6.5).
@@ -118,6 +132,7 @@ namespace Margin.Enemies
             {
                 AabbBox box = HitboxMath.ToWorld(origin.x, origin.y, dummy.Facing, shape.offset.x, shape.offset.y, shape.size.x, shape.size.y);
                 if (Current == null) return;   // parried by an earlier box this frame
+                activeBoxes.Add(box);
                 int hits = HitResolver.Resolve(this, Faction.Enemy, Current, box, dummy.Facing, hitThisAttack, Settings);
                 if (hits > 0 && Current != null)
                 {
@@ -142,6 +157,7 @@ namespace Margin.Enemies
         private void Finish()
         {
             Current = null;
+            activeBoxes.Clear();
             cooldown = pauseFrames;
             dummy.PoseOverride = null;
             if (dummy.Rig != null) dummy.Rig.Tint = null;

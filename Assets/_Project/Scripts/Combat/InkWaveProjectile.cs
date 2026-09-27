@@ -10,7 +10,7 @@ namespace Margin.Combat
     /// through once. Uses its AttackData for damage, knockback, hitstun and hitstop. Ticks with the GameLoop.
     /// Passes through walls for now (level collision comes with rooms in Milestone 5).
     /// </summary>
-    public sealed class InkWaveProjectile : MonoBehaviour, ITickable
+    public sealed class InkWaveProjectile : MonoBehaviour, ITickable, IHitboxSource
     {
         private static readonly Color Ink = new Color32(0x1A, 0x1A, 0x1A, 0xFF);
 
@@ -42,12 +42,36 @@ namespace Margin.Combat
             return wave;
         }
 
-        private void OnEnable() => GameLoop.Register(this);
-        private void OnDisable() => GameLoop.Unregister(this);
+        private void OnEnable()
+        {
+            GameLoop.Register(this);
+            HitboxSources.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            GameLoop.Unregister(this);
+            HitboxSources.Unregister(this);
+        }
 
         private void OnDestroy()
         {
             if (visual != null) Destroy(visual.gameObject);
+        }
+
+        private readonly AabbBox[] boxes = new AabbBox[1];
+
+        public Faction Faction => Faction.Player;
+
+        /// <summary>The wave's one hitbox (empty until Spawn sets it up).</summary>
+        public System.Collections.Generic.IReadOnlyList<AabbBox> ActiveHitboxes
+        {
+            get
+            {
+                if (attack == null) return System.Array.Empty<AabbBox>();
+                boxes[0] = Box;
+                return boxes;
+            }
         }
 
         public AabbBox Box => new AabbBox(position.x, position.y, attack.projectileSize.x, attack.projectileSize.y);

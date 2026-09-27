@@ -11,7 +11,8 @@ namespace Margin.DebugTools
     /// <summary>
     /// F1 view: draws every 2D collider's real shape over the game so you can compare it with the art.
     /// Colors: red = Ground, blue = OneWayPlatform, green = the player's collision box at its tick position,
-    /// yellow = anything else, cyan = hurtboxes, orange = attack hitboxes that are out this tick.
+    /// yellow = anything else, cyan = hurtboxes, orange = the player's attack hitboxes out this tick,
+    /// magenta = enemy attack hitboxes out this tick.
     ///
     /// Drawn with GL lines after each camera renders. Works with the built-in renderer (Camera.onPostRender)
     /// and with URP (RenderPipelineManager.endCameraRendering).
@@ -24,6 +25,7 @@ namespace Margin.DebugTools
         private static readonly Color OtherColor = new Color(1f, 0.8f, 0.1f);
         private static readonly Color HurtboxColor = new Color(0.1f, 0.85f, 0.95f);
         private static readonly Color HitboxColor = new Color(1f, 0.45f, 0f);
+        private static readonly Color EnemyHitboxColor = new Color(1f, 0.15f, 0.75f);
 
         private readonly List<Collider2D> colliders = new List<Collider2D>();
         private Material lineMaterial;
@@ -103,11 +105,13 @@ namespace Margin.DebugTools
             GL.Color(HurtboxColor);
             foreach (Hurtbox hurtbox in Hurtbox.Active) DrawBox(hurtbox.WorldBox, 0f);
 
-            if (Player == null || Player.Combat == null) return;
-            GL.Color(HitboxColor);
-            // Drawn three times, slightly inset, so active hitboxes stand out as thick outlines.
-            foreach (AabbBox box in Player.Combat.ActiveHitboxes)
-                for (int i = 0; i < 3; i++) DrawBox(box, i * 0.01f);
+            foreach (IHitboxSource source in HitboxSources.Active)
+            {
+                GL.Color(source.Faction == Faction.Player ? HitboxColor : EnemyHitboxColor);
+                // Drawn three times, slightly inset, so active hitboxes stand out as thick outlines.
+                foreach (AabbBox box in source.ActiveHitboxes)
+                    for (int i = 0; i < 3; i++) DrawBox(box, i * 0.01f);
+            }
         }
 
         private static void DrawBox(AabbBox box, float inset)
