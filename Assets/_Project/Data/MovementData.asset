@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b41fee84276702947a04db72dd005017, type: 3}
+  m_Name: MovementData
+  m_EditorClassIdentifier: 
+  runSpeed: 9
+  runInputThreshold: 0.25
+  groundAccelerationFrames: 4
+  groundDecelerationFrames: 3
+  airAccelerationFrames: 8
+  airDecelerationFrames: 8
+  jumpHeight: 3.2
+  minJumpHeight: 1.2
+  framesToApex: 22
+  coyoteFrames: 6
+  fallGravityMultiplier: 1.8
+  maxFallSpeed: 20
+  fastFallSpeed: 28
+  apexHangThreshold: 1.5
+  apexHangGravityMultiplier: 0.5
+  apexHangRequiresJumpHeld: 1
+  landFrames: 2
+  cornerCorrectionDistance: 0.15
+  dashFrames: 10
+  dashSpeed: 16
+  dashInvulnerableFrames: 8
+  airDashes: 1
+  dashCooldownFrames: 20
+  wallSlideSpeed: 4
+  wallJumpHorizontalSpeed: 9
+  wallJumpControlLockFrames: 8

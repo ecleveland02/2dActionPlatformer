@@ -4,6 +4,9 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Project/Scenes/Gym.unity
+    guid: 5819e4356d04a76458ce8d091555f559
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
