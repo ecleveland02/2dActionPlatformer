@@ -113,11 +113,14 @@ namespace Margin.EditorTools
             EditorGUI.BeginChangeCheck();
             float typed = EditorGUILayout.FloatField("Angle (°)", current.Get(selected));
             Vector2 offset = EditorGUILayout.Vector2Field("Hips offset", rig.RootOffset);
+            float tilt = EditorGUILayout.FloatField(new GUIContent("Body tilt (°)", "Tilts the whole figure around the hips. " +
+                "Positive tips forward (90 = face down), negative backward (-90 = on its back)."), current.rootRotation);
             if (EditorGUI.EndChangeCheck())
             {
                 current.Set(selected, typed);
                 current.rootOffsetX = offset.x;
                 current.rootOffsetY = offset.y;
+                current.rootRotation = tilt;
                 ApplyWithUndo(rig, current, "Edit pose");
             }
 
@@ -145,6 +148,7 @@ namespace Margin.EditorTools
         {
             Undo.RecordObject(rig, label);
             foreach (PoseJoint joint in FigurePose.AllJoints) Undo.RecordObject(rig.Pivot(joint), label);
+            Undo.RecordObject(rig.HipsTransform, label);
             rig.ApplyPose(pose);
             EditorUtility.SetDirty(rig);
             SceneView.RepaintAll();

@@ -25,6 +25,10 @@ namespace Margin.Rendering
         public bool loop = true;
         [Tooltip("Frames to blend from the previous animation into this one. 0 = instant (crisp).")]
         [Min(0)] public int fadeInFrames = 4;
+        [Tooltip("Cycles only: how far the body travels in one full loop with the planted foot not sliding (units). " +
+                 "The animator speeds the clip up or down to match movement speed. 0 = always play at normal speed. " +
+                 "Set by the starter animation tools.")]
+        [Min(0f)] public float strideLength;
 
         private PoseTimeline timeline;
 

@@ -48,6 +48,12 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   applies `SecondaryMotion` springs per `PoseMotionSettings` (head/back arm sprung; sword arm and legs never, so
   attacks and foot contact stay exact); `PlayerAnimator` leans into ground acceleration (run/idle only).
   Cycles: 8 keys from `Gait` tables in StarterPoses (Run1-8, Sprint1-8, Walk1-8); **Margin > Upgrade Run Cycles**.
+  `FigurePose.rootRotation` tilts the whole body around the hips (lying down). Foot lock: `PoseClip.strideLength`
+  + pure `CycleSync` set `PoseAnimator.PlaybackRate` from movement speed (player run/sprint, enemy walks).
+  One-shot transition clips (turn, runStop, hardLand by `LastFallHeight`, parrySuccess, idleFidget) are visual only:
+  any state change except into Idle cancels them. Enemy knockdown: a hard hit in the air (|knockback.y| >=
+  `knockdownLaunchSpeed`, heavy hit while airborne, or slam) sets `HardAirHit`; landing enters `EnemyKnockdownState`
+  (lie `knockdownFrames`, get up `getUpFrames`, invulnerable by default).
 - **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
   cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
   on hit, "Cancels into" + jump/dash inside the window; on whiff, jump/dash from the window start and follow-up

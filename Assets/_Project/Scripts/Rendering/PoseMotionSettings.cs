@@ -35,6 +35,12 @@ namespace Margin.Rendering
         [Tooltip("How quickly the lean follows (fraction per tick).")]
         [Range(0.01f, 1f)] public float leanSmoothing = 0.2f;
 
+        [Header("Foot lock (cycles with a stride length)")]
+        [Tooltip("Slowest a run/walk cycle may play relative to normal (standing almost still).")]
+        [Range(0.05f, 1f)] public float minCycleRate = 0.35f;
+        [Tooltip("Fastest a run/walk cycle may play relative to normal.")]
+        [Range(1f, 5f)] public float maxCycleRate = 3f;
+
         private float[] weights;
 
         /// <summary>Per-joint weights in FigurePose.AllJoints order.</summary>

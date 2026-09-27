@@ -344,6 +344,50 @@ namespace Margin.Tests
             StepUntil(() => bat.Grounded, 120);
         }
 
+        private void HitWith(EnemyBase enemy, Vector2 knockback, int hitstop, int hitstun = 30)
+        {
+            AttackData a = Attack("Hit", 4, 3, 10, damage: 1, hitstop: hitstop, hitstun: hitstun, knockback: knockback,
+                                  center: Vector2.zero, size: Vector2.one);
+            enemy.ReceiveHit(new HitInfo(player, a, knockback, enemy.Position, hitstop >= settings.globalHitstopThreshold));
+        }
+
+        [Test]
+        public void Launched_LandsInKnockdown_CantBeHit_ThenGetsUp()
+        {
+            EnemyBase grunt = Grunt(6f);
+            HitWith(grunt, new Vector2(0f, 12f), hitstop: 0);   // a launcher
+            StepUntil(() => grunt.CurrentState == grunt.Knockdown, 200);
+            Assert.IsTrue(grunt.Grounded);
+            Assert.IsFalse(grunt.CanBeHit, "Can't be hit while knocked down.");
+
+            StepUntil(() => grunt.CurrentState != grunt.Knockdown, settings.knockdownFrames + settings.getUpFrames + 5);
+            Assert.AreEqual(grunt.Approach, grunt.CurrentState, "Back up and fighting.");
+            Assert.IsTrue(grunt.CanBeHit);
+        }
+
+        [Test]
+        public void GroundHit_WithoutLaunch_IsNotAKnockdown()
+        {
+            EnemyBase grunt = Grunt(6f);
+            HitWith(grunt, new Vector2(3f, 0f), hitstop: 10, hitstun: 20);   // heavy, but on the ground
+            for (int i = 0; i < 60; i++)
+            {
+                Step();
+                Assert.AreNotEqual(grunt.Knockdown, grunt.CurrentState);
+            }
+        }
+
+        [Test]
+        public void Bat_KnockedDown_ThenFliesBackUp()
+        {
+            FlyingEnemy bat = Bat(15f, 4f);
+            HitWith(bat, new Vector2(0f, -12f), hitstop: 0);    // spiked down
+            StepUntil(() => bat.CurrentState == bat.Knockdown, 200);
+            StepUntil(() => bat.CurrentState != bat.Knockdown, settings.knockdownFrames + settings.getUpFrames + 5);
+            Steps(240);
+            Assert.AreEqual(bat.Home.y, bat.Position.y, 0.5f, "Flew back up.");
+        }
+
         [Test]
         public void PlayerDeath_RespawnsAtSpawn_WithFullHealth_AndResetsEnemies()
         {

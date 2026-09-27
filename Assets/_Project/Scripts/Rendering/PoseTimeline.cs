@@ -48,19 +48,25 @@ namespace Margin.Rendering
         }
 
         /// <summary>The pose at a tick (0 = first tick of the clip).</summary>
-        public FigurePose Sample(int tick)
-        {
-            if (tick < 0) tick = 0;
-            if (Loop) tick %= TotalFrames;
-            else if (tick >= TotalFrames) return poses[poses.Length - 1];
+        public FigurePose Sample(int tick) => Sample((float)tick);
 
-            int start = 0;
+        /// <summary>
+        /// The pose at a fractional time in ticks (e.g. 2.5 = halfway between ticks 2 and 3). Used when a clip plays
+        /// faster or slower than 1 tick per tick, such as a run cycle synced to running speed.
+        /// </summary>
+        public FigurePose Sample(float time)
+        {
+            if (time < 0f) time = 0f;
+            if (Loop) time %= TotalFrames;
+            else if (time >= TotalFrames) return poses[poses.Length - 1];
+
+            float start = 0f;
             for (int i = 0; i < poses.Length; i++)
             {
-                if (tick < start + frames[i])
+                if (time < start + frames[i])
                 {
                     int next = Neighbour(i, +1);
-                    float u = (tick - start) / (float)frames[i];
+                    float u = (time - start) / frames[i];
                     if (easings[i] == PoseEasing.Smooth)
                         return FigurePose.CatmullRom(poses[Neighbour(i, -1)], poses[i], poses[next], poses[Neighbour(next, +1)], u);
                     return FigurePose.Lerp(poses[i], poses[next], PoseEasingMath.Apply(easings[i], u));

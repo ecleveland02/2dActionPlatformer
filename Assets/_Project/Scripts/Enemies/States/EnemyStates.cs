@@ -167,11 +167,45 @@ namespace Margin.Enemies
 
         public override EnemyState CheckTransitions()
         {
+            // Landing after a hard hit in the air knocks it flat, even if hitstun isn't over.
+            if (Enemy.HardAirHit && Enemy.Grounded && Enemy.Velocity.y <= 0f && Enemy.FramesInState > 1) return Enemy.Knockdown;
             if (Enemy.FramesInState < Frames || (!Enemy.Grounded && !Enemy.Flies)) return null;
+            Enemy.HardAirHit = false;
             return Enemy.PlayerFightable() ? (EnemyState)Enemy.Approach : Enemy.Patrol;
         }
 
         public override void Tick() => Enemy.Brake(0.5f);
+    }
+
+    /// <summary>
+    /// Knocked flat after a hard hit in the air: lies for CombatSettings.knockdownFrames (can't be hit by default),
+    /// then gets up over getUpFrames and fights again. The last hit's slide carries on along the floor.
+    /// </summary>
+    public sealed class EnemyKnockdownState : EnemyState
+    {
+        public EnemyKnockdownState(EnemyBase enemy) : base(enemy) { }
+
+        public override void Enter()
+        {
+            Enemy.Runner.Cancel();
+            Enemy.ReleaseAttackSlot();
+            Enemy.Play(Data.knockdown != null ? Data.knockdown : Data.hurt, restart: true);
+        }
+
+        public override EnemyState CheckTransitions()
+        {
+            var s = Enemy.Settings;
+            if (Enemy.FramesInState < s.knockdownFrames + s.getUpFrames) return null;
+            return Enemy.PlayerFightable() ? (EnemyState)Enemy.Approach : Enemy.Patrol;
+        }
+
+        public override void Tick()
+        {
+            if (Enemy.FramesInState == Enemy.Settings.knockdownFrames + 1) Enemy.Play(Data.getUp, restart: true);
+            Enemy.Brake(0.5f);
+        }
+
+        public override void Exit() => Enemy.HardAirHit = false;
     }
 
     /// <summary>Health reached 0: the defeat pose (the body still flies from the last hit), then it vanishes.</summary>

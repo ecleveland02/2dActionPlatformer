@@ -14,7 +14,8 @@ namespace Margin.Enemies
     /// attacks using AttackData (with combo strings), takes knockback, hitstun and juggles, and dies.
     /// Behavior lives in EnemyData, so the Doodle Grunt and Pencil Lancer are this component with different data.
     ///
-    /// States: Patrol > Alert > Approach > Attack, plus Hitstun (hits, launches and parry staggers) and Dead.
+    /// States: Patrol > Alert > Approach > Attack, plus Hitstun (hits, launches and parry staggers), Knockdown
+    /// (hit hard in the air: lands flat, lies, gets up) and Dead.
     /// Each tick: the state machine sets Velocity, then gravity is applied and the body moves (like the player).
     /// Attack slots: an enemy needs a slot from the shared AttackTokenPool to attack (CombatSettings.maxEnemyAttackers).
     /// Everything resets when the player respawns.
@@ -43,6 +44,9 @@ namespace Margin.Enemies
         private PlayerController target;
         private Vector2 home;
         private int hitstop, nextAttack;
+        private PoseClip oneShot;
+        /// <summary>Hit hard while airborne (or launched/spiked) during this hitstun: lands in a knockdown.</summary>
+        private bool hardAirHit;
 
         // ---- States (a subclass such as FlyingEnemy may swap in its own movement states in Awake) ----
         public EnemyState Patrol { get; protected set; }
@@ -50,6 +54,7 @@ namespace Margin.Enemies
         public EnemyState Approach { get; protected set; }
         public EnemyAttackState Attack { get; protected set; }
         public EnemyHitstunState Hitstun { get; private set; }
+        public EnemyKnockdownState Knockdown { get; private set; }
         public EnemyDeadState Dead { get; private set; }
 
         // ---- Runtime values ----
@@ -85,7 +90,13 @@ namespace Margin.Enemies
         public IReadOnlyList<AabbBox> ActiveHitboxes => runner.ActiveHitboxes;
 
         // IHitReceiver
-        public bool CanBeHit => machine != null && !IsDead;
+        public bool CanBeHit => machine != null && !IsDead && !(CurrentState == Knockdown && Settings.knockdownInvulnerable);
+        /// <summary>Will be knocked down on landing (set by hard hits in the air, cleared after the knockdown).</summary>
+        public bool HardAirHit
+        {
+            get => hardAirHit;
+            set => hardAirHit = value;
+        }
 
         protected virtual void Awake()
         {
@@ -100,6 +111,7 @@ namespace Margin.Enemies
             Approach = new EnemyApproachState(this);
             Attack = new EnemyAttackState(this);
             Hitstun = new EnemyHitstunState(this);
+            Knockdown = new EnemyKnockdownState(this);
             Dead = new EnemyDeadState(this);
         }
 
@@ -177,7 +189,7 @@ namespace Margin.Enemies
             if (GravityApplies && (!grounded || Velocity.y > 0f))
             {
                 // Juggle: airborne enemies in hitstun fall slower so air combos can keep them up.
-                bool juggled = CurrentState == Hitstun || CurrentState == Dead;
+                bool juggled = CurrentState == Hitstun || CurrentState == Dead || CurrentState == Knockdown;
                 float gravity = physics.FallGravity * (juggled ? Settings.juggleGravityScale : 1f);
                 // A spiked enemy (slammed downward) may fall faster than the normal max fall speed.
                 float maxFall = Mathf.Max(physics.maxFallSpeed, -Velocity.y);
@@ -226,7 +238,11 @@ namespace Margin.Enemies
         public void SetFacing(int direction)
         {
             if (direction == 0) return;
-            Facing = direction < 0 ? -1 : 1;
+            int next = direction < 0 ? -1 : 1;
+            // Turning around mid-walk plays the turn (visual only).
+            if (next != Facing && data != null && Mathf.Abs(Velocity.x) > 0.3f && (CurrentState == Patrol || CurrentState == Approach))
+                PlayOneShot(data.turn);
+            Facing = next;
         }
 
         public void FacePlayer()
@@ -288,11 +304,29 @@ namespace Margin.Enemies
         /// <summary>Runs one attack tick; false when the attack (or string) is over.</summary>
         public bool TickAttack() => runner.Tick(this, Position, Facing, target, Settings);
 
+        /// <summary>
+        /// Plays a clip (restart = from the start even if it's already playing). A one-shot (turn) keeps playing
+        /// over looping clips until it ends; a restart (attack, hurt, knockdown) cancels it.
+        /// </summary>
         public void Play(PoseClip clip, bool restart = false)
         {
             if (animator == null || clip == null) return;
-            if (restart) animator.Restart(clip);
-            else animator.Play(clip);
+            if (restart)
+            {
+                oneShot = null;
+                animator.Restart(clip);
+                return;
+            }
+            if (oneShot != null) return;
+            animator.Play(clip);
+        }
+
+        /// <summary>Plays a clip once over the current animation, then returns to it. Visual only.</summary>
+        public void PlayOneShot(PoseClip clip)
+        {
+            if (animator == null || clip == null) return;
+            oneShot = clip;
+            animator.Restart(clip);
         }
 
         private void OnAttackStarted(AttackData attack)
@@ -308,6 +342,10 @@ namespace Margin.Enemies
             Health.TakeDamage(hit.Damage, 0);   // no invulnerability: enemies can be comboed
             runner.Cancel();
             ReleaseAttackSlot();
+
+            // Hit hard in the air (launched, spiked, or a heavy hit while airborne): knocked down on landing.
+            bool heavy = hit.HitstopFrames >= Settings.globalHitstopThreshold;
+            if (Mathf.Abs(hit.Knockback.y) >= Settings.knockdownLaunchSpeed || (heavy && !Grounded)) hardAirHit = true;
 
             Velocity = hit.Knockback * data.knockbackTaken;
             // A heavy hit already froze the whole game, so no extra freeze here.
@@ -358,6 +396,8 @@ namespace Margin.Enemies
             Velocity = Vector2.zero;
             hitstop = 0;
             Cooldown = 0;
+            hardAirHit = false;
+            oneShot = null;
             nextAttack = 0;
             Health.Refill();
             SetVisible(true);
@@ -389,7 +429,17 @@ namespace Margin.Enemies
 
             rig.Tint = FlashColor();
 
-            if (animator != null) animator.Tick();
+            if (animator == null) return;
+            if (oneShot != null && animator.CurrentClip == oneShot && animator.Finished) oneShot = null;
+            PoseClip current = animator.CurrentClip;
+            bool standing = current == data.idle && oneShot == null;
+            animator.SetAdditive(standing ? data.idleBreathing : null);
+            // Walk cycles play in step with walking speed so the planted foot doesn't slide.
+            PoseMotionSettings m = animator.Motion;
+            animator.PlaybackRate = current != null && current.strideLength > 0f && current.Timeline != null
+                ? CycleSync.Rate(Velocity.x, current.strideLength, current.Timeline.TotalFrames, m.minCycleRate, m.maxCycleRate)
+                : 1f;
+            animator.Tick();
         }
 
         protected virtual void ShakeVisual(bool shaking)
@@ -402,6 +452,7 @@ namespace Margin.Enemies
 
         private void OnSlamImpact()
         {
+            if (CurrentState == Hitstun) hardAirHit = true;   // spiked into the floor: knocked flat
             CameraShake.Shake(0.2f);
             Vector2 feet = Position + new Vector2(0f, -Body.Size.y * 0.5f);
             if (InkSplatter.Instance != null) InkSplatter.Instance.Burst(feet, Vector2.up, 20);

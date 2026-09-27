@@ -137,6 +137,8 @@ namespace Margin.Rendering
         {
             if (!IsBuilt) Build();
             RootOffset = new Vector2(pose.rootOffsetX, pose.rootOffsetY);
+            // Whole-body tilt: the hips are the root of every joint. Positive tips toward facing (clockwise, -z).
+            hips.localRotation = Quaternion.Euler(0f, 0f, -pose.rootRotation);
             foreach (PoseJoint joint in FigurePose.AllJoints)
                 Pivot(joint).localRotation = Quaternion.Euler(0f, 0f, Sign(joint) * pose.Get(joint));
         }
@@ -145,7 +147,12 @@ namespace Margin.Rendering
         public FigurePose CapturePose()
         {
             if (!IsBuilt) Build();
-            var pose = new FigurePose { rootOffsetX = rootOffset.x, rootOffsetY = rootOffset.y };
+            var pose = new FigurePose
+            {
+                rootOffsetX = rootOffset.x,
+                rootOffsetY = rootOffset.y,
+                rootRotation = FigurePose.NormalizeAngle(-hips.localEulerAngles.z),
+            };
             foreach (PoseJoint joint in FigurePose.AllJoints)
                 pose.Set(joint, FigurePose.NormalizeAngle(Sign(joint) * Pivot(joint).localEulerAngles.z));
             return pose;

@@ -30,6 +30,17 @@ namespace Margin.Combat
         [Tooltip("Combo damage never scales below this fraction.")]
         [Range(0.1f, 1f)] public float comboDamageFloor = 0.5f;
 
+        [Header("Enemy knockdown")]
+        [Tooltip("An enemy hit with at least this much vertical knockback (up or down, units/s) is 'hit hard' and " +
+                 "is knocked down when it lands. Heavy hits (global hitstop) on an airborne enemy count too.")]
+        [Min(0f)] public float knockdownLaunchSpeed = 8f;
+        [Tooltip("Frames lying on the ground.")]
+        [Min(1)] public int knockdownFrames = 45;
+        [Tooltip("Frames of the get-up animation afterwards.")]
+        [Min(1)] public int getUpFrames = 24;
+        [Tooltip("Knocked-down enemies can't be hit (no juggling them along the floor).")]
+        public bool knockdownInvulnerable = true;
+
         [Header("Enemies (spec 9)")]
         [Tooltip("Max enemies attacking the player at once (attack slots). 0 = no limit: every enemy that has " +
                  "noticed the player may attack. Set 2 or 3 if groups turn into unavoidable lock-downs.")]

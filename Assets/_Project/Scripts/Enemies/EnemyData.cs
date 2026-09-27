@@ -71,9 +71,18 @@ namespace Margin.Enemies
         [Tooltip("Optional body proportions (e.g. a bigger head), applied to the rig when the enemy is built.")]
         public StickFigureProportions proportions;
         public PoseClip idle;
+        [Tooltip("Additive layer on top of idle (breathing).")]
+        public PoseClip idleBreathing;
+        [Tooltip("Walk cycle. With a stride length it plays in step with walking speed (no foot sliding).")]
         public PoseClip walk;
+        [Tooltip("One-shot when it turns around while walking.")]
+        public PoseClip turn;
         public PoseClip alert;
         public PoseClip hurt;
+        [Tooltip("Hit hard in the air: falls flat when it lands.")]
+        public PoseClip knockdown;
+        [Tooltip("Getting back up after a knockdown.")]
+        public PoseClip getUp;
         public PoseClip defeated;
         [Tooltip("Length of a held weapon line from the front hand (e.g. the Lancer's pencil). 0 = unarmed.")]
         [Min(0f)] public float weaponLength = 0f;

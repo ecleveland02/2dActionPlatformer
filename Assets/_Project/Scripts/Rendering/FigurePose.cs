@@ -4,7 +4,8 @@ namespace Margin.Rendering
 {
     /// <summary>
     /// One keyframe of the stick figure: an angle (degrees, relative to the parent bone) for each
-    /// PoseJoint, plus a root offset that shifts the hips (crouch, bob). Pure C# so it can be unit tested.
+    /// PoseJoint, plus a root offset that shifts the hips (crouch, bob) and a root rotation that tilts the whole
+    /// body around the hips (lying down, tumbling). Pure C# so it can be unit tested.
     /// Angle rule: positive = toward the facing direction (see PoseJoint).
     /// </summary>
     [Serializable]
@@ -12,6 +13,9 @@ namespace Margin.Rendering
     {
         public float rootOffsetX;
         public float rootOffsetY;
+        /// <summary>Whole-body tilt around the hips in degrees. Positive = tips toward the facing direction
+        /// (90 = lying face down, -90 = lying on the back).</summary>
+        public float rootRotation;
         public float spine;
         public float neck;
         public float shoulderFront;
@@ -75,6 +79,7 @@ namespace Margin.Rendering
             {
                 rootOffsetX = a.rootOffsetX + (b.rootOffsetX - a.rootOffsetX) * t,
                 rootOffsetY = a.rootOffsetY + (b.rootOffsetY - a.rootOffsetY) * t,
+                rootRotation = LerpAngle(a.rootRotation, b.rootRotation, t),
             };
             foreach (PoseJoint joint in AllJoints)
                 result.Set(joint, LerpAngle(a.Get(joint), b.Get(joint), t));
@@ -95,16 +100,20 @@ namespace Margin.Rendering
             {
                 rootOffsetX = Spline(p0.rootOffsetX, p1.rootOffsetX, p2.rootOffsetX, p3.rootOffsetX, t),
                 rootOffsetY = Spline(p0.rootOffsetY, p1.rootOffsetY, p2.rootOffsetY, p3.rootOffsetY, t),
+                rootRotation = SplineAngle(p0.rootRotation, p1.rootRotation, p2.rootRotation, p3.rootRotation, t),
             };
             foreach (PoseJoint joint in AllJoints)
-            {
-                float a1 = p1.Get(joint);
-                float a0 = a1 + DeltaAngle(a1, p0.Get(joint));
-                float a2 = a1 + DeltaAngle(a1, p2.Get(joint));
-                float a3 = a2 + DeltaAngle(p2.Get(joint), p3.Get(joint));
-                result.Set(joint, NormalizeAngle(Spline(a0, a1, a2, a3, t)));
-            }
+                result.Set(joint, SplineAngle(p0.Get(joint), p1.Get(joint), p2.Get(joint), p3.Get(joint), t));
             return result;
+        }
+
+        /// <summary>Catmull-Rom for angles: unwrapped around p1 first so each step takes the short way.</summary>
+        private static float SplineAngle(float p0, float p1, float p2, float p3, float t)
+        {
+            float a0 = p1 + DeltaAngle(p1, p0);
+            float a2 = p1 + DeltaAngle(p1, p2);
+            float a3 = a2 + DeltaAngle(p2, p3);
+            return NormalizeAngle(Spline(a0, p1, a2, a3, t));
         }
 
         /// <summary>Uniform Catmull-Rom for one value.</summary>
@@ -128,7 +137,12 @@ namespace Margin.Rendering
         /// <summary>The difference a - b per joint (shortest angles). Used for additive layers such as breathing.</summary>
         public static FigurePose Subtract(FigurePose a, FigurePose b)
         {
-            var d = new FigurePose { rootOffsetX = a.rootOffsetX - b.rootOffsetX, rootOffsetY = a.rootOffsetY - b.rootOffsetY };
+            var d = new FigurePose
+            {
+                rootOffsetX = a.rootOffsetX - b.rootOffsetX,
+                rootOffsetY = a.rootOffsetY - b.rootOffsetY,
+                rootRotation = DeltaAngle(b.rootRotation, a.rootRotation),
+            };
             foreach (PoseJoint joint in AllJoints) d.Set(joint, DeltaAngle(b.Get(joint), a.Get(joint)));
             return d;
         }
@@ -140,6 +154,7 @@ namespace Margin.Rendering
             {
                 rootOffsetX = pose.rootOffsetX + delta.rootOffsetX * weight,
                 rootOffsetY = pose.rootOffsetY + delta.rootOffsetY * weight,
+                rootRotation = pose.rootRotation + delta.rootRotation * weight,
             };
             foreach (PoseJoint joint in AllJoints) r.Set(joint, pose.Get(joint) + delta.Get(joint) * weight);
             return r;

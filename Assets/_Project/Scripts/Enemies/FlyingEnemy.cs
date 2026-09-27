@@ -14,7 +14,7 @@ namespace Margin.Enemies
         [SerializeField] private ScribbleBatVisual visual;
 
         public override bool Flies => true;
-        protected override bool GravityApplies => CurrentState == Hitstun || CurrentState == Dead;
+        protected override bool GravityApplies => CurrentState == Hitstun || CurrentState == Dead || CurrentState == Knockdown;
         public ScribbleBatVisual Visual => visual;
 
         protected override void Awake()

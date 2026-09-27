@@ -35,6 +35,11 @@ namespace Margin.Tests
             set.land = Clip("Land", 1, loop: false);
             set.skid = Clip("Skid", 1, loop: false);
             set.dash = Clip("Dash", 1, loop: false);
+            set.turn = Clip("Turn", 2, loop: false);
+            set.runStop = Clip("RunStop", 2, loop: false);
+            set.idleFidget = Clip("Fidget", 2, loop: false);
+            set.hardLand = Clip("HardLand", 2, loop: false);
+            set.fidgetAfterFrames = 30;
 
             world.Box(-50, -1, 50, 0);
             KinematicBody2D body = world.Body(new Vector2(0, 0.05f));
@@ -120,6 +125,78 @@ namespace Margin.Tests
             Assert.AreEqual(set.sprint, Playing);
             float sprintPhase = ((animator.PoseAnimator.ClipTick - 1) % 30) / 30f;
             Assert.AreEqual(runPhase, sprintPhase, 1f / 30f + 0.001f, "Sprint should continue the stride, not restart it.");
+        }
+
+        private void RunRightToFullSpeed()
+        {
+            for (int i = 0; i < 10; i++) Step();
+            input.Move = Vector2.right;
+            for (int i = 0; i < 20; i++) Step();
+            Assert.IsInstanceOf<RunState>(player.CurrentState);
+        }
+
+        [Test]
+        public void TurningAroundWhileRunning_PlaysTheTurn()
+        {
+            RunRightToFullSpeed();
+            input.Move = Vector2.left;
+            Step();
+            Assert.AreEqual(set.turn, animator.OneShot);
+            Assert.AreEqual(set.turn, Playing);
+        }
+
+        [Test]
+        public void ReleasingAtSpeed_PlaysRunStop_AndRunningAgainCancelsIt()
+        {
+            RunRightToFullSpeed();
+            input.Move = Vector2.zero;
+            Step();
+            Assert.AreEqual(set.runStop, animator.OneShot);
+
+            input.Move = Vector2.right;
+            Step();
+            Assert.IsNull(animator.OneShot, "Pressing a direction goes straight back to the run.");
+            Assert.AreEqual(set.run, Playing);
+        }
+
+        [Test]
+        public void StandingStill_PlaysAFidget_AndJumpingCancelsIt()
+        {
+            for (int i = 0; i < 80 && animator.OneShot != set.idleFidget; i++) Step();
+            Assert.AreEqual(set.idleFidget, animator.OneShot, "Fidgets after 30 idle frames.");
+
+            input.JumpHeld = true;
+            Step(pressJump: true);
+            Assert.IsNull(animator.OneShot, "Any move cancels a one-shot.");
+            Assert.AreEqual(set.jump, Playing);
+        }
+
+        [Test]
+        public void RunCycle_PlaysFasterWhenItHasAStrideLength()
+        {
+            set.run.strideLength = 3f;
+            RunRightToFullSpeed();
+            float expected = CycleSync.Rate(player.Velocity.x, 3f, set.run.Timeline.TotalFrames, 0.35f, 3f);
+            Assert.AreEqual(expected, animator.PoseAnimator.PlaybackRate, 1e-3f);
+            Assert.Greater(animator.PoseAnimator.PlaybackRate, 1f);
+        }
+
+        [Test]
+        public void HardLanding_OnlyAfterAHighFall()
+        {
+            for (int i = 0; i < 10; i++) Step();
+            input.JumpHeld = true;
+            Step(pressJump: true);
+            for (int i = 0; i < 120 && !(player.CurrentState is LandState); i++) Step();
+            Assert.Less(player.LastFallHeight, set.hardLandingHeight, "A normal jump is not a hard landing.");
+            Assert.AreNotEqual(set.hardLand, animator.OneShot);
+
+            input.JumpHeld = false;
+            for (int i = 0; i < 20; i++) Step();
+            player.ResetTo(new Vector2(0f, 8f));   // drop from 8 units up
+            for (int i = 0; i < 200 && !(player.CurrentState is LandState); i++) Step();
+            Assert.Greater(player.LastFallHeight, set.hardLandingHeight);
+            Assert.AreEqual(set.hardLand, animator.OneShot);
         }
     }
 }

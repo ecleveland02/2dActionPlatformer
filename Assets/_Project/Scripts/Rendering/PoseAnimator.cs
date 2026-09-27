@@ -25,7 +25,7 @@ namespace Margin.Rendering
 
         private PoseClip clip;
         private PoseTimeline timeline;
-        private int clipTick;
+        private float clipTime;   // in clip ticks; advances by PlaybackRate each game tick
 
         private FigurePose fadeFrom;
         private int fadeFrames;
@@ -48,7 +48,11 @@ namespace Margin.Rendering
         }
 
         public PoseClip CurrentClip => clip;
-        public int ClipTick => clipTick;
+        public int ClipTick => (int)clipTime;
+        /// <summary>Clip ticks per game tick (1 = normal). Owners set it every tick, e.g. to sync a run to speed.</summary>
+        public float PlaybackRate { get; set; } = 1f;
+        /// <summary>True once a non-looping clip has played to its end.</summary>
+        public bool Finished => timeline != null && !timeline.Loop && clipTime >= timeline.TotalFrames;
         public FigurePose Output { get; private set; }
         /// <summary>Extra forward lean in degrees added to the spine this tick (e.g. leaning into acceleration).</summary>
         public float Lean { get; set; }
@@ -78,7 +82,7 @@ namespace Margin.Rendering
             int nextTick = 0;
             if (keepPhase && timeline != null)
             {
-                float phase = (clipTick % timeline.TotalFrames) / (float)timeline.TotalFrames;
+                float phase = (clipTime % timeline.TotalFrames) / timeline.TotalFrames;
                 nextTick = Mathf.RoundToInt(phase * nextTimeline.TotalFrames);
             }
 
@@ -87,7 +91,7 @@ namespace Margin.Rendering
             fadeTick = 0;
             clip = next;
             timeline = nextTimeline;
-            clipTick = nextTick;
+            clipTime = nextTick;
         }
 
         /// <summary>Layers a clip's motion (relative to its first pose) on top. Pass null to remove.</summary>
@@ -105,8 +109,9 @@ namespace Margin.Rendering
         {
             if (timeline == null || rig == null) return;
 
-            previousOutput = hasTicked ? Output : timeline.Sample(clipTick);
-            FigurePose pose = timeline.Sample(clipTick++);
+            previousOutput = hasTicked ? Output : timeline.Sample(clipTime);
+            FigurePose pose = timeline.Sample(clipTime);
+            clipTime += Mathf.Max(0f, PlaybackRate);
 
             if (additiveTimeline != null && additiveWeight > 0f)
             {

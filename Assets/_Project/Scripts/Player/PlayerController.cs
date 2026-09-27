@@ -66,6 +66,10 @@ namespace Margin.Player
         /// <summary>Consecutive grounded ticks spent running at full speed or faster. Sprint starts at MovementData.framesToStartSprint.</summary>
         public int SprintCharge { get; private set; }
         public bool IsSprinting => SprintCharge >= data.framesToStartSprint;
+        /// <summary>How far (units) the player dropped from the highest point of the last airtime to the landing.
+        /// Used to pick a hard-landing animation.</summary>
+        public float LastFallHeight { get; private set; }
+        private float airPeakY;
 
         public MovementData Data => data;
         public IPlayerInput Controls { get; private set; }
@@ -163,6 +167,7 @@ namespace Margin.Player
         public void ResetTo(Vector2 position)
         {
             Body.Teleport(position);
+            airPeakY = position.y;
             Velocity = Vector2.zero;
             FramesSinceGrounded = 0;
             SprintCharge = 0;
@@ -244,6 +249,8 @@ namespace Margin.Player
 
             if (c.Grounded)
             {
+                if (c.JustLanded) LastFallHeight = Mathf.Max(0f, airPeakY - Body.Position.y);
+                airPeakY = Body.Position.y;
                 if (Velocity.y < 0f) Velocity.y = 0f;
                 FramesSinceGrounded = 0;
                 coyoteAvailable = true;
@@ -251,6 +258,7 @@ namespace Margin.Player
             }
             else
             {
+                airPeakY = Mathf.Max(airPeakY, Body.Position.y);
                 FramesSinceGrounded++;
             }
         }
