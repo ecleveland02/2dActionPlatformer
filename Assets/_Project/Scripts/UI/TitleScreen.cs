@@ -37,7 +37,7 @@ namespace Margin.UI
                 MenuView.Item("Play", settings.iconPlay, Play),
                 MenuView.Controls(settings),
                 MenuView.Item("Quit", settings.iconQuit, MarginUI.QuitGame),
-            }, fullPage: true, subtitle: "ink. paper. katana.", titleSize: settings.menuTitleSize * 2);
+            }, fullPage: true, titleSize: settings.menuTitleSize * 2);
             menu.Open(controls);
 
             InputActionMap map = controls != null ? controls.FindActionMap("Menu") : null;
