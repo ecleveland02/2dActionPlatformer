@@ -59,6 +59,14 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   (lie `knockdownFrames`, get up `getUpFrames`, invulnerable by default). Enemy clips (idle loops + breathing,
   turn, alert, hurt, knockdown, get-up, defeat) live in `StarterEnemies.ApplyAnimations` (also run by Upgrade
   Animations); the bat's body motion (bob/bank, tumble, belly-up, flip back over) is in `FlyingEnemy.UpdateVisual`.
+- **Sword look + traced poses:** `WeaponLook` (Data/Weapons/KatanaLook, Data/Enemies/PencilLook) styles the blade
+  drawn by `WeaponLine`: Katana = gray fill over an ink outline, guard, handle, scabbard at the hip; Pencil for the
+  lancer. The tip stays at hand + dir x length, so hitboxes/trail/smears ignore the look. `FigurePose.grip` turns
+  the sword away from the forearm (wrist). Two-handed grip is runtime IK (`PlaceBackHand`) only while the blade
+  points forward/up. Player poses and clips come from the katana sprite sheets, traced offline into rig angles and
+  generated into `Editor/StarterAnimations.TracedData.cs` (`ApplyTraced`, run by **Upgrade Animations**). Attack
+  clips are 6 keys (Entry, Windup, Strike, StrikeEnd, Recover, Exit) timed from each move's startup/active/recovery,
+  and strike poses were nudged so the blade crosses the existing hitbox on every active frame.
 - **Combat (M3):** `AttackData` holds frame data, hitboxes (authored per attack, right-facing, flipped by facing),
   cancels and presentation. Attack frame 1 = the tick it starts. `AttackTiming` (pure) owns phase/cancel rules:
   on hit, "Cancels into" + jump/dash inside the window; on whiff, jump/dash from the window start and follow-up
