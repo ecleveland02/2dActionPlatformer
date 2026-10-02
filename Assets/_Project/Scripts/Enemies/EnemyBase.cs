@@ -178,8 +178,12 @@ namespace Margin.Enemies
             FindTarget();
             machine.Tick();
             MoveBody();
+            AfterMove();
             UpdateVisual();
         }
+
+        /// <summary>Every tick after the body moved (e.g. the Eraser Crawler erasing the tile it stands on).</summary>
+        protected virtual void AfterMove() { }
 
         private void Begin()
         {
