@@ -29,6 +29,8 @@ namespace Margin.Level
         private readonly TransitionTimer timer = new TransitionTimer();
         private readonly List<Room> rooms = new List<Room>();
         private RoomDoor arrivalDoor;      // set while fading out through a door
+        private string sceneExit;          // leaving through a door into another scene
+        private bool warnedScene;
         private bool pitPending;           // fading out after a pit fall
         private bool respawnPending;       // PlayerHealth.Respawn happened; switch rooms on the next tick
         private int entryWalkLeft;
@@ -192,8 +194,15 @@ namespace Margin.Level
             Rect body = PlayerRect();
             foreach (RoomDoor door in CurrentRoom.Doors)
             {
-                if (door == null || door.Target == null || !door.isActiveAndEnabled) continue;
+                if (door == null || !door.Leads || !door.isActiveAndEnabled) continue;
                 if (!door.Area.Overlaps(body)) continue;
+                if (door.Target == null && !Application.CanStreamedLevelBeLoaded(door.NextScene))
+                {
+                    if (!warnedScene)
+                        Debug.LogWarning($"Door to scene '{door.NextScene}': not in Build Settings yet (Margin > Build World 2 adds it).", door);
+                    warnedScene = true;
+                    continue;
+                }
                 LeaveThrough(door);
                 return;
             }
@@ -226,6 +235,7 @@ namespace Margin.Level
         private void LeaveThrough(RoomDoor door)
         {
             arrivalDoor = door.Target;
+            sceneExit = door.Target == null ? door.NextScene : null;
             Protect(true);
             // Keep walking out (or keep rising through a hole in the ceiling) while the screen fades.
             switch (door.DoorSide)
@@ -241,7 +251,15 @@ namespace Margin.Level
         /// <summary>The screen is fully covered: move the player and switch rooms unseen.</summary>
         private void OnScreenCovered()
         {
-            if (arrivalDoor != null)
+            if (!string.IsNullOrEmpty(sceneExit))
+            {
+                // Out of this world: the save moves on to the next scene's start, then it loads behind the fade.
+                string scene = sceneExit;
+                sceneExit = null;
+                Margin.Save.GameSession.EnterScene(scene, player);
+                Margin.UI.MarginUI.LoadScene(scene);   // CheckDoors made sure it's in Build Settings
+            }
+            else if (arrivalDoor != null)
             {
                 RoomDoor door = arrivalDoor;
                 arrivalDoor = null;
@@ -300,6 +318,7 @@ namespace Margin.Level
             // PlayerHealth has already moved the player. Switch rooms on the next tick, outside this event.
             respawnPending = true;
             arrivalDoor = null;
+            sceneExit = null;
             pitPending = false;
             entryWalkLeft = 0;
             ReleaseControls();

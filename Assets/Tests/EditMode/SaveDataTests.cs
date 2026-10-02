@@ -52,6 +52,9 @@ namespace Margin.Tests
             Assert.AreEqual("1:02:03", SaveData.FormatPlaytime((3600 + 2 * 60 + 3) * 60L));
             Assert.AreEqual("Margin Call", SaveData.CleanName("7 Margin Call"));
             Assert.AreEqual("Ink Pot", SaveData.CleanName("Ink Pot"));
+            Assert.AreEqual("World 2", SaveData.SceneTitle("World2"));
+            Assert.AreEqual("World 2", SaveData.SceneTitle("World 2"));
+            Assert.AreEqual("Title", SaveData.SceneTitle("Title"));
             var d = new SaveData { checkpointName = "Margin Call", playFrames = 60 * 75 };
             d.abilities.Add("GrappleLine");
             Assert.AreEqual("Margin Call   1:15   Grapple Line", d.Summary());

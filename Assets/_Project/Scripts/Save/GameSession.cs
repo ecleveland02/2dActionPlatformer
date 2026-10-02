@@ -74,6 +74,20 @@ namespace Margin.Save
             return null;
         }
 
+        /// <summary>
+        /// The player walked out of this world into <paramref name="scene"/> (e.g. World 1 into World 2): the save
+        /// keeps their abilities and moves to the new scene's start, so Continue begins there.
+        /// </summary>
+        public static void EnterScene(string scene, PlayerController player)
+        {
+            if (!Active) return;
+            if (player != null) Capture(player);
+            Data.scene = scene;
+            Data.checkpointId = "";
+            Data.checkpointName = SaveData.SceneTitle(scene);
+            Save();
+        }
+
         /// <summary>One game tick played (LevelDirector calls this; it pauses with the game).</summary>
         public static void CountTick()
         {

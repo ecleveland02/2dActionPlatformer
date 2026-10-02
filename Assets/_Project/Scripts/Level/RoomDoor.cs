@@ -19,6 +19,8 @@ namespace Margin.Level
         [SerializeField] private Side side;
         [Tooltip("The door in the next room this one leads to (it usually leads back here).")]
         [SerializeField] private RoomDoor target;
+        [Tooltip("Leave the world: with no Target, walking through loads this scene (it must be in Build Settings).")]
+        [SerializeField] private string nextScene;
         [Tooltip("Size of the trigger area, centered on this object.")]
         [SerializeField] private Vector2 size = new Vector2(1f, 4f);
         [Tooltip("Where the player's center appears when arriving through this door, relative to this object.")]
@@ -33,6 +35,9 @@ namespace Margin.Level
 
         public Side DoorSide => side;
         public RoomDoor Target => target;
+        public string NextScene => nextScene;
+        /// <summary>Leads somewhere: another door, or another scene.</summary>
+        public bool Leads => target != null || !string.IsNullOrEmpty(nextScene);
         public int ArrivalNudge => arrivalNudge;
 
         /// <summary>The room this door belongs to.</summary>
@@ -62,6 +67,9 @@ namespace Margin.Level
             arrivalNudge = nudge;
             safeOffset = safe;
         }
+
+        /// <summary>Makes this door the way out of the world, into another scene (e.g. World 1 to World 2).</summary>
+        public void ConfigureSceneExit(string scene) => nextScene = scene;
 
         /// <summary>Connects two doors both ways.</summary>
         public static void Link(RoomDoor a, RoomDoor b)

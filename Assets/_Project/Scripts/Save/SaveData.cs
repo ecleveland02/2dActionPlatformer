@@ -65,12 +65,22 @@ namespace Margin.Save
             return i > 0 && i < title.Length && title[i] == ' ' ? title.Substring(i + 1) : title;
         }
 
+        /// <summary>A scene name for the slot list: "World2" becomes "World 2".</summary>
+        public static string SceneTitle(string scene)
+        {
+            if (string.IsNullOrEmpty(scene)) return "";
+            int i = scene.Length;
+            while (i > 0 && char.IsDigit(scene[i - 1])) i--;
+            return i > 0 && i < scene.Length && scene[i - 1] != ' ' ? scene.Substring(0, i) + " " + scene.Substring(i) : scene;
+        }
+
         /// <summary>The slot's one-line summary, e.g. "Margin Call   0:12:34   Grapple Line".</summary>
         public string Summary()
         {
             string where = string.IsNullOrEmpty(checkpointName) ? "Start" : checkpointName;
             string text = where + "   " + FormatPlaytime(playFrames);
             if (HasAbility("GrappleLine")) text += "   Grapple Line";
+            if (HasAbility("DoubleJump")) text += "   Double Jump";
             return text;
         }
     }

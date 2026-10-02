@@ -195,6 +195,23 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   `BossArena.Start` skips a saved-beaten boss (`SkipToBeaten`); `AbilityPickup` hides if the ability is owned.
   Playing a world straight from the editor has no slot: nothing saves. Menu pages are pluggable: `IMenuPanel` +
   `MenuView.Panel(...)` (Options and SlotPanel use it).
+- **World 2 (M7, spec 11.2):** Graph Paper. Menu **Margin > Build World 2** writes `Scenes/World2.unity` (8 rooms in
+  `Editor/GymBuilder.World2.cs`, added to Build Settings after World1); World 1's last door is a scene exit
+  (`RoomDoor.ConfigureSceneExit`: no Target, loads `NextScene` behind the fade; `GameSession.EnterScene` saves the
+  move). Shared world setup is `GymBuilder.FinishWorld`; `WorldKit.SolidStyle` = `LevelBlock.Style.Grid` draws ground
+  as graph squares. Pieces: `Level/GridBlock` (TickOrder -50, pure `GridPath`; carries riders via `IMovingSolid`,
+  pushes bodies, crush = `LevelDirector.Crush`; one-way blocks only carry; `Frozen` holds it; the drawing is a child
+  smoothed in LateUpdate), `Level/ErasableTile` (rubbed out by `EraserCrawler.AfterMove`, back after 360 frames),
+  `Enemies/TackTurret` (unparryable tacks, `EnemyProjectile`), `Enemies/EraserCrawler`. Enemies that fall 3 units
+  below their room die (`EnemyBase.CheckFellOut`). Data: `Editor/StarterWorld2.cs`.
+  **Double Jump (Spring Doodle):** `DoubleJumpState`, `PlayerController.CheckDoubleJump` (air jumps refill on landing
+  and grapple release), `MovementData.doubleJumpHeight/airJumps/springFrames`; the spring under the feet hits enemies
+  (`PlayerCombat.TickSpring`, numbers in CombatSettings); `PlayerAnimator` flips 360. Reward of the Stapler Titan.
+  **Stapler Titan** (`Bosses/Stapler/`, data `Data/Bosses/Stapler` via `StarterBosses.EnsureStapler`): Chomp (parry),
+  Hop Slam (red; pure `StaplerMath` arc, `ShockwaveProjectile`s both ways, long jam = punish), Staple Shot (red,
+  aimed staples), phase 2 Staple Rain (red, dashed lanes; platforms block staples). Phase 2 pins `StaplePlatform`s
+  with `KeepInPhase2` and tears out the rest (flicker first); everything restores on retry. No new move while its
+  own waves/staples are still out (spec: max 2 attack types at once).
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

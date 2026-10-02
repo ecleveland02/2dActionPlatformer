@@ -29,7 +29,7 @@ namespace Margin.EditorTools
     ///   6 Crossfire       mixed fight: grunts, lancer, bat
     ///   7 Margin Call     ink pot before the boss
     ///   8 The Highlighter boss arena (raised lines for phase 2); the exit is sealed until the boss falls
-    ///   9 Loose Leaf      after the boss: gaps crossed with the Grapple Line; end of the slice
+    ///   9 Loose Leaf      after the boss: gaps crossed with the Grapple Line; the far door leads to World 2
     /// </summary>
     public static partial class GymBuilder
     {
@@ -51,6 +51,10 @@ namespace Margin.EditorTools
             public StarterEnemies.Result Enemies;
             public Transform Root;
             public int Ground, OneWay;
+            /// <summary>How solid ground is drawn: World 1 hatched, World 2 graph paper squares.</summary>
+            public LevelBlock.Style SolidStyle = LevelBlock.Style.Solid;
+            public StarterWorld2.Result World2;
+            public StarterBosses.StaplerResult Stapler;
         }
 
         [MenuItem("Margin/Build World 1")]
@@ -96,17 +100,34 @@ namespace Margin.EditorTools
                 Crossfire(kit, 5), MarginCall(kit, 6), HighlighterArena(kit, 7), LooseLeaf(kit, 8),
             };
             for (int i = 0; i + 1 < rooms.Count; i++) RoomDoor.Link(rooms[i].RightDoor, rooms[i + 1].LeftDoor);
+            FinishWorld(kit, rooms, scene, WorldPath, levelSettings, cameraSettings,
+                        new Dictionary<string, bool> { { "wallCling", false } });   // Boss 4's ability, not in World 1
+            AddToBuildSettingsFirst(WorldPath);
+            Debug.Log($"World 1 built at {WorldPath}: {rooms.Count} rooms. Press Play. (Rooms are switched off except " +
+                      "the first; tick one on in the Hierarchy to edit it.)");
+        }
 
-            GameObject player = BuildPlayer(playerLayer, assets);
+
+        /// <summary>
+        /// The parts every world scene shares: the player at the first room's start (<paramref name="abilities"/> sets
+        /// AbilityUnlocks fields it begins with when playing the scene straight from the editor; a save overrides
+        /// them), the LevelDirector, the camera and scene effects. Saves the scene.
+        /// </summary>
+        private static void FinishWorld(WorldKit kit, List<RoomKit> rooms, Scene scene, string path, LevelSettings levelSettings,
+                                        CameraSettings cameraSettings, Dictionary<string, bool> abilities)
+        {
+            GymAssets assets = kit.Assets;
+            GameObject player = BuildPlayer(LayerMask.NameToLayer("Player"), assets);
             player.transform.position = rooms[0].P(4f, 0.95f);
-            var so = new SerializedObject(player.GetComponent<PlayerController>());
-            so.FindProperty("abilities.wallCling").boolValue = false;   // Boss 4's ability, not in World 1
+            var controller = player.GetComponent<PlayerController>();
+            var so = new SerializedObject(controller);
+            foreach (KeyValuePair<string, bool> a in abilities) so.FindProperty("abilities." + a.Key).boolValue = a.Value;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             var director = new GameObject("LevelDirector").AddComponent<LevelDirector>();
             SetReference(director, "settings", levelSettings);
             SetReference(director, "startRoom", rooms[0].Room);
-            SetReference(director, "player", player.GetComponent<PlayerController>());
+            SetReference(director, "player", controller);
 
             var camObject = new GameObject("Main Camera") { tag = "MainCamera" };
             var cam = camObject.AddComponent<Camera>();
@@ -125,10 +146,7 @@ namespace Margin.EditorTools
             for (int i = 1; i < rooms.Count; i++) rooms[i].Room.gameObject.SetActive(false);
 
             EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene, WorldPath);
-            AddToBuildSettingsFirst(WorldPath);
-            Debug.Log($"World 1 built at {WorldPath}: {rooms.Count} rooms. Press Play. (Rooms are switched off except " +
-                      "the first; tick one on in the Hierarchy to edit it.)");
+            EditorSceneManager.SaveScene(scene, path);
         }
 
         // ================= rooms =================
@@ -342,7 +360,8 @@ namespace Margin.EditorTools
         {
             // Two gaps too wide to jump: the Grapple Line (won from the Highlighter) swings across.
             var r = new RoomKit(kit, "9 Loose Leaf", index, 64f, 18f);
-            r.Frame(0f, null);
+            r.Frame(0f, 0f);
+            r.RightDoor.ConfigureSceneExit(World2Scene);   // on to World 2 (Margin > Build World 2 adds it)
             r.Solid("Floor A", -1f, -3f, 14f, 0f);
             r.Solid("Floor B", 30f, -3f, 40f, 0f);
             r.Solid("Floor C", 52f, -3f, 65f, 0f);
@@ -354,8 +373,7 @@ namespace Margin.EditorTools
             r.Anchor(25.5f, 8.5f);
             r.Anchor(46f, 8.5f);
             r.Grunt(36f, 0f);
-            r.Label("END OF THE VERTICAL SLICE", 58f, 6f, 1.2f);
-            r.Label("thanks for playing!", 58f, 5f);
+            r.Label("WORLD 2: GRAPH PAPER  ->", 57f, 6f, 1.2f);
             r.Paper(97);
             return r;
         }
@@ -364,7 +382,7 @@ namespace Margin.EditorTools
 
         /// <summary>Builds one room: geometry, doors, enemies and decoration, in the room's own coordinates
         /// (x from 0 at the left edge of the camera bounds, floor top usually at y = 0, bounds bottom at -2).</summary>
-        private sealed class RoomKit
+        private sealed partial class RoomKit
         {
             public readonly Room Room;
             public RoomDoor LeftDoor, RightDoor;
@@ -452,7 +470,7 @@ namespace Margin.EditorTools
                 go.transform.SetParent(geometry, false);
                 go.transform.position = P((x0 + x1) * 0.5f, (y0 + y1) * 0.5f);
                 go.AddComponent<BoxCollider2D>().size = new Vector2(x1 - x0, y1 - y0);
-                go.AddComponent<LevelBlock>().Configure(LevelBlock.Style.Solid, kit.Assets.Ink);
+                go.AddComponent<LevelBlock>().Configure(kit.SolidStyle, kit.Assets.Ink);
                 return go;
             }
 

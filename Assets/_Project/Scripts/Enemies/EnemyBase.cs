@@ -179,8 +179,19 @@ namespace Margin.Enemies
             machine.Tick();
             MoveBody();
             AfterMove();
+            CheckFellOut();
             UpdateVisual();
         }
+
+        /// <summary>Fell out of its room (a pit, or a tile erased under it): defeated, until the room resets.</summary>
+        private void CheckFellOut()
+        {
+            if (IsDead) return;
+            if (room == null) room = Level.Room.Of(this);
+            if (room != null && Position.y < room.WorldBounds.yMin - 3f) machine.ForceState(Dead);
+        }
+
+        private Level.Room room;
 
         /// <summary>Every tick after the body moved (e.g. the Eraser Crawler erasing the tile it stands on).</summary>
         protected virtual void AfterMove() { }
