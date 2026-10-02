@@ -30,9 +30,10 @@ namespace Margin.UI
 
         public InkPanel Card => card;
         public bool IsOpen { get; private set; }
+        public bool Busy => false;
 
         /// <param name="playSlot">Called with the slot number (0-2) to continue or start.</param>
-        public SlotPanel(UISettings settings, MenuView.CardMaker makeCard, Action<int> playSlot)
+        public SlotPanel(UISettings settings, Func<float, float, InkPanel> makeCard, Action<int> playSlot)
         {
             s = settings;
             play = playSlot;

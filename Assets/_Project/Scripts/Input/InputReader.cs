@@ -85,6 +85,7 @@ namespace Margin.Input
             if (Buffer == null && GameLoop.Clock != null) Initialize(GameLoop.Clock);
             if (Buffer == null) Debug.LogError("InputReader needs a GameLoop in the scene.", this);
 
+            Margin.Save.OptionsStore.ApplyBindings(actions);   // the player's rebound keys
             InputActionMap map = actions.FindActionMap(GameplayMap, throwIfNotFound: true);
             moveAction = map.FindAction("Move", throwIfNotFound: true);
             jumpAction = map.FindAction("Jump", throwIfNotFound: true);

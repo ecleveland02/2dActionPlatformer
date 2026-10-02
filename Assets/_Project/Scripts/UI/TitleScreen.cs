@@ -31,10 +31,11 @@ namespace Margin.UI
         {
             Time.timeScale = 1f;   // in case we came here from the pause menu
             if (settings == null) settings = MarginUI.FindSettings();
+            Margin.Save.OptionsStore.ApplyBindings(controls);
             UIDocument document = MarginUI.CreateDocument(transform, settings, out panel);
             menu = new MenuView(document.rootVisualElement, settings, "MARGIN", new[]
             {
-                MenuView.Panel("Play", settings.iconPlay, card => new SlotPanel(settings, card, Play)),
+                MenuView.Panel("Play", settings.iconPlay, menu => new SlotPanel(settings, menu.MakeCard, Play)),
                 MenuView.Options(settings),
                 MenuView.Controls(settings),
                 MenuView.Item("Quit", settings.iconQuit, MarginUI.QuitGame),

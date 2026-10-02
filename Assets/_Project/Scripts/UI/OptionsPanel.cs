@@ -43,8 +43,9 @@ namespace Margin.UI
 
         public InkPanel Card => card;
         public bool IsOpen { get; private set; }
+        public bool Busy => false;
 
-        public OptionsPanel(UISettings settings, MenuView.CardMaker makeCard)
+        public OptionsPanel(UISettings settings, Func<float, float, InkPanel> makeCard)
         {
             s = settings;
             AddSlider("Master volume", () => OptionsStore.Current.masterVolume, v => OptionsStore.Current.masterVolume = v);

@@ -132,8 +132,11 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   UIDocument scaled from 1920x1080, with `HudView` (health + ink card top-left with damage chip, low-health pulse,
   hurt shake, combo counter and breaker prompt; boss bar bottom-centre for any `IBossBarSource` in `BossBars`,
   e.g. an enemy with `EnemyData.bossBarName`) and the pause menu, a `MenuView` (flat `UIButton`s with pack icons:
-  Resume, Restart = `PlayerHealth.Respawn`, Controls, Title Screen, Quit; Controls page shows `KeyHint` key/mouse
-  pictures per binding, text for gamepad). `TitleScreen` (Scenes/Title.unity, **Margin > Build Title Screen**, first
+  Resume, Restart = `PlayerHealth.Respawn`, Options, Controls, Title Screen, Quit). Every page is an `IMenuPanel`
+  (`MenuView.Panel`): `ControlsPanel` shows `KeyHint` key/mouse pictures per binding (text for gamepad) and rebinds:
+  pick a Keyboard/Gamepad cell, press the new key (Esc / Start cancel); `Input/Rebinding` replaces the action's first
+  binding in that group and swaps with any action that had the key; overrides saved as JSON in options.json
+  (`OptionsStore.ApplyBindings` in InputReader/TitleScreen). Move, Pause and the Menu map aren't rebindable. `TitleScreen` (Scenes/Title.unity, **Margin > Build Title Screen**, first
   in Build Settings) is the same `MenuView` on a full `RuledPaper` page: Play (loads `UISettings.firstScene`),
   Options, Controls, Quit. Scene names live in UISettings (`titleScene`, `firstScene`); `MarginUI.LoadScene` checks Build Settings.
   **Options** (title + pause, `OptionsPanel` page of `MenuView`): master/music/effects volume, screen shake, window mode,

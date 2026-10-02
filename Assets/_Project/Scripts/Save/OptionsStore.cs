@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace Margin.Save
 {
@@ -71,6 +72,30 @@ namespace Margin.Save
             Current.Clamp();
             if (displayChanged) ApplyDisplay();
             Changed?.Invoke();
+        }
+
+        /// <summary>Puts the player's rebound keys on a controls asset (InputReader and the title screen call this).</summary>
+        public static void ApplyBindings(InputActionAsset actions)
+        {
+            if (actions == null) return;
+            try
+            {
+                actions.RemoveAllBindingOverrides();
+                if (!string.IsNullOrEmpty(Current.bindingOverrides)) actions.LoadBindingOverridesFromJson(Current.bindingOverrides);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"Couldn't load rebound controls ({e.Message}); using the defaults.");
+                actions.RemoveAllBindingOverrides();
+            }
+        }
+
+        /// <summary>Remembers the asset's current overrides and saves options.json.</summary>
+        public static void StoreBindings(InputActionAsset actions)
+        {
+            if (actions == null) return;
+            Current.bindingOverrides = actions.SaveBindingOverridesAsJson();
+            Save();
         }
 
         /// <summary>Window mode, resolution and vsync. (The editor's Game view ignores mode and resolution.)</summary>

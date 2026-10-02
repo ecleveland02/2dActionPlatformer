@@ -11,58 +11,48 @@ namespace Margin.UI
     /// A menu (spec 14): a hand-drawn paper card with a title and a column of clean flat buttons, each with an icon
     /// from Art/UI. Used by the pause menu (over the dimmed game) and the title screen (over a full notebook page).
     /// Works with keyboard, gamepad (MarginControls "Menu" map, fed in by the owner) and mouse (hover selects,
-    /// click activates). A Controls entry opens a page listing every action with the key/mouse pictures of its
-    /// current bindings (text for gamepad), read from the input asset so it follows rebinding.
+    /// click activates). Buttons either do something or open a page of their own (IMenuPanel): Controls (bindings
+    /// table + rebinding), Options, the title screen's save slots.
     /// </summary>
     public sealed class MenuView
     {
-        /// <summary>Builds a page's card at the given size (the menu's hand-drawn style, centered).</summary>
-        public delegate InkPanel CardMaker(float width, float height);
-
         /// <summary>One button: label, icon and what it does (or which page it opens).</summary>
         public struct Entry
         {
             public string Label;
             public Texture2D Icon;
             public Action Action;
-            internal bool OpensControls;
-            internal Func<CardMaker, IMenuPanel> MakePanel;
+            internal Func<MenuView, IMenuPanel> MakePanel;
         }
 
         public static Entry Item(string label, Texture2D icon, Action action) =>
             new Entry { Label = label, Icon = icon, Action = action };
 
-        /// <summary>The button that opens the Controls page.</summary>
-        public static Entry Controls(UISettings s) => new Entry { Label = "Controls", Icon = s.iconControls, OpensControls = true };
+        /// <summary>The Controls page: every action's keys and buttons, and rebinding them.</summary>
+        public static Entry Controls(UISettings s) =>
+            Panel("Controls", s.iconControls, menu => new ControlsPanel(s, menu.MakeCard, () => menu.Bindings));
 
-        /// <summary>The button that opens the Options page (audio, screen shake, display, key bindings).</summary>
-        public static Entry Options(UISettings s) =>
-            Panel("Options", s.iconOptions, card => new OptionsPanel(s, card));
+        /// <summary>The Options page (audio, screen shake, display).</summary>
+        public static Entry Options(UISettings s) => Panel("Options", s.iconOptions, menu => new OptionsPanel(s, menu.MakeCard));
 
-        /// <summary>A button that opens a page of its own (Options, save slots...).</summary>
-        public static Entry Panel(string label, Texture2D icon, Func<CardMaker, IMenuPanel> make) =>
+        /// <summary>A button that opens a page of its own.</summary>
+        public static Entry Panel(string label, Texture2D icon, Func<MenuView, IMenuPanel> make) =>
             new Entry { Label = label, Icon = icon, MakePanel = make };
-
-        private enum Page { Main, Controls, Panel }
 
         private readonly UISettings s;
         private readonly VisualElement layer;
-        private readonly InkPanel mainCard, controlsCard;
+        private readonly InkPanel mainCard;
         private readonly List<UIButton> buttons = new List<UIButton>();
         private readonly List<Action> actions = new List<Action>();
-        private readonly UIButton backButton;
-        private readonly VisualElement bindingList;
         private readonly RuledPaper page;
-        private readonly List<IMenuPanel> panels = new List<IMenuPanel>();
+        private readonly MenuCursor cursor;
         private IMenuPanel openPanel;
-        private MenuCursor cursor;
-        private Page shown;
-        private InputActionAsset shownBindings;
         private UIButton pressedButton;
 
-        private const float ControlsWidth = 980f;
-
         public bool IsOpen { get; private set; }
+
+        /// <summary>The controls asset given to Open (the Controls page reads and rebinds it).</summary>
+        public InputActionAsset Bindings { get; private set; }
 
         /// <param name="fullPage">True: a whole notebook page behind the card (title screen). False: dim the game.</param>
         /// <param name="titleSize">Title text size; 0 = UISettings.menuTitleSize.</param>
@@ -86,10 +76,11 @@ namespace Margin.UI
             float mainWidth = s.buttonWidth + 120f;
             float mainHeight = 60f + size + 36f + (string.IsNullOrEmpty(subtitle) ? 0f : s.labelSize + 24f) +
                                entries.Count * (s.buttonHeight + s.buttonSpacing) + 40f;
-            mainCard = Card(mainWidth, mainHeight);
+            mainCard = MakeCard(mainWidth, mainHeight);
             layer.Add(mainCard);
             VisualElement column = Column(mainCard);
-            Label titleLabel = Title(title, size);
+            Label titleLabel = UIButton.FlowLabel(s, title, size, s.ink);
+            titleLabel.style.marginBottom = 30f;
             column.Add(titleLabel);
             if (!string.IsNullOrEmpty(subtitle))
             {
@@ -98,39 +89,19 @@ namespace Margin.UI
                 sub.style.marginBottom = 30f;
                 column.Add(sub);
             }
+
             foreach (Entry e in entries)
             {
                 if (e.MakePanel != null)
                 {
-                    // A page of its own (Options, save slots): built now, shown when its button is picked.
-                    IMenuPanel panel = e.MakePanel(Card);
-                    panels.Add(panel);
+                    // A page of its own: built now, shown when its button is picked.
+                    IMenuPanel panel = e.MakePanel(this);
                     layer.Add(panel.Card);
                     HudView.SetVisible(panel.Card, false);
                     AddButton(column, e.Label, e.Icon, () => OpenPanel(panel));
                 }
-                else if (e.OpensControls) AddButton(column, e.Label, e.Icon, () => ShowPage(Page.Controls));
                 else AddButton(column, e.Label, e.Icon, e.Action);
             }
-
-            // ---- Controls page: bindings table + Back ----
-            float rowHeight = s.keyIconSize + 10f;
-            float controlsHeight = 60f + s.menuTitleSize + 30f + 12f * rowHeight + s.buttonHeight + 70f;
-            controlsCard = Card(ControlsWidth, controlsHeight);
-            layer.Add(controlsCard);
-            VisualElement controlsColumn = Column(controlsCard);
-            controlsColumn.Add(Title("CONTROLS", s.menuTitleSize));
-            bindingList = new VisualElement { pickingMode = PickingMode.Ignore };
-            bindingList.style.width = ControlsWidth - 120f;
-            bindingList.style.marginBottom = 24f;
-            controlsColumn.Add(bindingList);
-            backButton = new UIButton(s, "Back", s.iconBack);
-            backButton.Clicked += () =>
-            {
-                Sfx.Play("ui_back");
-                ShowPage(Page.Main);
-            };
-            controlsColumn.Add(backButton);
 
             cursor = new MenuCursor(buttons.Count);
             Close();
@@ -138,14 +109,10 @@ namespace Margin.UI
 
         public void Open(InputActionAsset inputActions)
         {
+            if (inputActions != null) Bindings = inputActions;
             IsOpen = true;
             HudView.SetVisible(layer, true);
-            if (inputActions != null && inputActions != shownBindings)
-            {
-                shownBindings = inputActions;
-                FillBindings(inputActions);
-            }
-            ShowPage(Page.Main);
+            ShowMain();
             Select(0);
         }
 
@@ -172,14 +139,11 @@ namespace Margin.UI
                 pressedButton = null;
             }
 
-            if (shown == Page.Panel)
+            if (openPanel != null && openPanel.IsOpen)
             {
                 openPanel.Update(navigate, submit, cancel, realFrames);
-                if (page != null) page.Refresh();
-                return true;
             }
-
-            if (shown == Page.Main)
+            else
             {
                 int direction = navigate.y > 0.5f ? -1 : navigate.y < -0.5f ? 1 : 0;
                 if (cursor.Hold(direction, realFrames, s.menuRepeatDelay, s.menuRepeatInterval))
@@ -195,56 +159,56 @@ namespace Margin.UI
                     actions[cursor.Index]?.Invoke();
                 }
                 else if (cancel) return false;
-            }
-            else if (submit || cancel)
-            {
-                Sfx.Play("ui_back");
-                ShowPage(Page.Main);
+                mainCard.Refresh();
             }
 
-            mainCard.Refresh();
-            controlsCard.Refresh();
             if (page != null) page.Refresh();
             return true;
         }
 
-        /// <summary>Pause pressed while open: back out of Controls first, otherwise close. Returns true if it closed.</summary>
+        /// <summary>
+        /// Pause pressed while open: back out of an open page first, otherwise close. Returns true if it closed.
+        /// A page that's busy (waiting for a key to rebind) keeps the press.
+        /// </summary>
         public bool Back()
         {
-            if (shown == Page.Panel)
-            {
-                openPanel.Close();   // the panel tidies up (Options saves) and returns to the main page
-                return false;
-            }
-            if (shown != Page.Controls) return true;
-            ShowPage(Page.Main);
+            if (openPanel == null || !openPanel.IsOpen) return true;
+            if (!openPanel.Busy) openPanel.Close();
             return false;
+        }
+
+        /// <summary>Builds a page card in the menu's hand-drawn style, centered on the screen.</summary>
+        public InkPanel MakeCard(float width, float height)
+        {
+            var card = new InkPanel(s) { pickingMode = PickingMode.Position };
+            card.style.position = Position.Absolute;
+            card.style.left = Length.Percent(50f);
+            card.style.top = Length.Percent(50f);
+            card.style.marginLeft = -width * 0.5f;
+            card.style.marginTop = -height * 0.5f;
+            card.style.width = width;
+            card.style.height = height;
+            return card;
         }
 
         // ---------------- pages and selection ----------------
 
-        private void ShowPage(Page next)
+        private void ShowMain()
         {
-            if (shown == Page.Panel && next != Page.Panel && openPanel != null && openPanel.IsOpen) openPanel.Close();
-            shown = next;
-            HudView.SetVisible(mainCard, shown == Page.Main);
-            HudView.SetVisible(controlsCard, shown == Page.Controls);
-            backButton.SetSelected(shown == Page.Controls);   // the only button there
+            if (openPanel != null && openPanel.IsOpen) openPanel.Close();
+            openPanel = null;
+            HudView.SetVisible(mainCard, true);
         }
 
         private void OpenPanel(IMenuPanel panel)
         {
-            ShowPage(Page.Main);
             openPanel = panel;
-            shown = Page.Panel;
             HudView.SetVisible(mainCard, false);
-            panel.Open(() => ShowPage(Page.Main));
-        }
-
-        /// <summary>Re-reads the bindings table (after keys were rebound).</summary>
-        public void RefreshBindings()
-        {
-            if (shownBindings != null) FillBindings(shownBindings);
+            panel.Open(() =>
+            {
+                openPanel = null;
+                HudView.SetVisible(mainCard, true);
+            });
         }
 
         private void Select(int index)
@@ -272,82 +236,6 @@ namespace Margin.UI
             actions.Add(action);
         }
 
-        // ---------------- controls table ----------------
-
-        private void FillBindings(InputActionAsset inputActions)
-        {
-            bindingList.Clear();
-            InputActionMap gameplay = inputActions.FindActionMap("Gameplay");
-            InputActionMap menu = inputActions.FindActionMap("Menu");
-            int size = s.labelSize + 2;
-
-            Header("", "KEYBOARD / MOUSE", "GAMEPAD", size);
-            Row("Move", gameplay?.FindAction("Move"), size);
-            Row("Jump", gameplay?.FindAction("Jump"), size);
-            Row("Light attack", gameplay?.FindAction("LightAttack"), size);
-            Row("Heavy attack", gameplay?.FindAction("HeavyAttack"), size);
-            Row("Special", gameplay?.FindAction("Special"), size);
-            Row("Dash", gameplay?.FindAction("Dash"), size);
-            Row("Parry", gameplay?.FindAction("Parry"), size);
-            if (gameplay?.FindAction("Grapple") != null) Row("Grapple Line", gameplay.FindAction("Grapple"), size);
-            Row("Pause", menu?.FindAction("Pause"), size);
-            if (gameplay?.FindAction("Heal") != null) Row("Heal (100 ink)", gameplay.FindAction("Heal"), size);
-            else Header("Redraw (100 ink)", "Down + Special", "Down + Special", size);
-            Header("Combo breaker (50 ink)", "Parry while hit", "Parry while hit", size);
-        }
-
-        private VisualElement TableRow()
-        {
-            var row = new VisualElement { pickingMode = PickingMode.Ignore };
-            row.style.flexDirection = FlexDirection.Row;
-            row.style.alignItems = Align.Center;
-            row.style.height = s.keyIconSize + 10f;
-            bindingList.Add(row);
-            return row;
-        }
-
-        private VisualElement Cell(VisualElement row, float width)
-        {
-            var cell = new VisualElement { pickingMode = PickingMode.Ignore };
-            cell.style.width = width;
-            cell.style.flexDirection = FlexDirection.Row;
-            cell.style.alignItems = Align.Center;
-            row.Add(cell);
-            return cell;
-        }
-
-        private void Header(string what, string keyboard, string gamepad, int size)
-        {
-            VisualElement row = TableRow();
-            Color color = string.IsNullOrEmpty(what) ? s.faint : s.ink;
-            Cell(row, 300f).Add(UIButton.FlowLabel(s, what, size, s.ink));
-            Cell(row, 300f).Add(UIButton.FlowLabel(s, keyboard, size, color));
-            Cell(row, 260f).Add(UIButton.FlowLabel(s, gamepad, size, color));
-        }
-
-        private void Row(string what, InputAction action, int size)
-        {
-            VisualElement row = TableRow();
-            Cell(row, 300f).Add(UIButton.FlowLabel(s, what, size, s.ink));
-            Cell(row, 300f).Add(new KeyHint(s, action, "Keyboard", size, s.keyIconSize, s.ink));
-            Cell(row, 260f).Add(new KeyHint(s, action, "Gamepad", size, s.keyIconSize, s.ink));
-        }
-
-        // ---------------- building helpers ----------------
-
-        private InkPanel Card(float width, float height)
-        {
-            var card = new InkPanel(s) { pickingMode = PickingMode.Position };
-            card.style.position = Position.Absolute;
-            card.style.left = Length.Percent(50f);
-            card.style.top = Length.Percent(50f);
-            card.style.marginLeft = -width * 0.5f;
-            card.style.marginTop = -height * 0.5f;
-            card.style.width = width;
-            card.style.height = height;
-            return card;
-        }
-
         private static VisualElement Column(VisualElement card)
         {
             var column = new VisualElement { pickingMode = PickingMode.Ignore };
@@ -357,13 +245,6 @@ namespace Margin.UI
             column.style.flexGrow = 1f;
             card.Add(column);
             return column;
-        }
-
-        private Label Title(string text, int size)
-        {
-            Label title = UIButton.FlowLabel(s, text, size, s.ink);
-            title.style.marginBottom = 30f;
-            return title;
         }
     }
 }

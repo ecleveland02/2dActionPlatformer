@@ -22,6 +22,8 @@ namespace Margin.Save
         public int resolutionWidth;
         public int resolutionHeight;
         public bool vsync = true;
+        /// <summary>Rebound keys and buttons: the Input System's override JSON (empty = MarginControls as shipped).</summary>
+        public string bindingOverrides = "";
 
         /// <summary>Keeps every value in range (a hand-edited or old file can't break the game).</summary>
         public void Clamp()
@@ -32,6 +34,7 @@ namespace Margin.Save
             screenShake = Clamp01(screenShake);
             if (!Enum.IsDefined(typeof(DisplayMode), displayMode)) displayMode = DisplayMode.Borderless;
             if (resolutionWidth < 0 || resolutionHeight < 0) resolutionWidth = resolutionHeight = 0;
+            if (bindingOverrides == null) bindingOverrides = "";
         }
 
         public OptionsData Copy() => (OptionsData)MemberwiseClone();
