@@ -7,13 +7,14 @@ using UnityEngine;
 namespace Margin.EditorTools
 {
     /// <summary>
-    /// Creates the Highlighter's data in Data/Bosses/Highlighter (spec 10): one AttackData per move (frame data,
+    /// Creates the bosses' data. The Highlighter's in Data/Bosses/Highlighter (spec 10): one AttackData per move (frame data,
     /// damage, parryability; startup is the telegraph), the flood's hit, two BossPhase assets and HighlighterData.
     /// Only creates what's missing, so tuning done in the Inspector is never overwritten. Run by Build World 1.
     /// </summary>
     public static class StarterBosses
     {
         private const string Folder = "Assets/_Project/Data/Bosses/Highlighter";
+        private const string StaplerFolder = "Assets/_Project/Data/Bosses/Stapler";
 
         internal sealed class Result
         {
@@ -26,6 +27,72 @@ namespace Margin.EditorTools
         {
             Result r = EnsureCreated();
             EditorGUIUtility.PingObject(r.Highlighter);
+        }
+
+        internal sealed class StaplerResult
+        {
+            public StaplerData Stapler;
+            public AttackData Shockwave;
+        }
+
+        [MenuItem("Margin/Create Stapler Titan Boss Data")]
+        public static void CreateStaplerFromMenu()
+        {
+            StaplerResult r = EnsureStapler();
+            EditorGUIUtility.PingObject(r.Stapler);
+        }
+
+        /// <summary>
+        /// The Stapler Titan's data in Data/Bosses/Stapler (spec 10, Boss 2: positioning and punishing openings).
+        /// Only creates what's missing. Run by Build World 2.
+        /// </summary>
+        internal static StaplerResult EnsureStapler()
+        {
+            StickFigureRigEditor.EnsureFolder(StaplerFolder);
+            const string f = StaplerFolder;
+
+            // Chomp: the jaw creaks open with a glint (24 frames), snaps shut as it lunges. Parryable.
+            AttackData chomp = Attack("STChomp", 24, 6, 32, damage: 16, hitstop: 7, hitstun: 20, new Vector2(9f, 5f), parryable: true,
+                                      shake: 0.12f, box: new HitboxShape { offset = new Vector2(1.9f, 0f), size = new Vector2(2.6f, 1.9f) }, folder: f);
+            // Hop Slam: crouch + red flash (28 frames), a 40-frame leap at you, then a 52-frame jam (the punish).
+            AttackData hop = Attack("STHopSlam", 28, 40, 52, damage: 18, hitstop: 8, hitstun: 24, new Vector2(8f, 9f), parryable: false,
+                                    shake: 0.2f, folder: f);
+            // The landing's shockwaves: low enough to jump (or double jump) over.
+            AttackData wave = Attack("STShockwave", 1, 1, 0, damage: 12, hitstop: 5, hitstun: 18, new Vector2(5f, 10f), parryable: false,
+                                     shake: 0.08f, folder: f);
+            // Staple Shot: red flash (22 frames), then 3 aimed staples 12 frames apart.
+            AttackData shot = Attack("STStapleShot", 22, 26, 30, damage: 10, hitstop: 4, hitstun: 16, new Vector2(5f, 4f), parryable: false,
+                                     shake: 0.06f, folder: f);
+            // Staple Rain: jaw to the sky + lanes (30 frames), five staples fall 8 frames apart.
+            AttackData rain = Attack("STStapleRain", 30, 40, 34, damage: 12, hitstop: 4, hitstun: 16, new Vector2(3f, 5f), parryable: false,
+                                     shake: 0.06f, folder: f);
+
+            BossPhase one = Phase("StaplerPhase1", 1f, 30, 48, 0, 0, f,
+                Move(StaplerTitanBoss.Chomp, chomp, 4, 0f, 5f),
+                Move(StaplerTitanBoss.HopSlam, hop, 3, 3f, 0f),
+                Move(StaplerTitanBoss.StapleShot, shot, 3, 5f, 0f));
+            BossPhase two = Phase("StaplerPhase2", 0.5f, 26, 42, 160, 60, f,
+                Move(StaplerTitanBoss.Chomp, chomp, 3, 0f, 5f),
+                Move(StaplerTitanBoss.HopSlam, hop, 3, 2f, 0f),
+                Move(StaplerTitanBoss.StapleRain, rain, 3, 0f, 0f),
+                Move(StaplerTitanBoss.StapleShot, shot, 2, 5f, 0f));
+
+            var data = StarterCombat.LoadOrCreate<StaplerData>($"{f}/StaplerTitan.asset", out bool isNew);
+            if (isNew)
+            {
+                data.bossName = "THE STAPLER TITAN";
+                data.maxHealth = 560;
+                data.introFrames = 120;
+                data.introFramesRepeat = 30;
+                data.parryStaggerFrames = 70;
+                data.defeatFrames = 150;
+                data.bodySize = new Vector2(3.2f, 1.7f);
+                data.walkSpeed = 3f;
+                data.phases = new List<BossPhase> { one, two };
+                EditorUtility.SetDirty(data);
+            }
+            AssetDatabase.SaveAssets();
+            return new StaplerResult { Stapler = data, Shockwave = wave };
         }
 
         internal static Result EnsureCreated()
@@ -79,9 +146,9 @@ namespace Margin.EditorTools
         }
 
         private static AttackData Attack(string name, int startup, int active, int recovery, int damage, int hitstop, int hitstun,
-                                         Vector2 knockback, bool parryable, float shake, HitboxShape? box = null)
+                                         Vector2 knockback, bool parryable, float shake, HitboxShape? box = null, string folder = Folder)
         {
-            var a = StarterCombat.LoadOrCreate<AttackData>($"{Folder}/{name}.asset", out bool isNew);
+            var a = StarterCombat.LoadOrCreate<AttackData>($"{folder}/{name}.asset", out bool isNew);
             if (!isNew) return a;
             a.startupFrames = startup;
             a.activeFrames = active;
@@ -109,9 +176,13 @@ namespace Margin.EditorTools
             new BossMoveEntry { move = move, attack = attack, weight = weight, minRange = minRange, maxRange = maxRange };
 
         private static BossPhase Phase(string name, float threshold, int restMin, int restMax, int transition, int transitionRepeat,
-                                       params BossMoveEntry[] moves)
+                                       params BossMoveEntry[] moves) =>
+            Phase(name, threshold, restMin, restMax, transition, transitionRepeat, Folder, moves);
+
+        private static BossPhase Phase(string name, float threshold, int restMin, int restMax, int transition, int transitionRepeat,
+                                       string folder, params BossMoveEntry[] moves)
         {
-            var p = StarterCombat.LoadOrCreate<BossPhase>($"{Folder}/{name}.asset", out bool isNew);
+            var p = StarterCombat.LoadOrCreate<BossPhase>($"{folder}/{name}.asset", out bool isNew);
             if (!isNew) return p;
             p.healthThreshold = threshold;
             p.restFramesMin = restMin;

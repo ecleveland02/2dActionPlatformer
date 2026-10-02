@@ -12,10 +12,13 @@ namespace Margin.Combat
     /// AttackData (damage, knockback, hitstun; parryable or not), and stops at walls and floors. Drawn as a thumbtack
     /// pointing along its flight. Cleared when the player changes room or respawns.
     /// </summary>
+    public enum ProjectileLook { Tack, Staple }
+
     public sealed class EnemyProjectile : MonoBehaviour, ITickable, IHitboxSource
     {
         private static readonly Color Ink = new Color32(0x1A, 0x1A, 0x1A, 0xFF);
         private static readonly Color Head = new Color32(0xC8, 0x3C, 0x32, 0xFF);
+        private static readonly Color Steel = new Color32(0x5C, 0x60, 0x68, 0xFF);
 
         private Component owner;
         private AttackData attack;
@@ -24,6 +27,7 @@ namespace Margin.Combat
         private LayerMask solid;
         private int lifeLeft;
         private float size;
+        private ProjectileLook look;
         private readonly HashSet<IHitReceiver> hit = new HashSet<IHitReceiver>();
         private readonly List<AabbBox> boxes = new List<AabbBox>();
         private LineRenderer pin, head;
@@ -34,9 +38,10 @@ namespace Margin.Combat
         public Vector2 Position => position;
 
         public static EnemyProjectile Spawn(Component owner, AttackData attack, CombatSettings settings, Vector2 from,
-                                            Vector2 velocity, LayerMask solid, int lifetimeFrames, float size = 0.35f)
+                                            Vector2 velocity, LayerMask solid, int lifetimeFrames, float size = 0.35f,
+                                            ProjectileLook look = ProjectileLook.Tack)
         {
-            var go = new GameObject("Tack");
+            var go = new GameObject(look == ProjectileLook.Staple ? "Staple" : "Tack");
             var p = go.AddComponent<EnemyProjectile>();
             p.owner = owner;
             p.attack = attack;
@@ -46,6 +51,7 @@ namespace Margin.Combat
             p.solid = solid;
             p.lifeLeft = Mathf.Max(1, lifetimeFrames);
             p.size = size;
+            p.look = look;
             p.Build();
             p.Draw();
             return p;
@@ -94,8 +100,9 @@ namespace Margin.Combat
 
         private void Build()
         {
-            pin = Line("Pin", Ink, 0.05f, 13);
+            pin = Line("Pin", look == ProjectileLook.Staple ? Steel : Ink, 0.06f, 13);
             head = Line("Head", Head, 0.22f, 14);
+            head.enabled = look == ProjectileLook.Tack;
         }
 
         private LineRenderer Line(string lineName, Color color, float width, int order)
@@ -119,6 +126,18 @@ namespace Margin.Combat
         {
             if (pin == null) return;
             Vector2 dir = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : Vector2.right;
+            if (look == ProjectileLook.Staple)
+            {
+                // A staple: the crown across the back, both legs pointing the way it flies.
+                Vector2 side = new Vector2(-dir.y, dir.x) * size * 0.5f;
+                Vector2 crown = position - dir * size * 0.5f, legs = position + dir * size * 0.5f;
+                pin.positionCount = 4;
+                pin.SetPosition(0, legs + side);
+                pin.SetPosition(1, crown + side);
+                pin.SetPosition(2, crown - side);
+                pin.SetPosition(3, legs - side);
+                return;
+            }
             Vector3 tip = position + dir * 0.22f, back = position - dir * 0.12f;
             pin.positionCount = 2;
             pin.SetPosition(0, back);

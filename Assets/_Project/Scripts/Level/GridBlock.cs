@@ -41,6 +41,8 @@ namespace Margin.Level
         public int TickOrder => -50;
         public Vector2 CarryDelta { get; private set; }
         public int MoveStamp { get; private set; }
+        /// <summary>Held still where it is (stapled by the Stapler Titan). Cleared when the room resets.</summary>
+        public bool Frozen { get; set; }
 
         public void Configure(IList<Vector2Int> cells, float speed, int pause, int delay, bool isLoop, Transform drawing)
         {
@@ -64,6 +66,7 @@ namespace Margin.Level
 
         public void ResetForRoom()
         {
+            Frozen = false;
             transform.position = home;
             UnityEngine.Physics2D.SyncTransforms();
             Restart();
@@ -82,6 +85,13 @@ namespace Margin.Level
         public void Tick()
         {
             Vector2 before = transform.position;
+            if (Frozen)
+            {
+                CarryDelta = Vector2.zero;
+                drawFrom = drawTo = before;
+                tickedAt = Time.fixedTime;
+                return;
+            }
             Pt offset = route.Tick();
             Vector2 after = home + new Vector2(offset.X, offset.Y) * cellSize;
             CarryDelta = after - before;
@@ -107,6 +117,8 @@ namespace Margin.Level
             foreach (KinematicBody2D body in KinematicBody2D.All)
             {
                 if (body == null) continue;
+                // A one-way block (jump up through it) never shoves anyone; it only carries.
+                if (body.Data != null && (body.Data.oneWayMask & (1 << gameObject.layer)) != 0) continue;
                 Rect b = new Rect(body.Position - body.Size * 0.5f, body.Size);
                 if (!now.Overlaps(b)) continue;
                 if (b.yMin >= topBefore - 0.05f) continue;   // standing on top: a rider, carried
