@@ -549,6 +549,22 @@ namespace Margin.Bosses
             if (visual != null) visual.SetVisible(false);
         }
 
+        protected override void OnSkippedToBeaten()
+        {
+            if (cap != null) Destroy(cap.gameObject);
+            cap = null;
+            drops.Clear();
+            streakFade = 0;
+            if (flood != null) flood.Level01 = 0f;
+            if (visual != null)
+            {
+                visual.SetVisible(false);
+                visual.ShowTitle("", Vector2.zero, 0f);
+                visual.SetDrops(drops);
+                visual.SetStreak(Vector2.zero, Vector2.zero, 0f);
+            }
+        }
+
         protected override void OnReset()
         {
             if (cap != null) Destroy(cap.gameObject);

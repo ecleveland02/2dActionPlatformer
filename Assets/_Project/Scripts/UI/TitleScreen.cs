@@ -7,7 +7,7 @@ namespace Margin.UI
     /// <summary>
     /// The title screen (spec 14): a full notebook page with the game's name and Play, Controls and Quit, in the same
     /// hand-drawn card and flat buttons as the pause menu. Keyboard, gamepad ("Menu" map) and mouse all work.
-    /// Play loads UISettings.firstScene. Built by Margin > Build Title Screen into Scenes/Title.unity (first in
+    /// Play opens the 3 save slots (SlotPanel); a slot continues where it was saved, or starts at UISettings.firstScene. Built by Margin > Build Title Screen into Scenes/Title.unity (first in
     /// Build Settings, so the built game opens here); the pause menu's Title Screen button comes back.
     /// </summary>
     [DefaultExecutionOrder(100)]
@@ -34,7 +34,7 @@ namespace Margin.UI
             UIDocument document = MarginUI.CreateDocument(transform, settings, out panel);
             menu = new MenuView(document.rootVisualElement, settings, "MARGIN", new[]
             {
-                MenuView.Item("Play", settings.iconPlay, Play),
+                MenuView.Panel("Play", settings.iconPlay, card => new SlotPanel(settings, card, Play)),
                 MenuView.Options(settings),
                 MenuView.Controls(settings),
                 MenuView.Item("Quit", settings.iconQuit, MarginUI.QuitGame),
@@ -68,9 +68,13 @@ namespace Margin.UI
                         Time.unscaledDeltaTime * 60f);
         }
 
-        private void Play()
+        /// <summary>Continue the slot (or start a new game in it) and load where it was saved.</summary>
+        private void Play(int slot)
         {
-            MarginUI.LoadScene(settings.firstScene);
+            Margin.Save.GameSession.Begin(slot, settings.firstScene);
+            string scene = Margin.Save.GameSession.Data.scene;
+            if (!Application.CanStreamedLevelBeLoaded(scene)) scene = settings.firstScene;
+            MarginUI.LoadScene(scene);
         }
     }
 }

@@ -183,6 +183,15 @@ Persistent instructions for Claude Code. Sections 0, 2, 3, and 4 are copied verb
   `BossEvents` (tell sound per move via `BossMoveEntry.tellSound` or the boss's default), level/ability events;
   UI and one-offs use `Sfx.Play(id)`. Music: world loop; boss + layer stems start together with `PlayScheduled`,
   the layer fades in over 2 bars at phase 2. `MarginAudioImport` streams music, decompresses SFX (first import only).
+- **Saves (M6, spec 15):** `Scripts/Save/`. Pure `SaveData` (abilities by `Ability` name, weapons, last checkpoint
+  id/name/scene, beaten bosses by `BossBase.SaveId` = BossData asset name, play ticks) written by `SaveSystem` to
+  persistentDataPath/save_1..3.json (tmp file + .bak). `GameSession` = the slot in play: the title screen's Play opens
+  `SlotPanel` (3 slots, erase with a second press) and `Begin`s a slot; `LevelDirector.Begin` calls `Restore`
+  (abilities + start at the saved ink pot via `Checkpoint.Restore`; a new game saves at once); autosaves on
+  `LevelEvents.CheckpointReached` (spec) and also on boss beaten / ability unlocked (so a boss win isn't lost).
+  `BossArena.Start` skips a saved-beaten boss (`SkipToBeaten`); `AbilityPickup` hides if the ability is owned.
+  Playing a world straight from the editor has no slot: nothing saves. Menu pages are pluggable: `IMenuPanel` +
+  `MenuView.Panel(...)` (Options and SlotPanel use it).
 - **Status:** see `git log` and tags (`m1`, `m2`, ...) for milestone progress. M1 complete (commit 0782ccb).
 
 ## 0. How to Use This Document (Instructions for Claude Code)

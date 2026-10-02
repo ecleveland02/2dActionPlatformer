@@ -16,25 +16,34 @@ namespace Margin.UI
     /// </summary>
     public sealed class MenuView
     {
+        /// <summary>Builds a page's card at the given size (the menu's hand-drawn style, centered).</summary>
+        public delegate InkPanel CardMaker(float width, float height);
+
         /// <summary>One button: label, icon and what it does (or which page it opens).</summary>
         public struct Entry
         {
             public string Label;
             public Texture2D Icon;
             public Action Action;
-            internal Page Opens;
+            internal bool OpensControls;
+            internal Func<CardMaker, IMenuPanel> MakePanel;
         }
 
         public static Entry Item(string label, Texture2D icon, Action action) =>
-            new Entry { Label = label, Icon = icon, Action = action, Opens = Page.Main };
+            new Entry { Label = label, Icon = icon, Action = action };
 
         /// <summary>The button that opens the Controls page.</summary>
-        public static Entry Controls(UISettings s) => new Entry { Label = "Controls", Icon = s.iconControls, Opens = Page.Controls };
+        public static Entry Controls(UISettings s) => new Entry { Label = "Controls", Icon = s.iconControls, OpensControls = true };
 
-        /// <summary>The button that opens the Options page (audio, screen shake, display).</summary>
-        public static Entry Options(UISettings s) => new Entry { Label = "Options", Icon = s.iconOptions, Opens = Page.Options };
+        /// <summary>The button that opens the Options page (audio, screen shake, display, key bindings).</summary>
+        public static Entry Options(UISettings s) =>
+            Panel("Options", s.iconOptions, card => new OptionsPanel(s, card));
 
-        internal enum Page { Main, Controls, Options }
+        /// <summary>A button that opens a page of its own (Options, save slots...).</summary>
+        public static Entry Panel(string label, Texture2D icon, Func<CardMaker, IMenuPanel> make) =>
+            new Entry { Label = label, Icon = icon, MakePanel = make };
+
+        private enum Page { Main, Controls, Panel }
 
         private readonly UISettings s;
         private readonly VisualElement layer;
@@ -44,7 +53,8 @@ namespace Margin.UI
         private readonly UIButton backButton;
         private readonly VisualElement bindingList;
         private readonly RuledPaper page;
-        private readonly OptionsPanel options;
+        private readonly List<IMenuPanel> panels = new List<IMenuPanel>();
+        private IMenuPanel openPanel;
         private MenuCursor cursor;
         private Page shown;
         private InputActionAsset shownBindings;
@@ -90,13 +100,18 @@ namespace Margin.UI
             }
             foreach (Entry e in entries)
             {
-                Page opens = e.Opens;
-                AddButton(column, e.Label, e.Icon, opens == Page.Main ? e.Action : () => ShowPage(opens));
+                if (e.MakePanel != null)
+                {
+                    // A page of its own (Options, save slots): built now, shown when its button is picked.
+                    IMenuPanel panel = e.MakePanel(Card);
+                    panels.Add(panel);
+                    layer.Add(panel.Card);
+                    HudView.SetVisible(panel.Card, false);
+                    AddButton(column, e.Label, e.Icon, () => OpenPanel(panel));
+                }
+                else if (e.OpensControls) AddButton(column, e.Label, e.Icon, () => ShowPage(Page.Controls));
+                else AddButton(column, e.Label, e.Icon, e.Action);
             }
-
-            // ---- Options page ----
-            options = new OptionsPanel(s, Card);
-            layer.Add(options.Card);
 
             // ---- Controls page: bindings table + Back ----
             float rowHeight = s.keyIconSize + 10f;
@@ -136,7 +151,7 @@ namespace Margin.UI
 
         public void Close()
         {
-            if (options != null && options.IsOpen) options.Close();
+            if (openPanel != null && openPanel.IsOpen) openPanel.Close();
             IsOpen = false;
             HudView.SetVisible(layer, false);
         }
@@ -157,9 +172,9 @@ namespace Margin.UI
                 pressedButton = null;
             }
 
-            if (shown == Page.Options)
+            if (shown == Page.Panel)
             {
-                options.Update(navigate, submit, cancel, realFrames);
+                openPanel.Update(navigate, submit, cancel, realFrames);
                 if (page != null) page.Refresh();
                 return true;
             }
@@ -196,9 +211,9 @@ namespace Margin.UI
         /// <summary>Pause pressed while open: back out of Controls first, otherwise close. Returns true if it closed.</summary>
         public bool Back()
         {
-            if (shown == Page.Options)
+            if (shown == Page.Panel)
             {
-                options.Close();   // saves and returns to the main page
+                openPanel.Close();   // the panel tidies up (Options saves) and returns to the main page
                 return false;
             }
             if (shown != Page.Controls) return true;
@@ -210,12 +225,26 @@ namespace Margin.UI
 
         private void ShowPage(Page next)
         {
-            if (shown == Page.Options && next != Page.Options && options.IsOpen) options.Close();
+            if (shown == Page.Panel && next != Page.Panel && openPanel != null && openPanel.IsOpen) openPanel.Close();
             shown = next;
             HudView.SetVisible(mainCard, shown == Page.Main);
             HudView.SetVisible(controlsCard, shown == Page.Controls);
             backButton.SetSelected(shown == Page.Controls);   // the only button there
-            if (shown == Page.Options && !options.IsOpen) options.Open(() => ShowPage(Page.Main));
+        }
+
+        private void OpenPanel(IMenuPanel panel)
+        {
+            ShowPage(Page.Main);
+            openPanel = panel;
+            shown = Page.Panel;
+            HudView.SetVisible(mainCard, false);
+            panel.Open(() => ShowPage(Page.Main));
+        }
+
+        /// <summary>Re-reads the bindings table (after keys were rebound).</summary>
+        public void RefreshBindings()
+        {
+            if (shownBindings != null) FillBindings(shownBindings);
         }
 
         private void Select(int index)

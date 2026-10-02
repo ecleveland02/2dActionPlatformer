@@ -67,6 +67,9 @@ namespace Margin.UI
 
         public bool Selected => selected;
 
+        /// <summary>Changes the button's text (save slots show their summary).</summary>
+        public void SetText(string text) => label.text = text;
+
         /// <summary>Keyboard/gamepad confirm: a quick squash (released next frame by the menu).</summary>
         public void SetPressed(bool on) =>
             style.scale = new Scale(on ? new Vector3(0.96f, 0.96f, 1f) : Vector3.one);

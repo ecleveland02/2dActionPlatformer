@@ -66,6 +66,8 @@ namespace Margin.Bosses
         public int MoveFrame { get; private set; }
 
         public BossData Data => data;
+        /// <summary>Saved games remember beaten bosses by this (the BossData asset's name).</summary>
+        public string SaveId => data != null ? data.name : name;
         public CombatSettings Settings => settings != null ? settings : CombatSettings.Defaults;
         public BossPhase Phase => data != null && data.phases.Count > 0 ? data.phases[Mathf.Clamp(PhaseIndex, 0, data.phases.Count - 1)] : null;
         public Vector2 Position => Body.Position;
@@ -315,6 +317,17 @@ namespace Margin.Bosses
             return thresholds;
         }
 
+        /// <summary>A saved game already beat this boss: gone from the start, no fight, no defeat animation.</summary>
+        public void SkipToBeaten()
+        {
+            if (Mode == BossMode.Gone) return;
+            if (Mode == BossMode.Attacking) OnMoveEnd(CurrentMove);
+            Enter(BossMode.Gone, 0);
+            hitboxes.Clear();
+            SetHurtbox(false);
+            OnSkippedToBeaten();
+        }
+
         // ---------------- reset ----------------
 
         private void OnPlayerRespawned(PlayerController player)
@@ -450,6 +463,8 @@ namespace Margin.Bosses
         protected virtual void OnDefeatStart() { }
         protected virtual void OnDefeatTick() { }
         protected virtual void OnVanish() { }
+        /// <summary>Hide everything quietly (SkipToBeaten).</summary>
+        protected virtual void OnSkippedToBeaten() { }
         protected virtual void OnHurt(in HitInfo hit) { }
         protected virtual void OnReset() { }
         /// <summary>Every tick after the mode's work (projectiles, lingering effects).</summary>

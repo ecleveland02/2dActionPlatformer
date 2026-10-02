@@ -181,6 +181,9 @@ namespace Margin.UI
         private void ToTitle()
         {
             Resume();
+            // Keep the play time; progress since the last ink pot isn't saved (spec 15: autosave at checkpoints).
+            Margin.Save.GameSession.Save();
+            Margin.Save.GameSession.End();
             LoadScene(settings.titleScene);
         }
 
@@ -202,6 +205,7 @@ namespace Margin.UI
         private void Quit()
         {
             Resume();
+            Margin.Save.GameSession.Save();   // keep the play time
             QuitGame();
         }
 

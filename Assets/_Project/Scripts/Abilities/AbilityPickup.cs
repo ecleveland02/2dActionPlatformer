@@ -63,6 +63,13 @@ namespace Margin.Abilities
             LevelDirector director = LevelDirector.Instance;
             PlayerController player = director != null ? director.Player : SceneQuery.FindFirst<PlayerController>();
             if (player == null || player.Body == null) return;
+            if (player.Abilities.Has(ability))
+            {
+                // Already have it (a continued save): the pen isn't here any more.
+                taken = true;
+                pen.gameObject.SetActive(false);
+                return;
+            }
             if (Vector2.Distance(player.Body.Position, transform.position) < 1.3f) Take(player);
         }
 

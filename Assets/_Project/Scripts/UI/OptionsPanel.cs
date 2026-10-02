@@ -13,7 +13,7 @@ namespace Margin.UI
     /// on a choice steps it forward, Cancel or Back returns. With the mouse: hover picks a row, click the arrows.
     /// Changes apply at once (OptionsStore) and are saved to options.json when the page closes.
     /// </summary>
-    public sealed class OptionsPanel
+    public sealed class OptionsPanel : IMenuPanel
     {
         /// <summary>One adjustable line: its label, its current value as text, how to change it, and (for sliders)
         /// how full its bar is.</summary>
@@ -44,7 +44,7 @@ namespace Margin.UI
         public InkPanel Card => card;
         public bool IsOpen { get; private set; }
 
-        public OptionsPanel(UISettings settings, Func<float, float, InkPanel> makeCard)
+        public OptionsPanel(UISettings settings, MenuView.CardMaker makeCard)
         {
             s = settings;
             AddSlider("Master volume", () => OptionsStore.Current.masterVolume, v => OptionsStore.Current.masterVolume = v);

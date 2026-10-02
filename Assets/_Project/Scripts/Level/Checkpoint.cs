@@ -12,6 +12,8 @@ namespace Margin.Level
     /// </summary>
     public sealed class Checkpoint : MonoBehaviour, ITickable
     {
+        [Tooltip("Saved games remember the last ink pot by this. Empty = the room's title (fine with one pot per room).")]
+        [SerializeField] private string id;
         [Tooltip("Touch area: this wide and tall, standing on the object's position.")]
         [SerializeField] private Vector2 size = new Vector2(1.6f, 2.2f);
         [Tooltip("Where the player's center respawns, relative to this object. Outside the touch area, so " +
@@ -28,6 +30,17 @@ namespace Margin.Level
 
         /// <summary>After the LevelDirector (30).</summary>
         public int TickOrder => 31;
+
+        /// <summary>Stable id for save files.</summary>
+        public string Id
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(id)) return id;
+                Room room = Room.Of(this);
+                return room != null ? room.Title : name;
+            }
+        }
 
         public Vector2 RespawnPoint => (Vector2)transform.position + respawnOffset;
         public bool IsCurrent => current == this;
@@ -105,6 +118,21 @@ namespace Margin.Level
             if (LevelDirector.Instance != null) LevelDirector.Instance.SetCheckpoint(this);
             if (InkSplatter.Instance != null) InkSplatter.Instance.Burst((Vector2)transform.position + new Vector2(0f, 0.8f), Vector2.up, 12);
             LevelEvents.RaiseCheckpointReached(this);
+        }
+
+        /// <summary>
+        /// Continuing a saved game: this is the current ink pot again, quietly (no heal note, no splash, no save).
+        /// </summary>
+        public void Restore(PlayerController target)
+        {
+            player = target;
+            touching = true;   // the player starts inside it; don't count that as touching it again
+            Checkpoint previous = current;
+            current = this;
+            if (previous != null && previous != this && previous.visual != null) previous.visual.SetLit(false);
+            if (visual != null) visual.SetLit(true);
+            if (target != null && target.Health != null) target.Health.SpawnPoint = RespawnPoint;
+            if (LevelDirector.Instance != null) LevelDirector.Instance.SetCheckpoint(this);
         }
 
         private void OnDrawGizmos()

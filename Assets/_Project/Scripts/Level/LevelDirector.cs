@@ -118,12 +118,21 @@ namespace Margin.Level
             if (start == null && player != null) start = RoomAt(player.transform.position);
             if (start == null) start = rooms[0];
 
+            // Continuing a saved game: start at the saved ink pot, with the saved abilities.
+            Checkpoint saved = Margin.Save.GameSession.Restore(player, SceneQuery.FindAll<Checkpoint>());
+            if (saved != null && Room.Of(saved) != null)
+            {
+                start = Room.Of(saved);
+                player.ResetTo(saved.RespawnPoint);
+            }
+
             // Only the starting room runs; the rest wake up when entered.
             foreach (Room room in rooms)
                 if (room != start) room.gameObject.SetActive(false);
             CheckpointRoom = start;
             safePoint = player != null ? (Vector2)player.transform.position : start.WorldBounds.center;
             EnterRoom(start, resetContents: false);
+            if (saved != null) saved.Restore(player);
         }
 
         /// <summary>The room whose camera bounds contain a point, or null.</summary>
@@ -157,6 +166,7 @@ namespace Margin.Level
         public void Tick()
         {
             if (player == null || CurrentRoom == null) return;
+            Margin.Save.GameSession.CountTick();
 
             if (respawnPending)
             {

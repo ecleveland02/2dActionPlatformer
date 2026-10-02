@@ -55,6 +55,18 @@ namespace Margin.Bosses
             ApplySeals();
         }
 
+        /// <summary>
+        /// A saved game already beat this boss: open the arena and let it stay gone. Done in Start, after every
+        /// object in the room has woken up (Awake), so the boss is ready.
+        /// </summary>
+        private void Start()
+        {
+            if (beaten || boss == null || !Margin.Save.GameSession.IsBossBeaten(boss)) return;
+            beaten = true;
+            boss.SkipToBeaten();
+            ApplySeals();
+        }
+
         private void OnDisable()
         {
             GameLoop.Unregister(this);
