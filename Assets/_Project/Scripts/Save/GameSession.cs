@@ -122,6 +122,7 @@ namespace Margin.Save
 
         private static void CaptureAndSave()
         {
+            if (!Active) return;   // no save slot (a world played straight from the editor): nothing to save
             LevelDirector director = LevelDirector.Instance;
             if (director != null && director.Player != null) Capture(director.Player);
             Save();
@@ -130,6 +131,8 @@ namespace Margin.Save
         /// <summary>Copies the player's current abilities into the save.</summary>
         private static void Capture(PlayerController player)
         {
+            if (Data == null || player == null || player.Abilities == null) return;
+            if (Data.abilities == null) Data.abilities = new List<string>();
             Data.abilities.Clear();
             foreach (Ability a in (Ability[])Enum.GetValues(typeof(Ability)))
                 if (player.Abilities.Has(a)) Data.abilities.Add(a.ToString());
