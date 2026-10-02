@@ -16,7 +16,7 @@ namespace Margin.Level
     [RequireComponent(typeof(BoxCollider2D))]
     public sealed class LevelBlock : MonoBehaviour
     {
-        public enum Style { Solid, OneWay }
+        public enum Style { Solid, OneWay, Grid }
 
         [SerializeField] private Style style = Style.Solid;
         [SerializeField] private Material lineMaterial;
@@ -86,7 +86,7 @@ namespace Margin.Level
             }
 
             Transform hatchChild = transform.Find(HatchName);
-            bool wantHatch = style == Style.Solid && hatchSpacing > 0f && size.x > 0.2f && size.y > 0.2f;
+            bool wantHatch = (style == Style.Solid || style == Style.Grid) && hatchSpacing > 0f && size.x > 0.2f && size.y > 0.2f;
             if (!wantHatch)
             {
                 if (hatchChild != null) hatchChild.gameObject.SetActive(false);
@@ -104,6 +104,12 @@ namespace Margin.Level
             Setup(hatchLine, hatch, lineWidth * 0.4f, -1);
             hatchLine.loop = false;
             const float inset = 0.08f;
+            if (style == Style.Grid)
+            {
+                // World 2: graph paper squares (1 unit) inside the block instead of hatching.
+                SetPoints(hatchLine, LevelArt.GridLines(size.x, size.y, 1f), center);
+                return;
+            }
             SetPoints(hatchLine, LevelArt.Hatch(size.x - inset * 2f, size.y - inset * 2f, hatchSpacing), center);
         }
 

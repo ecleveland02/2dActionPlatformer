@@ -50,6 +50,30 @@ namespace Margin.Level
             return points;
         }
 
+        /// <summary>
+        /// Graph paper squares across a <paramref name="width"/> x <paramref name="height"/> box centered on 0, as one
+        /// back-and-forth pen stroke (vertical lines, then horizontal ones). Lines sit on whole multiples of
+        /// <paramref name="cell"/> from the box's corner.
+        /// </summary>
+        public static List<Pt> GridLines(float width, float height, float cell)
+        {
+            var points = new List<Pt>();
+            float hw = width * 0.5f, hh = height * 0.5f;
+            cell = Math.Max(0.05f, cell);
+            bool flip = false;
+            for (float x = -hw + cell; x < hw - 0.01f; x += cell, flip = !flip)
+            {
+                points.Add(new Pt(x, flip ? hh : -hh));
+                points.Add(new Pt(x, flip ? -hh : hh));
+            }
+            for (float y = -hh + cell; y < hh - 0.01f; y += cell, flip = !flip)
+            {
+                points.Add(new Pt(flip ? hw : -hw, y));
+                points.Add(new Pt(flip ? -hw : hw, y));
+            }
+            return points;
+        }
+
         /// <summary>A doodle about <paramref name="size"/> across, as pen strokes.</summary>
         public static List<List<Pt>> Doodle(DoodleKind kind, float size)
         {

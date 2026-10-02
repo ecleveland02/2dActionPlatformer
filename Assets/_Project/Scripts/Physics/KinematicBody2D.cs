@@ -34,6 +34,10 @@ namespace Margin.Physics
         private Collider2D groundCollider;      // what we are standing on (valid while grounded)
         private Collider2D dropThroughCollider; // one-way platform being dropped through, or null
         private int dropThroughTicks;
+        private IMovingSolid carrier;           // moving ground last carried on, and its stamp then
+        private int carriedStamp;
+        private Collider2D pushedBy;             // ignored by casts during Push (the body starts inside it)
+        private static readonly System.Collections.Generic.List<KinematicBody2D> all = new System.Collections.Generic.List<KinematicBody2D>();
 
         // Reused buffers so casting does not allocate memory every tick.
         private readonly RaycastHit2D[] hits = new RaycastHit2D[16];
@@ -50,6 +54,17 @@ namespace Margin.Physics
         public Vector2 Position { get; private set; }
         public Vector2 Size => box.size;
         public bool IsDroppingThrough => dropThroughCollider != null;
+        /// <summary>What the body is standing on (null when airborne).</summary>
+        public Collider2D GroundCollider => state.Grounded ? groundCollider : null;
+        /// <summary>Every enabled body (moving blocks push them).</summary>
+        public static System.Collections.Generic.IReadOnlyList<KinematicBody2D> All => all;
+
+        private void OnEnable()
+        {
+            if (!all.Contains(this)) all.Add(this);
+        }
+
+        private void OnDisable() => all.Remove(this);
 
         private float Skin => data.skinWidth;
         private Vector2 CastSize => box.size - 2f * Skin * Vector2.one;
@@ -80,6 +95,24 @@ namespace Margin.Physics
         /// Moves without testing for collisions (a flying boss gliding over platforms). Unlike Teleport the motion
         /// stays interpolated. Collision state is cleared: the body is treated as airborne.
         /// </summary>
+        /// <summary>
+        /// Pushed by something solid (a moving block). Moves with collisions like Move, but keeps the owner's
+        /// collision state. Returns how far it actually went (less than asked = squeezed against a wall).
+        /// </summary>
+        public Vector2 Push(Vector2 delta, Collider2D pusher = null)
+        {
+            EnsureData();
+            pushedBy = pusher;
+            Vector2 start = Position, p = Position;
+            if (delta.x != 0f) p = MoveHorizontal(p, delta.x);
+            if (delta.y < 0f) p = MoveDown(p, -delta.y);
+            else if (delta.y > 0f) p = MoveUp(p, delta.y, 0f);
+            pushedBy = null;
+            Position = p;
+            body.MovePosition(p);
+            return p - start;
+        }
+
         public void MoveFree(Vector2 delta)
         {
             Position += delta;
@@ -125,6 +158,18 @@ namespace Margin.Physics
             Vector2 groundNormal = state.GroundNormal;
             state = default;
             state.WasGrounded = wasGrounded;
+
+            // Standing on moving ground (a grid block): ride along first. It moved earlier this tick, so the body
+            // is shifted straight to where it would be, without a cast (it's already resting on the surface).
+            if (wasGrounded && groundCollider != null && groundCollider.TryGetComponent(out IMovingSolid solid))
+            {
+                if (solid != carrier || solid.MoveStamp != carriedStamp)
+                {
+                    Position += solid.CarryDelta;
+                    carrier = solid;
+                    carriedStamp = solid.MoveStamp;
+                }
+            }
 
             Vector2 start = Position;
             Vector2 p = Position;
@@ -313,7 +358,7 @@ namespace Margin.Physics
             for (int i = 0; i < count; i++)
             {
                 RaycastHit2D hit = hits[i];
-                if (hit.collider == box) continue;
+                if (hit.collider == box || hit.collider == pushedBy) continue;
                 // Ignore surfaces we are moving along or away from (e.g. the slope we walk on).
                 if (Vector2.Dot(hit.normal, dir) > -0.001f) continue;
 

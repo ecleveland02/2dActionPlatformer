@@ -202,8 +202,20 @@ namespace Margin.Level
         private void CheckPit()
         {
             if (player.Body.Position.y >= CurrentRoom.WorldBounds.yMin - Settings.killPlaneMargin) return;
+            Hazard("a pit");
+        }
 
-            bool died = player.Health != null && player.Health.TakeHazardDamage(Settings.pitDamage, "a pit");
+        /// <summary>Squeezed by a moving block (World 2): same as falling in a pit.</summary>
+        public void Crush(PlayerController who)
+        {
+            if (who != player || InTransition || player.CurrentState is DefeatedState) return;
+            Hazard("a crushing block");
+        }
+
+        /// <summary>Pit damage, then back to the last door (or the checkpoint) behind a quick fade.</summary>
+        private void Hazard(string cause)
+        {
+            bool died = player.Health != null && player.Health.TakeHazardDamage(Settings.pitDamage, cause);
             if (died) return;   // the defeat fade and respawn take over
             pitPending = true;
             Protect(true);
