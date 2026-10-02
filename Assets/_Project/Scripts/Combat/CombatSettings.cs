@@ -77,6 +77,13 @@ namespace Margin.Combat
         [Min(1)] public int redrawFrames = 45;
         [Range(0f, 1f)] public float redrawHealFraction = 0.3f;
 
+        [Header("Double jump spring (spec 8)")]
+        [Tooltip("The Spring Doodle's hit on whatever is under your feet when you double jump.")]
+        [Min(0)] public int springDamage = 6;
+        [Min(0)] public int springHitstunFrames = 18;
+        [Tooltip("Knockback given to what's below (x flips with facing): down and away.")]
+        public Vector2 springKnockback = new Vector2(3f, -8f);
+
         [Header("Ink meter (spec 6.6)")]
         [Min(1)] public int inkMax = 100;
         [Tooltip("Frames without landing a hit before ink starts draining (spec: 5 s).")]

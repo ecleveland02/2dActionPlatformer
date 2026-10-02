@@ -82,6 +82,14 @@ namespace Margin.Player
         [Tooltip("Frames after a wall jump during which left/right input is ignored, so you can't instantly drift back.")]
         [Min(0)] public int wallJumpControlLockFrames = 8;
 
+        [Header("Double Jump (Spring Doodle, Boss 2 reward, spec 8)")]
+        [Tooltip("Height of the jump in the air (units). A little lower than a ground jump.")]
+        [Min(0.1f)] public float doubleJumpHeight = 2.6f;
+        [Tooltip("Jumps allowed in the air before landing (or grabbing a wall or the Grapple Line).")]
+        [Min(0)] public int airJumps = 1;
+        [Tooltip("Frames the spring's hitbox under your feet stays out after a double jump.")]
+        [Min(1)] public int springFrames = 6;
+
         [Header("Grapple Line (Boss 1 reward, spec 8)")]
         [Tooltip("How far the line reaches, from the player to an anchor ring or enemy.")]
         [Min(1f)] public float grappleRange = 9.5f;
@@ -112,6 +120,8 @@ namespace Margin.Player
         public float RiseGravity => MovementMath.RiseGravity(jumpHeight, framesToApex);
         public float FallGravity => RiseGravity * fallGravityMultiplier;
         public float JumpVelocity => MovementMath.JumpVelocity(jumpHeight, framesToApex);
+        /// <summary>Launch speed for the double jump: v = sqrt(2 g h) with the normal rising gravity.</summary>
+        public float DoubleJumpVelocity => Mathf.Sqrt(2f * RiseGravity * doubleJumpHeight);
         public float GroundAccelStep => MovementMath.SpeedStepPerTick(runSpeed, groundAccelerationFrames);
         public float GroundDecelStep => MovementMath.SpeedStepPerTick(runSpeed, groundDecelerationFrames);
         public float AirAccelStep => MovementMath.SpeedStepPerTick(runSpeed, airAccelerationFrames);

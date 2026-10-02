@@ -50,6 +50,7 @@ namespace Margin.Player
         public ComboBreakerState ComboBreaker { get; private set; }
         public DefeatedState Defeated { get; private set; }
         public GrappleState Grapple { get; private set; }
+        public DoubleJumpState DoubleJump { get; private set; }
 
         // ---- Runtime values the states read and write ----
         /// <summary>Units per second. Public field so states can set .x / .y directly.</summary>
@@ -66,6 +67,8 @@ namespace Margin.Player
         public Vector2 LastPullPoint { get; private set; }
         public int PullLineFrames { get; set; }
         public int AirDashesLeft { get; set; }
+        /// <summary>Double jumps left before landing (needs the Double Jump ability).</summary>
+        public int AirJumpsLeft { get; set; }
         /// <summary>Ticks since last grounded. 0 while on the ground, 1 on the first tick starting airborne.</summary>
         public int FramesSinceGrounded { get; private set; }
         /// <summary>Consecutive grounded ticks spent running at full speed or faster. Sprint starts at MovementData.framesToStartSprint.</summary>
@@ -153,12 +156,14 @@ namespace Margin.Player
             ComboBreaker = new ComboBreakerState(this);
             Defeated = new DefeatedState(this);
             Grapple = new GrappleState(this);
+            DoubleJump = new DoubleJumpState(this);
 
             machine = new PlayerStateMachine();
             machine.ForceState(Fall);
 
             // Draws the Grapple Line and highlights the ring it would hook (harmless before it's unlocked).
             if (GetComponent<GrappleRope>() == null) gameObject.AddComponent<GrappleRope>();
+            if (GetComponent<SpringFX>() == null) gameObject.AddComponent<SpringFX>();
         }
 
         private void OnEnable() => GameLoop.Register(this);
@@ -266,6 +271,7 @@ namespace Margin.Player
                 FramesSinceGrounded = 0;
                 coyoteAvailable = true;
                 AirDashesLeft = data.airDashes;
+                AirJumpsLeft = data.airJumps;
             }
             else
             {
@@ -491,6 +497,24 @@ namespace Margin.Player
         {
             GrappleCooldown = data.grappleCooldownFrames;
             AirDashesLeft = data.airDashes;
+            AirJumpsLeft = data.airJumps;
+        }
+
+        /// <summary>Jump pressed in the air with the Double Jump ability and an air jump left (spec 8).</summary>
+        public PlayerState CheckDoubleJump()
+        {
+            if (!abilities.doubleJump || Grounded || AirJumpsLeft <= 0) return null;
+            return Controls.Buffer.Consume(BufferedAction.Jump) ? DoubleJump : null;
+        }
+
+        /// <summary>Called by DoubleJumpState.Enter: launches, uses an air jump, and springs the hitbox underfoot.</summary>
+        public void StartDoubleJump()
+        {
+            Velocity.y = data.DoubleJumpVelocity;
+            JumpStartY = Body.Position.y;
+            coyoteAvailable = false;
+            AirJumpsLeft--;
+            if (Combat != null) Combat.StartSpring(data.springFrames);
         }
 
         public PlayerState CheckDash()

@@ -24,6 +24,8 @@ namespace Margin.Player
         public PoseClip dash;
         public PoseClip wallSlide;
         public PoseClip wallJump;
+        [Tooltip("Frames of the front flip at the start of a double jump. 0 = no flip.")]
+        [Min(0)] public int doubleJumpFlipFrames = 18;
         [Tooltip("Hanging from the Grapple Line (free arm up the line; the body tilts along it). Falls back to the jump apex.")]
         public PoseClip grapple;
         public PoseClip hitstun;

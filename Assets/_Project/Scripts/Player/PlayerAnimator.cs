@@ -87,7 +87,7 @@ namespace Margin.Player
             // Hang along the grapple line; ease back upright after letting go.
             float tiltGoal = player.CurrentState is GrappleState grapple ? Mathf.Clamp(grapple.RopeAngle, -85f, 85f) : 0f;
             ropeTilt = Mathf.MoveTowards(ropeTilt, tiltGoal, player.CurrentState is GrappleState ? 25f : 8f);
-            poseAnimator.Tilt = ropeTilt;
+            poseAnimator.Tilt = ropeTilt + DoubleJumpFlip();
             poseAnimator.PlaybackRate = CycleRate(poseAnimator.CurrentClip);
             UpdateAirBlend();
             poseAnimator.KeepFeetOnFloor = player.Grounded;
@@ -154,6 +154,15 @@ namespace Margin.Player
         /// so authored poses stay exact.
         /// </summary>
         private float ropeTilt;
+
+        /// <summary>A quick front flip through the start of a double jump (eases out, so it snaps round then settles).</summary>
+        private float DoubleJumpFlip()
+        {
+            int frames = animations.doubleJumpFlipFrames;
+            if (frames <= 0 || !(player.CurrentState is DoubleJumpState)) return 0f;
+            float t = Mathf.Clamp01(player.FramesInState / (float)frames);
+            return 360f * (1f - (1f - t) * (1f - t));
+        }
 
         private float UpdateLean()
         {

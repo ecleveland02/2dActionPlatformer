@@ -16,6 +16,7 @@ namespace Margin.Player
         public override PlayerState CheckTransitions()
         {
             return Player.CheckWallJump()
+                   ?? Player.CheckDoubleJump()
                    ?? Player.CheckGrapple()
                    ?? Player.CheckParry()
                    ?? Player.CheckAttack()

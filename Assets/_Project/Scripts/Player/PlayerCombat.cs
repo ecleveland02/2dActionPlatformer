@@ -24,6 +24,9 @@ namespace Margin.Player
         private PlayerController player;
         private readonly HashSet<IHitReceiver> hitThisAttack = new HashSet<IHitReceiver>();
         private readonly List<AabbBox> activeBoxes = new List<AabbBox>();
+        private readonly HashSet<IHitReceiver> hitBySpring = new HashSet<IHitReceiver>();
+        private AttackData springAttack;
+        private int springLeft;
         private HitboxWindow lastWindow;
         private InkMeter ink;
         private AttackData breakerPush;
@@ -142,8 +145,50 @@ namespace Margin.Player
             if (weaponLine != null) weaponLine.Attacking = false;
         }
 
-        /// <summary>Called once per player tick (not during hitstop): ink decay.</summary>
-        public void Tick() => Ink.Tick();
+        /// <summary>Called once per player tick (not during hitstop): ink decay, the double jump's spring.</summary>
+        public void Tick()
+        {
+            Ink.Tick();
+            TickSpring();
+        }
+
+        /// <summary>Frames the double jump's spring hitbox has left (for its drawing).</summary>
+        public int SpringFramesLeft => springLeft;
+
+        /// <summary>Double jump (Spring Doodle, spec 8): a small hitbox under the feet for a few frames.</summary>
+        public void StartSpring(int frames)
+        {
+            springLeft = frames;
+            hitBySpring.Clear();
+        }
+
+        private void TickSpring()
+        {
+            if (springLeft <= 0) return;
+            springLeft--;
+            if (springAttack == null) springAttack = SpringAttack(Settings);
+            Vector2 p = player.Body.Position;
+            float feet = p.y - player.Body.Size.y * 0.5f;
+            var box = new AabbBox(p.x, feet - 0.3f, 1.1f, 0.6f);
+            activeBoxes.Add(box);
+            HitResolver.Resolve(this, Faction.Player, springAttack, box, player.Facing, hitBySpring, Settings);
+        }
+
+        /// <summary>The spring's hit, built from CombatSettings (it's the same whatever weapon you hold).</summary>
+        private static AttackData SpringAttack(CombatSettings s)
+        {
+            var a = ScriptableObject.CreateInstance<AttackData>();
+            a.name = "SpringDoodle";
+            a.hideFlags = HideFlags.DontSave;
+            a.damage = s.springDamage;
+            a.hitstopFrames = 4;
+            a.hitstunFrames = s.springHitstunFrames;
+            a.knockback = s.springKnockback;
+            a.inkGain = 3;
+            a.screenShake = 0.05f;
+            a.hitSound = "hit_light";
+            return a;
+        }
 
         /// <summary>
         /// Tests this frame's hitboxes against every enemy hurtbox (via HitResolver). Each target is hit once per

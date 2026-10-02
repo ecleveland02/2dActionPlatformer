@@ -16,6 +16,7 @@ namespace Margin.Player
 
             return Player.CheckGroundJump()
                    ?? Player.CheckWallJump()
+                   ?? Player.CheckDoubleJump()
                    ?? Player.CheckGrapple()
                    ?? Player.CheckParry()
                    ?? Player.CheckAttack()
